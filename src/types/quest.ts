@@ -11,6 +11,7 @@ export interface Quest {
 export interface DailyQuestState {
   quests: Quest[];
   lastResetDate: string; // ISO date string (YYYY-MM-DD)
+  previousDayCompletedCount?: number;
 }
 
 export const DEFAULT_DAILY_QUESTS: Omit<Quest, 'completed'>[] = [
