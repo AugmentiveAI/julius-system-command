@@ -1,14 +1,14 @@
 import { PlayerProfile } from '@/components/dashboard/PlayerProfile';
 import { StatsRadarChart } from '@/components/dashboard/StatsRadarChart';
 import { StreakCounter } from '@/components/dashboard/StreakCounter';
-import { INITIAL_PLAYER } from '@/types/player';
+import { BottomNav } from '@/components/navigation/BottomNav';
+import { usePlayer } from '@/hooks/usePlayer';
 
 const Index = () => {
-  // For now, use initial player data. Will add persistence later.
-  const player = INITIAL_PLAYER;
+  const { player } = usePlayer();
 
   return (
-    <div className="min-h-screen bg-background px-4 py-6">
+    <div className="min-h-screen bg-background px-4 pb-24 pt-6">
       <div className="mx-auto max-w-2xl space-y-6">
         {/* System Header */}
         <div className="text-center">
@@ -33,6 +33,8 @@ const Index = () => {
           </p>
         </div>
       </div>
+
+      <BottomNav />
     </div>
   );
 };
