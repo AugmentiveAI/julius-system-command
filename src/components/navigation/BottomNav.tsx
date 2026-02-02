@@ -1,9 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Scroll } from 'lucide-react';
+import { Home, Scroll, Trophy } from 'lucide-react';
 
 const navItems = [
   { path: '/', label: 'Dashboard', icon: Home },
   { path: '/quests', label: 'Quests', icon: Scroll },
+  { path: '/milestones', label: 'Milestones', icon: Trophy },
 ];
 
 export const BottomNav = () => {

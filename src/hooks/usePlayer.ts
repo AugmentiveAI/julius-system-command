@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Player, INITIAL_PLAYER, PlayerStats, getLowestStat, getPenaltyLevel, INITIAL_PENALTY } from '@/types/player';
+import { Player, INITIAL_PLAYER, PlayerStats, getLowestStat, getPenaltyLevel, INITIAL_PENALTY, Rank } from '@/types/player';
 import { Quest, DailyQuestState, DEFAULT_DAILY_QUESTS } from '@/types/quest';
+import { MainQuest, MainQuestState, DEFAULT_MAIN_QUESTS, getHighestRank } from '@/types/mainQuest';
 import { useToast } from '@/hooks/use-toast';
 
 const PLAYER_STORAGE_KEY = 'the-system-player';
 const QUESTS_STORAGE_KEY = 'the-system-quests';
+const MAIN_QUESTS_STORAGE_KEY = 'the-system-main-quests';
 
 function getTodayDateString(): string {
   return new Date().toISOString().split('T')[0];
@@ -68,9 +70,25 @@ function loadQuests(): DailyQuestState {
   };
 }
 
+function loadMainQuests(): MainQuestState {
+  try {
+    const stored = localStorage.getItem(MAIN_QUESTS_STORAGE_KEY);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (e) {
+    console.error('Failed to load main quest data:', e);
+  }
+  
+  return {
+    quests: DEFAULT_MAIN_QUESTS.map(q => ({ ...q, completed: false })),
+  };
+}
+
 export function usePlayer() {
   const [player, setPlayer] = useState<Player>(loadPlayer);
   const [questState, setQuestState] = useState<DailyQuestState>(loadQuests);
+  const [mainQuestState, setMainQuestState] = useState<MainQuestState>(loadMainQuests);
   const [showFlashEffect, setShowFlashEffect] = useState(false);
   const { toast } = useToast();
   const penaltyProcessedRef = useRef(false);
@@ -84,6 +102,11 @@ export function usePlayer() {
   useEffect(() => {
     localStorage.setItem(QUESTS_STORAGE_KEY, JSON.stringify(questState));
   }, [questState]);
+
+  // Persist main quests to localStorage
+  useEffect(() => {
+    localStorage.setItem(MAIN_QUESTS_STORAGE_KEY, JSON.stringify(mainQuestState));
+  }, [mainQuestState]);
 
   // Check for daily reset and process penalties
   useEffect(() => {
@@ -274,6 +297,40 @@ export function usePlayer() {
     }));
   }, []);
 
+  const completeMainQuest = useCallback((questId: string) => {
+    const quest = mainQuestState.quests.find(q => q.id === questId);
+    if (!quest || quest.completed) return;
+
+    // Mark main quest as completed
+    const updatedQuests = mainQuestState.quests.map(q =>
+      q.id === questId ? { ...q, completed: true, completedAt: new Date().toISOString() } : q
+    );
+
+    setMainQuestState({
+      quests: updatedQuests,
+    });
+
+    // Add XP
+    addXP(quest.xpReward);
+
+    // Calculate highest rank from all completed main quests
+    const completedRanks = updatedQuests
+      .filter(q => q.completed)
+      .map(q => q.unlocksTitle);
+    const highestRank = getHighestRank(completedRanks);
+
+    // Update player title
+    setPlayer(prev => ({
+      ...prev,
+      title: highestRank,
+    }));
+
+    toast({
+      title: "Main Quest Complete",
+      description: `+${quest.xpReward} XP. Title unlocked: ${quest.unlocksTitle}.`,
+    });
+  }, [mainQuestState.quests, addXP, toast]);
+
   const completedCount = questState.quests.filter(q => q.completed).length;
   const totalCount = questState.quests.length;
   const penaltyLevel = getPenaltyLevel(player.penalty.consecutiveZeroDays);
@@ -288,5 +345,7 @@ export function usePlayer() {
     penaltyLevel,
     showFlashEffect,
     dismissPenaltyBanner,
+    mainQuests: mainQuestState.quests,
+    completeMainQuest,
   };
 }
