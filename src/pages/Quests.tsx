@@ -2,9 +2,11 @@ import { BottomNav } from '@/components/navigation/BottomNav';
 import { QuestsHeader } from '@/components/quests/QuestsHeader';
 import { QuestCard } from '@/components/quests/QuestCard';
 import { usePlayer } from '@/hooks/usePlayer';
+import { useHistoryContext } from '@/contexts/HistoryContext';
 
 const Quests = () => {
   const { quests, completedCount, totalCount, completeQuest, uncompleteQuest } = usePlayer();
+  const { addCompletion } = useHistoryContext();
 
   // Sort quests: incomplete first, completed at bottom
   const sortedQuests = [...quests].sort((a, b) => {
@@ -17,6 +19,16 @@ const Quests = () => {
     if (quest?.completed) {
       uncompleteQuest(questId);
     } else {
+      // Log to history before completing
+      if (quest) {
+        addCompletion({
+          questId: quest.id,
+          questTitle: quest.title,
+          xpEarned: quest.xpReward,
+          completedAt: new Date().toISOString(),
+          type: 'daily',
+        });
+      }
       completeQuest(questId);
     }
   };

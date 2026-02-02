@@ -2,9 +2,11 @@ import { BottomNav } from '@/components/navigation/BottomNav';
 import { MilestonesHeader } from '@/components/milestones/MilestonesHeader';
 import { MainQuestCard } from '@/components/milestones/MainQuestCard';
 import { usePlayer } from '@/hooks/usePlayer';
+import { useHistoryContext } from '@/contexts/HistoryContext';
 
 const Milestones = () => {
   const { mainQuests, completeMainQuest } = usePlayer();
+  const { addCompletion } = useHistoryContext();
 
   const completedCount = mainQuests.filter(q => q.completed).length;
   const totalCount = mainQuests.length;
@@ -14,6 +16,20 @@ const Milestones = () => {
     if (a.completed === b.completed) return 0;
     return a.completed ? 1 : -1;
   });
+
+  const handleComplete = (questId: string) => {
+    const quest = mainQuests.find(q => q.id === questId);
+    if (quest && !quest.completed) {
+      addCompletion({
+        questId: quest.id,
+        questTitle: quest.title,
+        xpEarned: quest.xpReward,
+        completedAt: new Date().toISOString(),
+        type: 'main',
+      });
+      completeMainQuest(questId);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background px-4 pb-24 pt-6">
@@ -34,7 +50,7 @@ const Milestones = () => {
             <MainQuestCard
               key={quest.id}
               quest={quest}
-              onComplete={completeMainQuest}
+              onComplete={handleComplete}
             />
           ))}
         </div>
