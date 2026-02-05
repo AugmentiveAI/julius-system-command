@@ -1,10 +1,11 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Scroll, Trophy, Backpack, BookOpen } from 'lucide-react';
+ import { Home, Scroll, Trophy, Dna, Backpack, BookOpen } from 'lucide-react';
 
 const navItems = [
   { path: '/', label: 'Dashboard', icon: Home },
   { path: '/quests', label: 'Quests', icon: Scroll },
   { path: '/milestones', label: 'Milestones', icon: Trophy },
+   { path: '/genetics', label: 'Genetics', icon: Dna },
   { path: '/inventory', label: 'Inventory', icon: Backpack },
   { path: '/history', label: 'History', icon: BookOpen },
 ];

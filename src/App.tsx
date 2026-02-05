@@ -9,6 +9,7 @@ import Quests from "./pages/Quests";
 import Milestones from "./pages/Milestones";
 import Inventory from "./pages/Inventory";
 import History from "./pages/History";
+ import Genetics from "./pages/Genetics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/milestones" element={<Milestones />} />
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/history" element={<History />} />
+             <Route path="/genetics" element={<Genetics />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
