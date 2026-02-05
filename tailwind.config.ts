@@ -71,11 +71,22 @@ export default {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.6" },
         },
+        "level-up-pulse": {
+          "0%": { transform: "scale(1)", opacity: "1" },
+          "50%": { transform: "scale(1.1)", opacity: "0.8" },
+          "100%": { transform: "scale(1)", opacity: "1" },
+        },
+        "xp-bar-pulse": {
+          "0%, 100%": { boxShadow: "0 0 10px hsl(187 100% 50% / 0.5)" },
+          "50%": { boxShadow: "0 0 30px hsl(187 100% 50% / 0.9)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
+        "level-up-pulse": "level-up-pulse 0.5s ease-in-out",
+        "xp-bar-pulse": "xp-bar-pulse 1s ease-in-out infinite",
       },
     },
   },

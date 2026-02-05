@@ -4,6 +4,11 @@ import { Quest, DailyQuestState, DEFAULT_DAILY_QUESTS } from '@/types/quest';
 import { MainQuest, MainQuestState, DEFAULT_MAIN_QUESTS, getHighestRank } from '@/types/mainQuest';
 import { useToast } from '@/hooks/use-toast';
 
+interface LevelUpState {
+  show: boolean;
+  newLevel: number;
+}
+
 const PLAYER_STORAGE_KEY = 'the-system-player';
 const QUESTS_STORAGE_KEY = 'the-system-quests';
 const MAIN_QUESTS_STORAGE_KEY = 'the-system-main-quests';
@@ -90,6 +95,7 @@ export function usePlayer() {
   const [questState, setQuestState] = useState<DailyQuestState>(loadQuests);
   const [mainQuestState, setMainQuestState] = useState<MainQuestState>(loadMainQuests);
   const [showFlashEffect, setShowFlashEffect] = useState(false);
+  const [levelUpState, setLevelUpState] = useState<LevelUpState>({ show: false, newLevel: 0 });
   const { toast } = useToast();
   const penaltyProcessedRef = useRef(false);
 
@@ -202,12 +208,24 @@ export function usePlayer() {
       let newXP = prev.currentXP + amount;
       let newLevel = prev.level;
       let xpToNext = prev.xpToNextLevel;
+      const startLevel = prev.level;
 
       // Level up logic
       while (newXP >= xpToNext) {
         newXP -= xpToNext;
         newLevel++;
         xpToNext = Math.floor(xpToNext * 1.2);
+      }
+
+      // Trigger level up effect if leveled
+      if (newLevel > startLevel) {
+        setLevelUpState({ show: true, newLevel });
+        setTimeout(() => setLevelUpState({ show: false, newLevel: 0 }), 1600);
+        
+        toast({
+          title: "Level Up",
+          description: `You are now Level ${newLevel}.`,
+        });
       }
 
       return {
@@ -217,7 +235,7 @@ export function usePlayer() {
         xpToNextLevel: xpToNext,
       };
     });
-  }, []);
+  }, [toast]);
 
   const incrementStreak = useCallback(() => {
     setPlayer(prev => ({
@@ -347,5 +365,6 @@ export function usePlayer() {
     dismissPenaltyBanner,
     mainQuests: mainQuestState.quests,
     completeMainQuest,
+    levelUpState,
   };
 }
