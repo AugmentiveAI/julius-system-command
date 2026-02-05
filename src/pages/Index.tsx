@@ -2,16 +2,19 @@ import { PlayerProfile } from '@/components/dashboard/PlayerProfile';
 import { StatsRadarChart } from '@/components/dashboard/StatsRadarChart';
 import { StreakCounter } from '@/components/dashboard/StreakCounter';
 import { PenaltyBanner } from '@/components/dashboard/PenaltyBanner';
+import { SystemMessage } from '@/components/dashboard/SystemMessage';
 import { FlashOverlay } from '@/components/effects/FlashOverlay';
+import { LevelUpOverlay } from '@/components/effects/LevelUpOverlay';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { usePlayer } from '@/hooks/usePlayer';
 
 const Index = () => {
-  const { player, penaltyLevel, showFlashEffect, dismissPenaltyBanner } = usePlayer();
+  const { player, penaltyLevel, showFlashEffect, dismissPenaltyBanner, levelUpState } = usePlayer();
 
   return (
     <>
       <FlashOverlay show={showFlashEffect} />
+      <LevelUpOverlay show={levelUpState.show} newLevel={levelUpState.newLevel} />
       
       <div className="min-h-screen bg-background px-4 pb-24 pt-6">
         <div className="mx-auto max-w-2xl space-y-6">
@@ -38,12 +41,8 @@ const Index = () => {
           {/* Streak Counter */}
           <StreakCounter streak={player.streak} />
 
-          {/* System Message */}
-          <div className="rounded-lg border border-border bg-card/50 p-4 text-center">
-            <p className="font-tech text-sm text-muted-foreground">
-              The System is watching. Complete your daily quests to grow stronger.
-            </p>
-          </div>
+          {/* System Message of the Day */}
+          <SystemMessage />
         </div>
 
         <BottomNav />
