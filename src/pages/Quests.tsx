@@ -1,36 +1,55 @@
+import { useState, useEffect } from 'react';
+import { Clock } from 'lucide-react';
 import { BottomNav } from '@/components/navigation/BottomNav';
-import { QuestsHeader } from '@/components/quests/QuestsHeader';
-import { QuestCard } from '@/components/quests/QuestCard';
-import { usePlayer } from '@/hooks/usePlayer';
+import { TimeBlockSection } from '@/components/quests/TimeBlockSection';
+import { useProtocolQuests } from '@/hooks/useProtocolQuests';
 import { useHistoryContext } from '@/contexts/HistoryContext';
+import { QuestTimeBlock } from '@/types/quests';
+
+function getTimeUntilMidnight(): { hours: number; minutes: number } {
+  const now = new Date();
+  const midnight = new Date(now);
+  midnight.setHours(24, 0, 0, 0);
+
+  const diff = midnight.getTime() - now.getTime();
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+  return { hours, minutes };
+}
+
+const TIME_BLOCKS: QuestTimeBlock[] = ['morning', 'midday', 'afternoon', 'evening'];
 
 const Quests = () => {
-  const { quests, completedCount, totalCount, completeQuest, uncompleteQuest } = usePlayer();
+  const { quests, toggleQuest, getQuestsByTimeBlock, getTimeBlockStats, getTotalStats } =
+    useProtocolQuests();
   const { addCompletion } = useHistoryContext();
+  const [timeUntilReset, setTimeUntilReset] = useState(getTimeUntilMidnight);
 
-  // Sort quests: incomplete first, completed at bottom
-  const sortedQuests = [...quests].sort((a, b) => {
-    if (a.completed === b.completed) return 0;
-    return a.completed ? 1 : -1;
-  });
+  const totalStats = getTotalStats();
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTimeUntilReset(getTimeUntilMidnight());
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleToggle = (questId: string) => {
     const quest = quests.find(q => q.id === questId);
-    if (quest?.completed) {
-      uncompleteQuest(questId);
-    } else {
+    if (quest && !quest.completed) {
       // Log to history before completing
-      if (quest) {
-        addCompletion({
-          questId: quest.id,
-          questTitle: quest.title,
-          xpEarned: quest.xpReward,
-          completedAt: new Date().toISOString(),
-          type: 'daily',
-        });
-      }
-      completeQuest(questId);
+      const totalXp = quest.xp + (quest.geneticBonus?.bonusXp || 0);
+      addCompletion({
+        questId: quest.id,
+        questTitle: quest.title,
+        xpEarned: totalXp,
+        completedAt: new Date().toISOString(),
+        type: 'daily',
+      });
     }
+    toggleQuest(questId);
   };
 
   return (
@@ -43,16 +62,45 @@ const Quests = () => {
           </h1>
         </div>
 
-        {/* Quests Header */}
-        <QuestsHeader completedCount={completedCount} totalCount={totalCount} />
+        {/* Daily XP Header */}
+        <div className="rounded-lg border border-border bg-card p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-display text-xl font-bold text-foreground">
+                Daily Protocol
+              </h2>
+              <p className="mt-1 font-tech text-lg">
+                <span className="text-primary">{totalStats.earnedXp}</span>
+                <span className="text-muted-foreground"> / {totalStats.totalXp} XP</span>
+              </p>
+            </div>
 
-        {/* Quest List */}
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Clock className="h-4 w-4" />
+              <span className="font-tech text-sm">
+                Resets in {timeUntilReset.hours}h {timeUntilReset.minutes}m
+              </span>
+            </div>
+          </div>
+
+          {totalStats.completed === totalStats.total && (
+            <div className="mt-3 rounded-md bg-green-500/10 px-3 py-2 text-center">
+              <p className="font-tech text-sm text-green-400">
+                Protocol complete. The System is pleased.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Time Block Sections */}
         <div className="space-y-3">
-          {sortedQuests.map(quest => (
-            <QuestCard
-              key={quest.id}
-              quest={quest}
-              onToggle={handleToggle}
+          {TIME_BLOCKS.map(timeBlock => (
+            <TimeBlockSection
+              key={timeBlock}
+              timeBlock={timeBlock}
+              quests={getQuestsByTimeBlock(timeBlock)}
+              stats={getTimeBlockStats(timeBlock)}
+              onToggleQuest={handleToggle}
             />
           ))}
         </div>
