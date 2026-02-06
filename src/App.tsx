@@ -6,10 +6,11 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HistoryProvider } from "@/contexts/HistoryContext";
 import Index from "./pages/Index";
 import Quests from "./pages/Quests";
+import Training from "./pages/Training";
 import Milestones from "./pages/Milestones";
 import Inventory from "./pages/Inventory";
 import History from "./pages/History";
- import Genetics from "./pages/Genetics";
+import Genetics from "./pages/Genetics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/quests" element={<Quests />} />
+            <Route path="/training" element={<Training />} />
             <Route path="/milestones" element={<Milestones />} />
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/history" element={<History />} />
