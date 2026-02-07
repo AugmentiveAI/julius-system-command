@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
 import { Sun, Pill, Moon, Check } from 'lucide-react';
 
 interface SupplementStack {
   id: string;
+  questId: string;
   label: string;
   time: string;
   icon: React.ElementType;
@@ -13,6 +13,7 @@ interface SupplementStack {
 const STACKS: SupplementStack[] = [
   {
     id: 'morning',
+    questId: 'morning-supplements',
     label: 'Morning Stack',
     time: 'With breakfast',
     icon: Sun,
@@ -21,6 +22,7 @@ const STACKS: SupplementStack[] = [
   },
   {
     id: 'midday',
+    questId: 'midday-supplements',
     label: 'Midday Stack',
     time: 'With lunch',
     icon: Pill,
@@ -29,6 +31,7 @@ const STACKS: SupplementStack[] = [
   },
   {
     id: 'evening',
+    questId: 'evening-supplements',
     label: 'Evening Stack',
     time: 'Before bed',
     icon: Moon,
@@ -37,57 +40,28 @@ const STACKS: SupplementStack[] = [
   },
 ];
 
-const STORAGE_KEY = 'the-system-supplements';
-
-function getTodayKey(): string {
-  return new Date().toISOString().split('T')[0];
+interface SupplementChecklistProps {
+  questStates: Record<string, boolean>;
+  onToggle: (questId: string) => void;
 }
 
-function loadState(): Record<string, boolean> {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (parsed.date === getTodayKey()) return parsed.completed;
-    }
-  } catch {}
-  return {};
-}
-
-export const SupplementChecklist = () => {
-  const [completed, setCompleted] = useState<Record<string, boolean>>(loadState);
-
-  useEffect(() => {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ date: getTodayKey(), completed })
-    );
-  }, [completed]);
-
-  const toggle = useCallback((id: string) => {
-    setCompleted(prev => ({ ...prev, [id]: !prev[id] }));
-  }, []);
-
+export const SupplementChecklist = ({ questStates, onToggle }: SupplementChecklistProps) => {
   return (
     <div className="space-y-3">
-      <h3 className="font-display text-sm font-semibold text-foreground">
-        Supplement Protocol
-      </h3>
       {STACKS.map(stack => {
         const Icon = stack.icon;
-        const done = !!completed[stack.id];
+        const done = !!questStates[stack.questId];
 
         return (
           <button
             key={stack.id}
-            onClick={() => toggle(stack.id)}
+            onClick={() => onToggle(stack.questId)}
             className={`flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-all ${
               done
                 ? 'border-green-500/30 bg-green-500/10'
                 : 'border-border bg-card/50 hover:border-primary/50'
             }`}
           >
-            {/* Checkbox */}
             <div
               className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-all ${
                 done
