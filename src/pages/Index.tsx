@@ -9,18 +9,23 @@ import { DailyXPBar } from '@/components/dashboard/DailyXPBar';
 import { QuickActions } from '@/components/dashboard/QuickActions';
 import { CurrentStateCard } from '@/components/dashboard/CurrentStateCard';
 import { ResistanceCard2 } from '@/components/dashboard/ResistanceCard';
+import { ShadowMonarchBar } from '@/components/dashboard/ShadowMonarchBar';
+import { SystemBrief } from '@/components/dashboard/SystemBrief';
+import { SystemPredictions } from '@/components/dashboard/SystemPredictions';
+import { SystemWarnings } from '@/components/dashboard/SystemWarnings';
 import StateCheck from '@/components/StateCheck';
 import { FlashOverlay } from '@/components/effects/FlashOverlay';
 import { LevelUpOverlay } from '@/components/effects/LevelUpOverlay';
 import { GeneticWarning } from '@/components/warnings/GeneticWarning';
 import { BottomNav } from '@/components/navigation/BottomNav';
+import { GeneticHUD } from '@/components/genetic/GeneticHUD';
 import { usePlayer } from '@/hooks/usePlayer';
 import { useCaffeine } from '@/hooks/useCaffeine';
 import { useProtocolQuests } from '@/hooks/useProtocolQuests';
 import { useWorkout } from '@/hooks/useWorkout';
 import { useDailyXP } from '@/hooks/useDailyXP';
 import { useToast } from '@/hooks/use-toast';
-import { GeneticHUD } from '@/components/genetic/GeneticHUD';
+import { useSystemStrategy } from '@/hooks/useSystemStrategy';
 
 const LAST_SCAN_DATE_KEY = 'systemLastScanDate';
 
@@ -39,6 +44,7 @@ const Index = () => {
   const { toggleQuest, setQuestCompleted, quests, getTimeBlockStats } = useProtocolQuests();
   const { workout, workoutCompleted } = useWorkout();
   const { toast } = useToast();
+  const { strategy, dayNumber, playerTitle } = useSystemStrategy();
 
   const [scanOpen, setScanOpen] = useState(false);
   const [stateRefreshKey, setStateRefreshKey] = useState(0);
@@ -59,7 +65,6 @@ const Index = () => {
         title: '◈ Daily diagnostic required',
         description: 'The System must assess your condition.',
       });
-      // Small delay so user sees the toast first
       setTimeout(() => setScanOpen(true), 800);
     }
   }, [toast]);
@@ -125,7 +130,6 @@ const Index = () => {
     logCaffeine();
     const now = new Date();
     const isAfter10 = now.getHours() >= 10;
-
     toast({
       title: isAfter10 ? '☕ Caffeine Logged — Debuff Active' : '☕ Caffeine Logged',
       description: isAfter10
@@ -184,19 +188,34 @@ const Index = () => {
             isDismissed={player.penalty.bannerDismissedForSession}
           />
 
-          {/* Player Profile */}
-          <PlayerProfile player={player} />
+          {/* 1. Shadow Monarch Progress Bar */}
+          <ShadowMonarchBar progress={strategy.shadowMonarchProgress} title={playerTitle} />
 
-          {/* Daily XP Progress */}
-          <DailyXPBar breakdown={dailyXP} />
+          {/* 2. System Brief */}
+          <SystemBrief
+            dayNumber={dayNumber}
+            dailyBrief={strategy.dailyBrief}
+            strategicFocus={strategy.strategicFocus}
+            weeklyObjective={strategy.weeklyObjective}
+          />
 
-          {/* Current State Card */}
+          {/* 3. System Warnings (only when warnings exist) */}
+          <SystemWarnings warnings={strategy.warnings} />
+
+          {/* 4. Current State Card */}
           <CurrentStateCard onRescan={() => setScanOpen(true)} refreshKey={stateRefreshKey} />
 
-          {/* Resistance Analysis */}
+          {/* 5. Player Profile + Daily XP */}
+          <PlayerProfile player={player} />
+          <DailyXPBar breakdown={dailyXP} />
+
+          {/* 6. Stats Radar Chart */}
+          <StatsRadarChart stats={player.stats} />
+
+          {/* 7. Resistance Analysis */}
           <ResistanceCard2 />
 
-          {/* Quick Actions & Protocol Progress */}
+          {/* 8. Quick Actions (Active Quests summary) */}
           <QuickActions
             quests={quests}
             workout={workout}
@@ -206,11 +225,11 @@ const Index = () => {
             getTimeBlockStats={getTimeBlockStats}
           />
 
-          {/* Stats Radar Chart */}
-          <StatsRadarChart stats={player.stats} />
-
-          {/* Streak Counter */}
+          {/* 9. Streak Counter */}
           <StreakCounter streak={player.streak} />
+
+          {/* 10. System Predictions (collapsed by default) */}
+          <SystemPredictions predictions={strategy.predictions} />
 
           {/* System Message of the Day */}
           <SystemMessage />
