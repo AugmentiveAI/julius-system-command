@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
-import { Coffee } from 'lucide-react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { Coffee, ScanLine } from 'lucide-react';
 import { PlayerProfile } from '@/components/dashboard/PlayerProfile';
 import { StatsRadarChart } from '@/components/dashboard/StatsRadarChart';
 import { StreakCounter } from '@/components/dashboard/StreakCounter';
@@ -7,6 +7,8 @@ import { PenaltyBanner } from '@/components/dashboard/PenaltyBanner';
 import { SystemMessage } from '@/components/dashboard/SystemMessage';
 import { DailyXPBar } from '@/components/dashboard/DailyXPBar';
 import { QuickActions } from '@/components/dashboard/QuickActions';
+import { CurrentStateCard } from '@/components/dashboard/CurrentStateCard';
+import StateCheck from '@/components/StateCheck';
 import { FlashOverlay } from '@/components/effects/FlashOverlay';
 import { LevelUpOverlay } from '@/components/effects/LevelUpOverlay';
 import { GeneticWarning } from '@/components/warnings/GeneticWarning';
@@ -18,6 +20,17 @@ import { useWorkout } from '@/hooks/useWorkout';
 import { useDailyXP } from '@/hooks/useDailyXP';
 import { useToast } from '@/hooks/use-toast';
 
+const LAST_SCAN_DATE_KEY = 'systemLastScanDate';
+
+function needsDailyScan(): boolean {
+  const today = new Date().toISOString().split('T')[0];
+  return localStorage.getItem(LAST_SCAN_DATE_KEY) !== today;
+}
+
+function markScanDone() {
+  localStorage.setItem(LAST_SCAN_DATE_KEY, new Date().toISOString().split('T')[0]);
+}
+
 const Index = () => {
   const { player, penaltyLevel, showFlashEffect, dismissPenaltyBanner, levelUpState } = usePlayer();
   const { logCaffeine, hasLoggedAfter10am, warningDismissed, dismissWarning, logs } = useCaffeine();
@@ -25,12 +38,37 @@ const Index = () => {
   const { workout, workoutCompleted } = useWorkout();
   const { toast } = useToast();
 
+  const [scanOpen, setScanOpen] = useState(false);
+  const [stateRefreshKey, setStateRefreshKey] = useState(0);
+  const autoScanRef = useRef(false);
+
   const dailyXP = useDailyXP({
     quests,
     workoutCompleted,
     workoutXP: workout.xp,
     coldStreakDays: player.coldStreak ?? 0,
   });
+
+  // Auto-trigger scan on first daily load
+  useEffect(() => {
+    if (needsDailyScan() && !autoScanRef.current) {
+      autoScanRef.current = true;
+      toast({
+        title: '◈ Daily diagnostic required',
+        description: 'The System must assess your condition.',
+      });
+      // Small delay so user sees the toast first
+      setTimeout(() => setScanOpen(true), 800);
+    }
+  }, [toast]);
+
+  const handleScanClose = useCallback((open: boolean) => {
+    setScanOpen(open);
+    if (!open) {
+      markScanDone();
+      setStateRefreshKey(k => k + 1);
+    }
+  }, []);
 
   // --- Cross-system sync effects ---
   const syncedRef = useRef({ workout: false, caffeine: false });
@@ -98,6 +136,7 @@ const Index = () => {
     <>
       <FlashOverlay show={showFlashEffect} />
       <LevelUpOverlay show={levelUpState.show} newLevel={levelUpState.newLevel} />
+      <StateCheck open={scanOpen} onOpenChange={handleScanClose} />
 
       <div className="min-h-screen bg-background px-4 pb-24 pt-6">
         <div className="mx-auto max-w-2xl space-y-6">
@@ -106,13 +145,22 @@ const Index = () => {
             <h1 className="font-display text-sm uppercase tracking-[0.3em] text-muted-foreground">
               [ The System ]
             </h1>
-            <button
-              onClick={handleLogCaffeine}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card transition-colors hover:border-primary/50 hover:bg-primary/10"
-              title="Log caffeine"
-            >
-              <Coffee className="h-4 w-4 text-muted-foreground" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setScanOpen(true)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary/40 bg-primary/10 transition-all hover:bg-primary/20 hover:shadow-[0_0_12px_hsl(187,100%,50%,0.3)]"
+                title="System Scan"
+              >
+                <ScanLine className="h-4 w-4 text-primary" style={{ filter: 'drop-shadow(0 0 4px hsl(187 100% 50% / 0.6))' }} />
+              </button>
+              <button
+                onClick={handleLogCaffeine}
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card transition-colors hover:border-primary/50 hover:bg-primary/10"
+                title="Log caffeine"
+              >
+                <Coffee className="h-4 w-4 text-muted-foreground" />
+              </button>
+            </div>
           </div>
 
           {/* Caffeine Warning */}
@@ -138,6 +186,9 @@ const Index = () => {
 
           {/* Daily XP Progress */}
           <DailyXPBar breakdown={dailyXP} />
+
+          {/* Current State Card */}
+          <CurrentStateCard onRescan={() => setScanOpen(true)} refreshKey={stateRefreshKey} />
 
           {/* Quick Actions & Protocol Progress */}
           <QuickActions
