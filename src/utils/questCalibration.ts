@@ -1,9 +1,14 @@
 import { PlayerStateCheck, GENETIC_MODIFIERS, DAY_TYPES } from '@/types/playerState';
 import { PlayerStats } from '@/types/player';
+import {
+  QuestDifficulty,
+  QuestTemplate,
+  QUEST_TEMPLATES,
+  CATEGORY_STAT_MAP,
+} from '@/types/questDifficulty';
 
 // ── Types ────────────────────────────────────────────────────────────
 
-export type Difficulty = 'low' | 'medium' | 'high';
 export type Intensity = 'high' | 'medium' | 'low';
 
 export interface CalibratedQuest {
@@ -12,15 +17,19 @@ export interface CalibratedQuest {
   stat: keyof PlayerStats;
   baseXP: number;
   adjustedXP: number;
-  difficulty: Difficulty;
+  difficulty: QuestDifficulty;
+  category: string;
+  estimatedMinutes: number;
+  sprintCount: number;
   isBonus?: boolean;
   isMandatory?: boolean;
   isBreak?: boolean;
+  geneticTag?: string;
 }
 
 export interface QuestCompletionRecord {
   questId: string;
-  completedAt: string; // ISO timestamp
+  completedAt: string;
   stat: keyof PlayerStats;
 }
 
@@ -30,53 +39,6 @@ export interface CalibrationResult {
   intensity: Intensity;
   geneticAlert: string | null;
 }
-
-// ── Quest Pool ───────────────────────────────────────────────────────
-
-interface PoolQuest {
-  id: string;
-  title: string;
-  stat: keyof PlayerStats;
-  baseXP: number;
-  difficulty: Difficulty;
-  tags: string[];
-}
-
-const QUEST_POOL: PoolQuest[] = [
-  // Sales / outreach
-  { id: 'cal-cold-outreach', title: 'Send 10 cold outreach messages', stat: 'sales', baseXP: 5, difficulty: 'high', tags: ['sales', 'revenue'] },
-  { id: 'cal-follow-up', title: 'Follow up with 5 warm leads', stat: 'sales', baseXP: 4, difficulty: 'medium', tags: ['sales', 'revenue'] },
-  { id: 'cal-pitch-practice', title: 'Record & review one pitch attempt', stat: 'sales', baseXP: 3, difficulty: 'medium', tags: ['sales', 'creative'] },
-
-  // Systems / deep work
-  { id: 'cal-deep-work', title: 'Complete one 45-min deep work sprint', stat: 'systems', baseXP: 5, difficulty: 'high', tags: ['systems', 'sprint'] },
-  { id: 'cal-build-ship', title: 'Deep Work Sprint: Build or Ship Something', stat: 'systems', baseXP: 50, difficulty: 'high', tags: ['systems', 'sprint', 'comt-bonus'] },
-  { id: 'cal-automate', title: 'Automate or streamline one workflow', stat: 'systems', baseXP: 4, difficulty: 'medium', tags: ['systems'] },
-  { id: 'cal-plan', title: 'Plan tomorrow\'s priority sprint list', stat: 'systems', baseXP: 2, difficulty: 'low', tags: ['systems', 'planning'] },
-
-  // Creative
-  { id: 'cal-content', title: 'Create one piece of content', stat: 'creative', baseXP: 3, difficulty: 'medium', tags: ['creative'] },
-  { id: 'cal-journal', title: 'Journaling / reflection session', stat: 'creative', baseXP: 2, difficulty: 'low', tags: ['creative', 'recovery'] },
-  { id: 'cal-learn', title: 'Learn something new (30 min)', stat: 'creative', baseXP: 3, difficulty: 'low', tags: ['creative', 'learning'] },
-
-  // Discipline / health
-  { id: 'cal-exercise', title: 'Exercise for 30 minutes', stat: 'discipline', baseXP: 3, difficulty: 'medium', tags: ['health'] },
-  { id: 'cal-cold-exposure', title: 'Cold exposure session', stat: 'discipline', baseXP: 3, difficulty: 'medium', tags: ['health', 'recovery'] },
-  { id: 'cal-walk', title: '30-minute walk or cold exposure', stat: 'discipline', baseXP: 2, difficulty: 'low', tags: ['health', 'recovery', 'mandatory-stress'] },
-  { id: 'cal-supplements', title: 'Complete all supplement stacks', stat: 'discipline', baseXP: 2, difficulty: 'low', tags: ['health'] },
-
-  // Wealth
-  { id: 'cal-financials', title: 'Review financials or pipeline', stat: 'wealth', baseXP: 2, difficulty: 'medium', tags: ['revenue'] },
-  { id: 'cal-invoice', title: 'Send pending invoices or proposals', stat: 'wealth', baseXP: 3, difficulty: 'medium', tags: ['revenue'] },
-
-  // Network
-  { id: 'cal-network', title: 'Engage 3 people in your niche online', stat: 'network', baseXP: 2, difficulty: 'low', tags: ['network'] },
-  { id: 'cal-collab', title: 'Reach out to 1 potential collaborator', stat: 'network', baseXP: 3, difficulty: 'medium', tags: ['network'] },
-
-  // Break / recovery
-  { id: 'cal-break', title: '15-minute break (walk, stretch, breathe)', stat: 'discipline', baseXP: 1, difficulty: 'low', tags: ['break'], },
-  { id: 'cal-second-wind', title: 'Second Wind: Post-cold-exposure sprint', stat: 'systems', baseXP: 30, difficulty: 'medium', tags: ['systems', 'comt-evening'] },
-];
 
 // ── System Messages ──────────────────────────────────────────────────
 
@@ -109,10 +71,6 @@ function pickRandom<T>(arr: T[]): T {
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
-function getHour(date: Date): number {
-  return date.getHours();
-}
-
 function isInCOMTPeak(hour: number): boolean {
   const { start, end } = GENETIC_MODIFIERS.comtWarrior.peakWindow;
   return hour >= start && hour < end;
@@ -133,16 +91,43 @@ function countConsecutiveRecoveryDays(history: PlayerStateCheck[]): number {
 }
 
 function countSprintsToday(completions: QuestCompletionRecord[], today: string): number {
-  return completions.filter(c => {
-    const pool = QUEST_POOL.find(q => q.id === c.questId);
-    return c.completedAt.startsWith(today) && pool?.tags.includes('sprint');
-  }).length;
+  return completions.filter(c => c.completedAt.startsWith(today)).length;
 }
 
-function reduceDifficulty(d: Difficulty): Difficulty {
-  if (d === 'high') return 'medium';
-  if (d === 'medium') return 'low';
-  return 'low';
+/** Check if a template is eligible for a given mode */
+function isEligible(tpl: QuestTemplate, mode: 'push' | 'steady' | 'recover'): boolean {
+  if (tpl.requiresState === 'any') return true;
+  if (tpl.requiresState === 'push') return mode === 'push';
+  if (tpl.requiresState === 'steady') return mode === 'push' || mode === 'steady';
+  return false;
+}
+
+/** Select random templates matching a filter */
+function selectTemplates(
+  filter: (t: QuestTemplate) => boolean,
+  count: number,
+  exclude: Set<string>,
+): QuestTemplate[] {
+  const candidates = QUEST_TEMPLATES.filter(t => filter(t) && !exclude.has(t.id));
+  const shuffled = [...candidates].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, count);
+}
+
+/** Convert a template to a CalibratedQuest */
+function templateToCalibrated(tpl: QuestTemplate, xpMultiplier = 1): CalibratedQuest {
+  const stat = CATEGORY_STAT_MAP[tpl.category];
+  return {
+    id: tpl.id,
+    title: tpl.name,
+    stat,
+    baseXP: tpl.baseXP,
+    adjustedXP: Math.round(tpl.baseXP * xpMultiplier),
+    difficulty: tpl.difficulty,
+    category: tpl.category,
+    estimatedMinutes: tpl.estimatedMinutes,
+    sprintCount: tpl.sprintCount,
+    geneticTag: tpl.geneticTag,
+  };
 }
 
 function applyXPMultiplier(quests: CalibratedQuest[], multiplier: number): CalibratedQuest[] {
@@ -152,25 +137,11 @@ function applyXPMultiplier(quests: CalibratedQuest[], multiplier: number): Calib
   }));
 }
 
-function selectFromPool(
-  filter: (q: PoolQuest) => boolean,
-  count: number,
-  exclude: Set<string> = new Set(),
-): PoolQuest[] {
-  const candidates = QUEST_POOL.filter(q => filter(q) && !exclude.has(q.id));
-  const shuffled = [...candidates].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, count);
-}
+const DIFFICULTY_ORDER: Record<QuestDifficulty, number> = { S: 5, A: 4, B: 3, C: 2, D: 1 };
 
-function toCalibrated(pool: PoolQuest[], xpMultiplier = 1): CalibratedQuest[] {
-  return pool.map(q => ({
-    id: q.id,
-    title: q.title,
-    stat: q.stat,
-    baseXP: q.baseXP,
-    adjustedXP: Math.round(q.baseXP * xpMultiplier),
-    difficulty: q.difficulty,
-  }));
+function downgradeDifficulty(d: QuestDifficulty): QuestDifficulty {
+  const map: Record<QuestDifficulty, QuestDifficulty> = { S: 'A', A: 'B', B: 'C', C: 'D', D: 'D' };
+  return map[d];
 }
 
 // ── Main Calibration Engine ──────────────────────────────────────────
@@ -181,7 +152,7 @@ export function calibrateQuests(
   completionHistory: QuestCompletionRecord[],
   currentTime: Date,
 ): CalibrationResult {
-  const hour = getHour(currentTime);
+  const hour = currentTime.getHours();
   const todayStr = currentTime.toISOString().split('T')[0];
   const dayOfWeek = currentTime.getDay();
   const dayType = DAY_TYPES[dayOfWeek];
@@ -194,47 +165,45 @@ export function calibrateQuests(
   let intensity: Intensity;
   let geneticAlert: string | null = null;
 
-  // ── Mode-based quest selection ──
+  // ── Mode-based quest selection from template library ──
 
   if (mode === 'push') {
     intensity = 'high';
     systemMessage = pickRandom(PUSH_MESSAGES);
 
-    // At least 2 high-difficulty quests
-    const hardQuests = selectFromPool(q => q.difficulty === 'high' && !q.tags.includes('comt-bonus'), 2, used);
-    hardQuests.forEach(q => used.add(q.id));
+    // 2 S-rank quests
+    const sRank = selectTemplates(t => t.difficulty === 'S' && isEligible(t, mode), 2, used);
+    sRank.forEach(t => used.add(t.id));
 
-    // Prioritize sales + systems
-    const revenueQuests = selectFromPool(q => q.tags.includes('revenue') || q.tags.includes('sales'), 2, used);
-    revenueQuests.forEach(q => used.add(q.id));
+    // 2 A-rank (revenue-focused)
+    const aRank = selectTemplates(
+      t => t.difficulty === 'A' && isEligible(t, mode) && ['Sales', 'Systems', 'Wealth'].includes(t.category),
+      2, used,
+    );
+    aRank.forEach(t => used.add(t.id));
 
-    // Fill remaining
-    const fill = selectFromPool(q => !q.tags.includes('break') && !q.tags.includes('comt-bonus') && !q.tags.includes('comt-evening'), 2, used);
-    fill.forEach(q => used.add(q.id));
+    // 2 fill from B+ rank
+    const fill = selectTemplates(
+      t => ['S', 'A', 'B'].includes(t.difficulty) && isEligible(t, mode),
+      2, used,
+    );
+    fill.forEach(t => used.add(t.id));
 
-    const all = [...hardQuests, ...revenueQuests, ...fill];
-    quests = toCalibrated(all.slice(0, 6), 1.25);
+    const all = [...sRank, ...aRank, ...fill].slice(0, 6);
+    quests = all.map(t => templateToCalibrated(t, 1.25));
 
-    // Free day + morning = hardest quests first (already sorted by selection)
+    // Free day + morning = hardest first
     if (dayType === 'free' && timeBlock === 'morning') {
-      quests.sort((a, b) => {
-        const diff: Record<Difficulty, number> = { high: 3, medium: 2, low: 1 };
-        return diff[b.difficulty] - diff[a.difficulty];
-      });
+      quests.sort((a, b) => DIFFICULTY_ORDER[b.difficulty] - DIFFICULTY_ORDER[a.difficulty]);
     }
 
     // COMT peak bonus quest
     if (isInCOMTPeak(hour)) {
-      const bonus = QUEST_POOL.find(q => q.id === 'cal-build-ship')!;
-      quests.push({
-        id: bonus.id,
-        title: bonus.title,
-        stat: bonus.stat,
-        baseXP: bonus.baseXP,
-        adjustedXP: Math.round(bonus.baseXP * 1.25),
-        difficulty: bonus.difficulty,
-        isBonus: true,
-      });
+      const comtBonus = QUEST_TEMPLATES.find(t => t.geneticTag === 'comt_peak' && !used.has(t.id));
+      if (comtBonus) {
+        used.add(comtBonus.id);
+        quests.push({ ...templateToCalibrated(comtBonus, 1.25), isBonus: true });
+      }
     }
 
   } else if (mode === 'steady') {
@@ -242,65 +211,57 @@ export function calibrateQuests(
     systemMessage = pickRandom(STEADY_MESSAGES);
 
     let targetCount = 5;
+    if (timeBlock === 'afternoon' && dayType === 'work') targetCount = 3;
 
-    // Afternoon on work day: reduce
-    if (timeBlock === 'afternoon' && dayType === 'work') {
-      targetCount = 3;
-    }
+    // Mix: 1 A-rank, rest B/C
+    const aRank = selectTemplates(t => t.difficulty === 'A' && isEligible(t, mode), 1, used);
+    aRank.forEach(t => used.add(t.id));
 
-    const balanced = selectFromPool(
-      q => !q.tags.includes('comt-bonus') && !q.tags.includes('comt-evening') && !q.tags.includes('break'),
-      targetCount,
-      used,
+    const rest = selectTemplates(
+      t => ['B', 'C'].includes(t.difficulty) && isEligible(t, mode),
+      targetCount - aRank.length, used,
     );
-    quests = toCalibrated(balanced);
+
+    quests = [...aRank, ...rest].map(t => templateToCalibrated(t));
 
   } else {
     // Recovery mode
     intensity = 'low';
     const consecutiveRecovery = countConsecutiveRecoveryDays(stateHistory);
 
-    if (consecutiveRecovery >= 3) {
-      systemMessage = ESCALATION_MESSAGE;
-    } else {
-      systemMessage = pickRandom(RECOVERY_MESSAGES);
-    }
+    systemMessage = consecutiveRecovery >= 3 ? ESCALATION_MESSAGE : pickRandom(RECOVERY_MESSAGES);
 
-    // Health quest
-    const health = selectFromPool(q => q.tags.includes('health') && q.difficulty === 'low', 1, used);
-    health.forEach(q => used.add(q.id));
+    // D-rank health quest
+    const health = selectTemplates(t => t.difficulty === 'D' && t.category === 'Health', 1, used);
+    health.forEach(t => used.add(t.id));
 
-    // Creative / learning quest
-    const creative = selectFromPool(q => q.tags.includes('creative') || q.tags.includes('learning'), 1, used);
-    creative.forEach(q => used.add(q.id));
+    // C-rank creative/learning
+    const creative = selectTemplates(
+      t => ['C', 'D'].includes(t.difficulty) && ['Creative', 'Learning'].includes(t.category),
+      1, used,
+    );
+    creative.forEach(t => used.add(t.id));
 
-    // One more low-difficulty, no sales/outreach
-    const extra = selectFromPool(q => q.difficulty === 'low' && q.stat !== 'sales' && q.stat !== 'network', 1, used);
+    // One more D/C, no Sales/Network
+    const extra = selectTemplates(
+      t => ['C', 'D'].includes(t.difficulty) && !['Sales', 'Network'].includes(t.category),
+      1, used,
+    );
 
-    const recoveryQuests = [...health, ...creative, ...extra];
-    quests = applyXPMultiplier(toCalibrated(recoveryQuests), 0.75);
+    const recoveryTemplates = [...health, ...creative, ...extra];
+    quests = recoveryTemplates.map(t => templateToCalibrated(t, 0.75));
 
-    // Add recovery bonus metadata (handled by consumer)
+    // Mark last for recovery bonus eligibility
     if (quests.length > 0) {
-      quests[quests.length - 1] = {
-        ...quests[quests.length - 1],
-        isBonus: true, // signals recovery bonus eligibility
-      };
+      quests[quests.length - 1].isBonus = true;
     }
 
-    // Stress = 5: mandatory walk
+    // Stress = 5: mandatory walk/cold exposure
     if (currentState.stress === 5) {
-      const walkQuest = QUEST_POOL.find(q => q.id === 'cal-walk')!;
-      if (!used.has(walkQuest.id)) {
-        quests.push({
-          id: walkQuest.id,
-          title: walkQuest.title,
-          stat: walkQuest.stat,
-          baseXP: walkQuest.baseXP,
-          adjustedXP: Math.round(walkQuest.baseXP * 0.75),
-          difficulty: walkQuest.difficulty,
-          isMandatory: true,
-        });
+      const mandatory = QUEST_TEMPLATES.find(t => t.id === 'tpl-walk-15' && !used.has(t.id))
+        || QUEST_TEMPLATES.find(t => t.id === 'tpl-cold-exposure' && !used.has(t.id));
+      if (mandatory) {
+        quests.push({ ...templateToCalibrated(mandatory, 0.75), isMandatory: true });
       }
     }
   }
@@ -313,66 +274,48 @@ export function calibrateQuests(
   }
 
   if (isInCOMTCrash(hour)) {
-    quests = quests.map(q => ({
-      ...q,
-      difficulty: reduceDifficulty(q.difficulty),
-    }));
+    quests = quests.map(q => ({ ...q, difficulty: downgradeDifficulty(q.difficulty) }));
     geneticAlert = 'Dopamine dip window. The System has adjusted expectations.';
   }
 
   // ── ACTN3 Sprinter guard ──
 
   const sprintsToday = countSprintsToday(completionHistory, todayStr);
-  const sprintQuests = quests.filter(q => {
-    const pool = QUEST_POOL.find(p => p.id === q.id);
-    return pool?.tags.includes('sprint');
-  });
+  const sprintQuests = quests.filter(q => q.sprintCount > 0);
 
   if (sprintsToday >= GENETIC_MODIFIERS.actn3Sprinter.maxSprintsBeforeDecay) {
     geneticAlert = GENETIC_MODIFIERS.actn3Sprinter.warningMessage;
-    // Remove extra sprint quests
-    quests = quests.filter(q => {
-      const pool = QUEST_POOL.find(p => p.id === q.id);
-      return !pool?.tags.includes('sprint');
-    });
+    quests = quests.filter(q => q.sprintCount === 0);
   } else if (sprintQuests.length >= 3) {
-    // Insert break after 3rd sprint
-    const breakQuest = QUEST_POOL.find(q => q.id === 'cal-break')!;
-    const idx = quests.findIndex(q => {
-      const pool = QUEST_POOL.find(p => p.id === q.id);
-      return pool?.tags.includes('sprint');
-    });
-    if (idx >= 0) {
-      const breakCal: CalibratedQuest = {
-        id: breakQuest.id,
-        title: breakQuest.title,
-        stat: breakQuest.stat,
-        baseXP: breakQuest.baseXP,
-        adjustedXP: breakQuest.baseXP,
-        difficulty: 'low',
-        isBreak: true,
-        isMandatory: true,
-      };
-      quests.splice(idx + 3, 0, breakCal);
+    // Insert mandatory break after 3rd sprint quest
+    const breakTpl = QUEST_TEMPLATES.find(t => t.id === 'tpl-sprint-break');
+    if (breakTpl) {
+      let sprintsSeen = 0;
+      const withBreak: CalibratedQuest[] = [];
+      for (const q of quests) {
+        withBreak.push(q);
+        if (q.sprintCount > 0) sprintsSeen++;
+        if (sprintsSeen === 3) {
+          withBreak.push({ ...templateToCalibrated(breakTpl), isBreak: true, isMandatory: true });
+        }
+      }
+      quests = withBreak;
     }
   }
 
   // ── Day-of-week intelligence ──
 
   if (dayType === 'work' && timeBlock === 'morning') {
-    // Front-load important quests
     quests.sort((a, b) => {
-      const priority = (q: CalibratedQuest) =>
-        (q.stat === 'sales' || q.stat === 'systems') ? 0 : 1;
-      return priority(a) - priority(b);
+      const p = (q: CalibratedQuest) => (q.stat === 'sales' || q.stat === 'systems') ? 0 : 1;
+      return p(a) - p(b);
     });
   }
 
   if (dayOfWeek === 4) {
-    // Thursday = transition day, cap at medium
     quests = quests.map(q => ({
       ...q,
-      difficulty: q.difficulty === 'high' ? 'medium' : q.difficulty,
+      difficulty: q.difficulty === 'S' ? 'A' : q.difficulty,
     }));
     if (!systemMessage.includes('transition')) {
       systemMessage += ' [Transition Day — planning focus.]';
@@ -380,15 +323,11 @@ export function calibrateQuests(
   }
 
   if (dayOfWeek === 5 || dayOfWeek === 6) {
-    // Fri-Sat: peak sprint days, boost difficulty
     quests = quests.map(q => ({
       ...q,
-      difficulty: q.difficulty === 'low' ? 'medium' : q.difficulty,
+      difficulty: q.difficulty === 'D' ? 'C' : q.difficulty === 'C' ? 'B' : q.difficulty,
     }));
   }
-
-  // ── Evening second-wind quest (post cold exposure) ──
-  // This is evaluated by consumers checking cold exposure completion
 
   return {
     recommendedQuests: quests,
@@ -404,16 +343,9 @@ export function shouldOfferSecondWind(
   coldExposureCompleted: boolean,
 ): CalibratedQuest | null {
   if (timeBlock !== 'evening' || !coldExposureCompleted) return null;
-  const q = QUEST_POOL.find(p => p.id === 'cal-second-wind')!;
-  return {
-    id: q.id,
-    title: q.title,
-    stat: q.stat,
-    baseXP: q.baseXP,
-    adjustedXP: q.baseXP,
-    difficulty: q.difficulty,
-    isBonus: true,
-  };
+  const tpl = QUEST_TEMPLATES.find(t => t.id === 'tpl-second-wind');
+  if (!tpl) return null;
+  return { ...templateToCalibrated(tpl), isBonus: true };
 }
 
 /** Recovery bonus XP awarded when all recovery quests are completed */
