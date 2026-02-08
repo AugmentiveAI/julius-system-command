@@ -1,6 +1,7 @@
 import { Check, Zap, Lock, Shield, Coffee as BreakIcon } from 'lucide-react';
 import { CalibratedQuest } from '@/utils/questCalibration';
 import { STAT_LABELS } from '@/types/quest';
+import { DIFFICULTY_BADGE_CONFIG, QuestDifficulty } from '@/types/questDifficulty';
 
 interface CalibratedQuestCardProps {
   quest: CalibratedQuest;
@@ -10,10 +11,16 @@ interface CalibratedQuestCardProps {
   animDelay?: number;
 }
 
-const DIFFICULTY_COLORS = {
-  low: 'text-green-400',
-  medium: 'text-yellow-400',
-  high: 'text-red-400',
+const DifficultyBadge = ({ difficulty }: { difficulty: QuestDifficulty }) => {
+  const config = DIFFICULTY_BADGE_CONFIG[difficulty];
+  return (
+    <span
+      className={`inline-flex items-center justify-center h-5 w-5 rounded text-[10px] font-mono font-bold border shrink-0 ${config.className}`}
+      style={config.glow ? { boxShadow: config.glow } : undefined}
+    >
+      {config.label}
+    </span>
+  );
 };
 
 export const CalibratedQuestCard = ({
@@ -66,6 +73,9 @@ export const CalibratedQuestCard = ({
           {completed && <Check className="h-3 w-3 text-white" />}
         </button>
 
+        {/* Difficulty Badge */}
+        <DifficultyBadge difficulty={quest.difficulty} />
+
         {/* Quest Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
@@ -86,11 +96,14 @@ export const CalibratedQuestCard = ({
               <BreakIcon className="h-3 w-3 text-blue-400 shrink-0" />
             )}
           </div>
-          <div className="mt-0.5 flex items-center gap-2 text-xs">
+          <div className="mt-0.5 flex items-center gap-2 text-xs flex-wrap">
             <span className="text-secondary">{STAT_LABELS[quest.stat]}</span>
-            <span className={`font-semibold ${DIFFICULTY_COLORS[quest.difficulty]}`}>
-              [{quest.difficulty.toUpperCase()}]
-            </span>
+            {quest.estimatedMinutes > 0 && (
+              <span className="text-muted-foreground">{quest.estimatedMinutes}m</span>
+            )}
+            {quest.sprintCount > 0 && (
+              <span className="text-muted-foreground">{quest.sprintCount} sprint{quest.sprintCount > 1 ? 's' : ''}</span>
+            )}
             <span className="text-primary font-semibold">
               +{quest.adjustedXP} XP
               {xpModified && (
