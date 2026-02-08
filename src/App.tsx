@@ -16,6 +16,7 @@ import Inventory from "./pages/Inventory";
 import History from "./pages/History";
 import Genetics from "./pages/Genetics";
 import NotFound from "./pages/NotFound";
+import SystemAnalytics from "./pages/SystemAnalytics";
 
 const queryClient = new QueryClient();
 
@@ -61,6 +62,7 @@ const AppContent = () => {
           <Route path="/inventory" element={<Inventory />} />
           <Route path="/history" element={<History />} />
           <Route path="/genetics" element={<Genetics />} />
+          <Route path="/system-analytics" element={<SystemAnalytics />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
