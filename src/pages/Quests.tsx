@@ -8,6 +8,7 @@ import { CalibratedQuestCard } from '@/components/quests/CalibratedQuestCard';
 import StateCheck from '@/components/StateCheck';
 import { useProtocolQuests } from '@/hooks/useProtocolQuests';
 import { useHistoryContext } from '@/contexts/HistoryContext';
+import { usePersuasion, recordCompletion, recordSkip } from '@/hooks/usePersuasion';
 import { QuestTimeBlock, TIME_BLOCK_CONFIG } from '@/types/quests';
 import { PlayerStateCheck } from '@/types/playerState';
 import {
@@ -16,6 +17,7 @@ import {
   CalibratedQuest,
   QuestCompletionRecord,
 } from '@/utils/questCalibration';
+import { loadCachedResistance } from '@/utils/resistanceTracker';
 import { ChevronDown, Brain, Moon, Dumbbell } from 'lucide-react';
 import {
   Collapsible,
@@ -155,6 +157,27 @@ const Quests = () => {
     );
   }, [todayCheck]);
 
+  // Resistance data for persuasion engine
+  const resistanceData = useMemo(() => loadCachedResistance(), []);
+
+  // Persuasion engine: generates messages for each calibrated quest
+  const persuasionMap = usePersuasion(
+    calibration?.recommendedQuests ?? [],
+    todayCheck,
+    resistanceData,
+  );
+
+  // Resistance quest IDs for display
+  const resistanceQuestIds = useMemo(() => {
+    const ids = new Set<string>();
+    if (resistanceData) {
+      for (const rp of resistanceData.hardAvoidanceQuests) {
+        ids.add(rp.questId);
+      }
+    }
+    return ids;
+  }, [resistanceData]);
+
   // Group calibrated quests by time block
   const groupedQuests = useMemo(() => {
     if (!calibration) return null;
@@ -188,6 +211,8 @@ const Quests = () => {
     const quest = calibration.recommendedQuests.find(q => q.id === questId);
     if (!quest) return;
 
+    const persuasionData = persuasionMap.get(questId);
+
     setCompletedCalibrated(prev => {
       const next = new Set(prev);
       if (next.has(questId)) {
@@ -207,10 +232,12 @@ const Quests = () => {
           completedAt: new Date().toISOString(),
           type: 'daily',
         });
+        // Record persuasion outcome
+        recordCompletion(persuasionData?.technique ?? null);
       }
       return next;
     });
-  }, [calibration, addCompletion]);
+  }, [calibration, addCompletion, persuasionMap]);
 
   // Also keep protocol quest toggling for protocol quests
   const handleProtocolToggle = (questId: string) => {
@@ -352,6 +379,8 @@ const Quests = () => {
                               locked={!unlocked}
                               onToggle={handleCalibratedToggle}
                               animDelay={unlocked ? i * 200 : 0}
+                              persuasion={persuasionMap.get(quest.id)}
+                              isResistanceQuest={resistanceQuestIds.has(quest.id)}
                             />
                           ))}
                         </div>
