@@ -67,6 +67,19 @@ export function useProtocolQuests() {
     }));
   }, []);
 
+  const setQuestCompleted = useCallback((questId: string, completed: boolean) => {
+    setState(prev => {
+      const quest = prev.quests.find(q => q.id === questId);
+      if (!quest || quest.completed === completed) return prev;
+      return {
+        ...prev,
+        quests: prev.quests.map(q =>
+          q.id === questId ? { ...q, completed } : q
+        ),
+      };
+    });
+  }, []);
+
   const getQuestsByTimeBlock = useCallback((timeBlock: QuestTimeBlock) => {
     return state.quests.filter(q => q.timeBlock === timeBlock);
   }, [state.quests]);
@@ -97,6 +110,7 @@ export function useProtocolQuests() {
   return {
     quests: state.quests,
     toggleQuest,
+    setQuestCompleted,
     getQuestsByTimeBlock,
     getTimeBlockStats,
     getTotalStats,

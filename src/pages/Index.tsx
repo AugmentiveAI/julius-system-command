@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { Coffee } from 'lucide-react';
 import { PlayerProfile } from '@/components/dashboard/PlayerProfile';
 import { StatsRadarChart } from '@/components/dashboard/StatsRadarChart';
@@ -5,6 +6,7 @@ import { StreakCounter } from '@/components/dashboard/StreakCounter';
 import { PenaltyBanner } from '@/components/dashboard/PenaltyBanner';
 import { SystemMessage } from '@/components/dashboard/SystemMessage';
 import { DailyXPBar } from '@/components/dashboard/DailyXPBar';
+import { QuickActions } from '@/components/dashboard/QuickActions';
 import { FlashOverlay } from '@/components/effects/FlashOverlay';
 import { LevelUpOverlay } from '@/components/effects/LevelUpOverlay';
 import { GeneticWarning } from '@/components/warnings/GeneticWarning';
@@ -18,8 +20,8 @@ import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
   const { player, penaltyLevel, showFlashEffect, dismissPenaltyBanner, levelUpState } = usePlayer();
-  const { logCaffeine, hasLoggedAfter10am, warningDismissed, dismissWarning } = useCaffeine();
-  const { toggleQuest, quests } = useProtocolQuests();
+  const { logCaffeine, hasLoggedAfter10am, warningDismissed, dismissWarning, logs } = useCaffeine();
+  const { toggleQuest, setQuestCompleted, quests, getTimeBlockStats } = useProtocolQuests();
   const { workout, workoutCompleted } = useWorkout();
   const { toast } = useToast();
 
@@ -30,18 +32,31 @@ const Index = () => {
     coldStreakDays: player.coldStreak ?? 0,
   });
 
+  // --- Cross-system sync effects ---
+  const syncedRef = useRef({ workout: false, caffeine: false });
+
+  // Auto-complete "scheduled-training" quest when workout is completed
+  useEffect(() => {
+    if (workoutCompleted && !syncedRef.current.workout) {
+      syncedRef.current.workout = true;
+      setQuestCompleted('scheduled-training', true);
+    }
+    if (!workoutCompleted) {
+      syncedRef.current.workout = false;
+    }
+  }, [workoutCompleted, setQuestCompleted]);
+
+  // Auto-fail "caffeine-cutoff" quest when caffeine logged after 10am
+  useEffect(() => {
+    if (hasLoggedAfter10am) {
+      setQuestCompleted('caffeine-cutoff', false);
+    }
+  }, [hasLoggedAfter10am, setQuestCompleted]);
+
   const handleLogCaffeine = () => {
     logCaffeine();
     const now = new Date();
     const isAfter10 = now.getHours() >= 10;
-
-    if (isAfter10) {
-      // Mark caffeine-cutoff quest as failed (ensure it's uncompleted)
-      const cutoffQuest = quests.find(q => q.id === 'caffeine-cutoff');
-      if (cutoffQuest?.completed) {
-        toggleQuest('caffeine-cutoff');
-      }
-    }
 
     toast({
       title: isAfter10 ? '☕ Caffeine Logged — Debuff Active' : '☕ Caffeine Logged',
@@ -95,6 +110,16 @@ const Index = () => {
 
           {/* Daily XP Progress */}
           <DailyXPBar breakdown={dailyXP} />
+
+          {/* Quick Actions & Protocol Progress */}
+          <QuickActions
+            quests={quests}
+            workout={workout}
+            workoutCompleted={workoutCompleted}
+            hasLoggedAfter10am={hasLoggedAfter10am}
+            caffeineLogCount={logs.length}
+            getTimeBlockStats={getTimeBlockStats}
+          />
 
           {/* Stats Radar Chart */}
           <StatsRadarChart stats={player.stats} />
