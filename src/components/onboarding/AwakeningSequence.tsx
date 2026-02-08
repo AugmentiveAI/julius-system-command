@@ -154,7 +154,7 @@ export function AwakeningSequence({ onComplete, isReplay = false }: AwakeningSeq
         fadeOut ? 'opacity-0' : 'opacity-100'
       }`}
     >
-      {/* Subtle ambient glow */}
+      {/* Subtle ambient glow — pointer-events: none */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
@@ -162,7 +162,16 @@ export function AwakeningSequence({ onComplete, isReplay = false }: AwakeningSeq
         }}
       />
 
-      <div className="relative z-20 mx-auto max-w-lg px-6 text-center">
+      {/* Scanline effect — pointer-events: none */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage:
+            'repeating-linear-gradient(0deg, transparent, transparent 2px, hsl(187 100% 50% / 0.1) 2px, hsl(187 100% 50% / 0.1) 4px)',
+        }}
+      />
+
+      <div className="relative z-[9998] mx-auto max-w-lg px-6 text-center">
         {/* Current step lines */}
         {step && (
           <div className="space-y-3">
@@ -203,26 +212,36 @@ export function AwakeningSequence({ onComplete, isReplay = false }: AwakeningSeq
                 There is no refusing the System.
               </p>
             ) : (
-              <div className="flex flex-col items-center gap-4">
+              <div className="flex flex-col items-center gap-4 relative z-[9999]">
                 <button
-                  onClick={handleAccept}
-                  className="group relative cursor-pointer rounded-lg border border-primary/60 bg-primary/10 px-10 py-3 font-display text-sm uppercase tracking-[0.3em] text-primary transition-all duration-500 hover:bg-primary/20 hover:shadow-[0_0_30px_hsl(187_100%_50%/0.4)] min-h-[48px]"
+                  onClick={() => { console.log('[Awakening] I ACCEPT clicked'); handleAccept(); }}
+                  onTouchEnd={(e) => { e.preventDefault(); console.log('[Awakening] I ACCEPT touchend'); handleAccept(); }}
+                  className="group relative cursor-pointer rounded-lg border border-primary/60 bg-primary/10 px-10 py-4 font-display text-sm uppercase tracking-[0.3em] text-primary transition-all duration-500 hover:bg-primary/20 hover:shadow-[0_0_30px_hsl(187_100%_50%/0.4)] min-h-[56px]"
                   style={{
                     boxShadow: '0 0 20px hsl(187 100% 50% / 0.2), inset 0 0 20px hsl(187 100% 50% / 0.05)',
                     opacity: 0,
                     animation: 'awaken-btn-in 0.8s ease-out 0.6s forwards',
+                    position: 'relative',
+                    zIndex: 9999,
+                    WebkitTapHighlightColor: 'transparent',
+                    touchAction: 'manipulation',
                   }}
                 >
                   I ACCEPT
-                  <span className="absolute inset-0 rounded-lg border border-primary/20 animate-pulse" style={{ animationDuration: '2s' }} />
+                  <span className="pointer-events-none absolute inset-0 rounded-lg border border-primary/20 animate-pulse" style={{ animationDuration: '2s' }} />
                 </button>
 
                 <button
-                  onClick={handleRefuse}
-                  className="cursor-pointer rounded-lg border border-destructive/40 bg-destructive/5 px-10 py-3 font-display text-sm uppercase tracking-[0.3em] text-destructive/70 transition-all duration-500 hover:bg-destructive/10 hover:text-destructive hover:shadow-[0_0_20px_hsl(0_62%_50%/0.2)] min-h-[48px]"
+                  onClick={() => { console.log('[Awakening] I DECLINE clicked'); handleRefuse(); }}
+                  onTouchEnd={(e) => { e.preventDefault(); console.log('[Awakening] I DECLINE touchend'); handleRefuse(); }}
+                  className="cursor-pointer rounded-lg border border-destructive/40 bg-destructive/5 px-10 py-4 font-display text-sm uppercase tracking-[0.3em] text-destructive/70 transition-all duration-500 hover:bg-destructive/10 hover:text-destructive hover:shadow-[0_0_20px_hsl(0_62%_50%/0.2)] min-h-[56px]"
                   style={{
                     opacity: 0,
                     animation: 'awaken-btn-in 0.8s ease-out 1.2s forwards',
+                    position: 'relative',
+                    zIndex: 9999,
+                    WebkitTapHighlightColor: 'transparent',
+                    touchAction: 'manipulation',
                   }}
                 >
                   I DECLINE
@@ -240,15 +259,6 @@ export function AwakeningSequence({ onComplete, isReplay = false }: AwakeningSeq
           }
         `}</style>
       </div>
-
-      {/* Scanline effect */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.03]"
-        style={{
-          backgroundImage:
-            'repeating-linear-gradient(0deg, transparent, transparent 2px, hsl(187 100% 50% / 0.1) 2px, hsl(187 100% 50% / 0.1) 4px)',
-        }}
-      />
     </div>
   );
 }
