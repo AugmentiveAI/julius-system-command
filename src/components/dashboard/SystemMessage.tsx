@@ -1,23 +1,23 @@
  import { useState, useEffect } from 'react';
  import { MessageSquare } from 'lucide-react';
  
- const SYSTEM_MESSAGES = [
-   "A hunter who rests too long becomes prey.",
-   "The gap between you and your goal closes with every quest.",
-   "Discipline is the bridge between your current rank and Shadow Monarch.",
-   "The System rewards consistency above all else.",
-   "Your shadows grow stronger with each challenge overcome.",
-   "Weakness is a choice. Choose strength.",
-   "Every quest completed is a step toward transcendence.",
-   "The path to S-Rank is paved with daily victories.",
-   "Fear of failure is the enemy of progress.",
-   "The System sees all. The System remembers all.",
-   "Today's effort becomes tomorrow's power.",
-   "A true hunter never stops evolving.",
-   "Your potential is unlimited. Your time is not.",
-   "The strongest hunters were once the weakest.",
-   "Rise. Grind. Repeat. Ascend.",
- ];
+const SYSTEM_MESSAGES = [
+  "The System is watching. Complete your daily quests to grow stronger.",
+  "A hunter must be relentless. Arise.",
+  "Every quest completed brings you closer to the Monarch.",
+  "Pain is temporary. Glory is eternal.",
+  "The weak make excuses. The strong make progress.",
+  "A hunter who rests too long becomes prey.",
+  "Discipline is the bridge between your current rank and Shadow Monarch.",
+  "The System rewards consistency above all else.",
+  "Weakness is a choice. Choose strength.",
+  "The path to S-Rank is paved with daily victories.",
+  "The System sees all. The System remembers all.",
+  "Today's effort becomes tomorrow's power.",
+  "A true hunter never stops evolving.",
+  "Your potential is unlimited. Your time is not.",
+  "Rise. Grind. Repeat. Ascend.",
+];
  
  function getMessageOfDay(): string {
    const today = new Date();
