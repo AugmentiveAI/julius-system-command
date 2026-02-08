@@ -34,6 +34,34 @@ const Index = () => {
 
   // --- Cross-system sync effects ---
   const syncedRef = useRef({ workout: false, caffeine: false });
+  const achievementRef = useRef({ morning: false, allDaily: false });
+
+  // Achievement: Morning Protocol Complete
+  useEffect(() => {
+    const morningQuests = quests.filter(q => q.timeBlock === 'morning');
+    const allMorningDone = morningQuests.length > 0 && morningQuests.every(q => q.completed);
+    if (allMorningDone && !achievementRef.current.morning) {
+      achievementRef.current.morning = true;
+      toast({
+        title: "⚡ MORNING PROTOCOL COMPLETE",
+        description: "All morning quests cleared. The System acknowledges.",
+      });
+    }
+    if (!allMorningDone) achievementRef.current.morning = false;
+  }, [quests, toast]);
+
+  // Achievement: Daily Protocol Mastered
+  useEffect(() => {
+    const allDone = quests.length > 0 && quests.every(q => q.completed);
+    if (allDone && !achievementRef.current.allDaily) {
+      achievementRef.current.allDaily = true;
+      toast({
+        title: "🏆 DAILY PROTOCOL MASTERED",
+        description: "All quests complete. You have proven worthy.",
+      });
+    }
+    if (!allDone) achievementRef.current.allDaily = false;
+  }, [quests, toast]);
 
   // Auto-complete "scheduled-training" quest when workout is completed
   useEffect(() => {
