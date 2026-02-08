@@ -120,4 +120,26 @@
   .text-glow-secondary {
     text-shadow: 0 0 10px hsl(263 91% 66% / 0.7);
   }
+
+  .text-glow-gold {
+    text-shadow: 0 0 12px hsl(45 100% 50% / 0.8), 0 0 24px hsl(45 100% 50% / 0.4);
+  }
+
+  /* Shimmer border for variable reward quests */
+  @keyframes shimmer-border {
+    0%, 100% { border-color: hsl(45 100% 50% / 0.2); }
+    50% { border-color: hsl(45 100% 50% / 0.5); }
+  }
+  .animate-shimmer-border {
+    animation: shimmer-border 2.5s ease-in-out infinite;
+  }
+
+  /* Subtle pulse for scarcity messages */
+  @keyframes persuasion-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+  .animate-persuasion-pulse {
+    animation: persuasion-pulse 2s ease-in-out infinite;
+  }
 }
