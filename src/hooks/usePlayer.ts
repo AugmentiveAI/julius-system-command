@@ -4,6 +4,7 @@ import { Quest, DailyQuestState, DEFAULT_DAILY_QUESTS } from '@/types/quest';
 import { MainQuest, MainQuestState, DEFAULT_MAIN_QUESTS, getHighestRank } from '@/types/mainQuest';
 import { getLevelFromTotalXP } from '@/types/xp';
 import { useToast } from '@/hooks/use-toast';
+import { getSystemToast } from '@/utils/systemVoice';
 
 interface LevelUpState {
   show: boolean;
@@ -164,25 +165,21 @@ export function usePlayer() {
             }
 
             toast({
-              title: penaltyLevel === 3 ? "⚠️ SYSTEM WARNING" : "Penalty Zone Active",
-              description: penaltyLevel === 3 
-                ? `Critical failure. ${lowestStat.charAt(0).toUpperCase() + lowestStat.slice(1)} reduced by ${reduction}.`
-                : `Stat penalty applied. ${lowestStat.charAt(0).toUpperCase() + lowestStat.slice(1)} reduced by ${reduction}.`,
+              ...getSystemToast('penaltyCritical', {
+                stat: lowestStat.charAt(0).toUpperCase() + lowestStat.slice(1),
+                reduction,
+              }),
               variant: "destructive",
             });
           } else if (penaltyLevel === 1) {
-            toast({
-              title: "Warning",
-              description: "Zero quests completed. Penalty approaching.",
-            });
+            toast(getSystemToast('penaltyWarning'));
           }
 
           // Reset streak on zero completion day
           if (newStreak > 0) {
             newStreak = 0;
             toast({
-              title: "Streak Lost",
-              description: "The System does not forgive inaction.",
+              ...getSystemToast('streakLost'),
               variant: "destructive",
             });
           }
@@ -222,10 +219,7 @@ export function usePlayer() {
         setLevelUpState({ show: true, newLevel });
         setTimeout(() => setLevelUpState({ show: false, newLevel: 0 }), 1600);
         
-        toast({
-          title: "Level Up",
-          description: `You are now Level ${newLevel}.`,
-        });
+        toast(getSystemToast('levelUp', { level: newLevel }));
       }
 
       return {
@@ -261,10 +255,7 @@ export function usePlayer() {
 
     // Add XP with terse notification
     addXP(quest.xpReward);
-    toast({
-      title: "Quest complete",
-      description: `+${quest.xpReward} XP.`,
-    });
+    toast(getSystemToast('questCompleted', { xp: quest.xpReward, stat: quest.stat }));
 
     // Update stat, last completion date, and clear penalties
     const statIncrement = getStatIncrement(quest.stat);
@@ -286,10 +277,7 @@ export function usePlayer() {
     const allComplete = updatedQuests.every(q => q.completed);
     if (allComplete) {
       incrementStreak();
-      toast({
-        title: "All Quests Complete",
-        description: "Streak increased. The System acknowledges your dedication.",
-      });
+      toast(getSystemToast('allQuestsComplete'));
     }
   }, [questState.quests, addXP, incrementStreak, toast]);
 
@@ -355,10 +343,7 @@ export function usePlayer() {
       title: highestRank,
     }));
 
-    toast({
-      title: "Main Quest Complete",
-      description: `+${quest.xpReward} XP. Title unlocked: ${quest.unlocksTitle}.`,
-    });
+    toast(getSystemToast('milestoneComplete', { name: quest.title, xp: quest.xpReward, title: quest.unlocksTitle }));
   }, [mainQuestState.quests, addXP, toast]);
 
   const applyTrainingStats = useCallback(() => {
@@ -383,10 +368,7 @@ export function usePlayer() {
           discipline: capStat(prev.stats.discipline + 2),
         },
       }));
-      toast({
-        title: "Cold Streak Milestone",
-        description: `${streakDays}-day streak! Discipline +2.`,
-      });
+      toast(getSystemToast('coldStreakMilestone', { streak: streakDays }));
     }
   }, [toast]);
 

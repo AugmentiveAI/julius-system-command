@@ -1,9 +1,10 @@
- import { useEffect, useState } from 'react';
- 
- interface LevelUpOverlayProps {
-   show: boolean;
-   newLevel: number;
- }
+import { useEffect, useState } from 'react';
+import { getSystemMessage } from '@/utils/systemVoice';
+
+interface LevelUpOverlayProps {
+  show: boolean;
+  newLevel: number;
+}
  
  export const LevelUpOverlay = ({ show, newLevel }: LevelUpOverlayProps) => {
    const [visible, setVisible] = useState(false);
@@ -47,9 +48,9 @@
              : 'opacity-0 scale-50'
          }`}
        >
-         <p className="font-display text-xl uppercase tracking-widest text-primary mb-2">
-           Level Up
-         </p>
+          <p className="font-display text-xl uppercase tracking-widest text-primary mb-2">
+            {getSystemMessage('levelUp', { level: newLevel })}
+          </p>
          <p 
            className="font-display text-8xl font-bold text-primary"
            style={{
