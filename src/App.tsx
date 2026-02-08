@@ -6,6 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HistoryProvider } from "@/contexts/HistoryContext";
 import { AwakeningSequence, isFirstRun } from "@/components/onboarding/AwakeningSequence";
+import { PreCommitmentModal } from "@/components/quests/PreCommitmentModal";
+import { usePreCommitment } from "@/hooks/usePreCommitment";
 import Index from "./pages/Index";
 import Quests from "./pages/Quests";
 import Training from "./pages/Training";
@@ -17,9 +19,17 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const App = () => {
+const AppContent = () => {
   const [showAwakening, setShowAwakening] = useState(isFirstRun);
   const [triggerScan, setTriggerScan] = useState(false);
+  const {
+    showModal,
+    commitment,
+    isRecovery,
+    handleAccept,
+    handleRequestAlternative,
+    handleDismiss,
+  } = usePreCommitment();
 
   const handleAwakeningComplete = () => {
     setShowAwakening(false);
@@ -27,27 +37,43 @@ const App = () => {
   };
 
   return (
+    <>
+      <Toaster />
+      <Sonner />
+      {showAwakening && (
+        <AwakeningSequence onComplete={handleAwakeningComplete} />
+      )}
+      {showModal && commitment && (
+        <PreCommitmentModal
+          commitment={commitment}
+          isRecovery={isRecovery}
+          onAccept={handleAccept}
+          onRequestAlternative={handleRequestAlternative}
+          onDismiss={handleDismiss}
+        />
+      )}
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Index forceFirstScan={triggerScan} onScanTriggered={() => setTriggerScan(false)} />} />
+          <Route path="/quests" element={<Quests />} />
+          <Route path="/training" element={<Training />} />
+          <Route path="/milestones" element={<Milestones />} />
+          <Route path="/inventory" element={<Inventory />} />
+          <Route path="/history" element={<History />} />
+          <Route path="/genetics" element={<Genetics />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </>
+  );
+};
+
+const App = () => {
+  return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <HistoryProvider>
-          <Toaster />
-          <Sonner />
-          {showAwakening && (
-            <AwakeningSequence onComplete={handleAwakeningComplete} />
-          )}
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index forceFirstScan={triggerScan} onScanTriggered={() => setTriggerScan(false)} />} />
-              <Route path="/quests" element={<Quests />} />
-              <Route path="/training" element={<Training />} />
-              <Route path="/milestones" element={<Milestones />} />
-              <Route path="/inventory" element={<Inventory />} />
-              <Route path="/history" element={<History />} />
-              <Route path="/genetics" element={<Genetics />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
+          <AppContent />
         </HistoryProvider>
       </TooltipProvider>
     </QueryClientProvider>

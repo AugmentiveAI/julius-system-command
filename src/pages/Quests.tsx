@@ -9,6 +9,8 @@ import StateCheck from '@/components/StateCheck';
 import { useProtocolQuests } from '@/hooks/useProtocolQuests';
 import { useHistoryContext } from '@/contexts/HistoryContext';
 import { usePersuasion, recordCompletion, recordSkip } from '@/hooks/usePersuasion';
+import { usePreCommitment } from '@/hooks/usePreCommitment';
+import { PreCommitmentBanner } from '@/components/quests/PreCommitmentBanner';
 import { QuestTimeBlock, TIME_BLOCK_CONFIG } from '@/types/quests';
 import { PlayerStateCheck } from '@/types/playerState';
 import {
@@ -127,7 +129,7 @@ const Quests = () => {
   const { quests: protocolQuests, toggleQuest, getQuestsByTimeBlock, getTimeBlockStats, getTotalStats } =
     useProtocolQuests();
   const { addCompletion } = useHistoryContext();
-
+  const { todayCommitment, resolveCommitment } = usePreCommitment();
   const [scanOpen, setScanOpen] = useState(false);
   const [todayCheck, setTodayCheck] = useState<PlayerStateCheck | null>(getLatestTodayCheck);
   const [unlocked, setUnlocked] = useState(!!todayCheck);
@@ -340,6 +342,26 @@ const Quests = () => {
               <h3 className="font-mono text-xs tracking-[0.15em] text-muted-foreground px-1">
                 ◈ CALIBRATED QUESTS
               </h3>
+
+              {/* Pre-commitment banner */}
+              {todayCommitment && (
+                <PreCommitmentBanner
+                  commitment={todayCommitment}
+                  questCompleted={completedCalibrated.has(todayCommitment.questId)}
+                  onHonored={() => {
+                    resolveCommitment(true);
+                    // Award bonus XP via history
+                    addCompletion({
+                      questId: 'precommit-bonus',
+                      questTitle: 'Pre-Commitment Bonus',
+                      xpEarned: 25,
+                      completedAt: new Date().toISOString(),
+                      type: 'daily',
+                    });
+                  }}
+                />
+              )}
+
               {TIME_BLOCKS_ORDER.map(block => {
                 const blockQuests = groupedQuests[block];
                 if (blockQuests.length === 0) return null;
@@ -381,6 +403,7 @@ const Quests = () => {
                               animDelay={unlocked ? i * 200 : 0}
                               persuasion={persuasionMap.get(quest.id)}
                               isResistanceQuest={resistanceQuestIds.has(quest.id)}
+                              isPreCommitted={todayCommitment?.questId === quest.id}
                             />
                           ))}
                         </div>
