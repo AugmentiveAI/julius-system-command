@@ -4,6 +4,7 @@ import { CounterCard } from '@/components/inventory/CounterCard';
 import { ListCard } from '@/components/inventory/ListCard';
 import { CurrencyCard } from '@/components/inventory/CurrencyCard';
 import { useInventory } from '@/hooks/useInventory';
+import { GeneticHUD } from '@/components/genetic/GeneticHUD';
 
 const Inventory = () => {
   const {
@@ -19,8 +20,9 @@ const Inventory = () => {
   } = useInventory();
 
   return (
-    <div className="min-h-screen bg-background px-4 pb-24 pt-6">
-      <div className="mx-auto max-w-2xl space-y-4">
+    <div className="min-h-screen bg-background pb-24 pt-6">
+      <GeneticHUD />
+      <div className="mx-auto max-w-2xl space-y-4 px-4 mt-3">
         {/* System Header */}
         <div className="text-center">
           <h1 className="font-display text-sm uppercase tracking-[0.3em] text-muted-foreground">

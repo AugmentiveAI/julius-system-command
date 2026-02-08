@@ -5,6 +5,7 @@ import { WEEKLY_SCHEDULE, WorkoutType } from '@/types/training';
 import { WORKOUT_CONFIGS } from '@/data/workouts';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { GeneticHUD } from '@/components/genetic/GeneticHUD';
 
 const WORKOUT_ICONS: Partial<Record<WorkoutType, React.ElementType>> = {
   'push-hypertrophy': Dumbbell,
@@ -43,8 +44,9 @@ const Training = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background px-4 pb-24 pt-6">
-      <div className="mx-auto max-w-2xl space-y-4">
+    <div className="min-h-screen bg-background pb-24 pt-6">
+      <GeneticHUD />
+      <div className="mx-auto max-w-2xl space-y-4 px-4 mt-3">
         {/* System Header */}
         <div className="text-center">
           <h1 className="font-display text-sm uppercase tracking-[0.3em] text-muted-foreground">
