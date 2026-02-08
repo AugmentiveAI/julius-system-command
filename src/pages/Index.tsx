@@ -8,6 +8,7 @@ import { SystemMessage } from '@/components/dashboard/SystemMessage';
 import { DailyXPBar } from '@/components/dashboard/DailyXPBar';
 import { QuickActions } from '@/components/dashboard/QuickActions';
 import { CurrentStateCard } from '@/components/dashboard/CurrentStateCard';
+import { ResistanceCard2 } from '@/components/dashboard/ResistanceCard';
 import StateCheck from '@/components/StateCheck';
 import { FlashOverlay } from '@/components/effects/FlashOverlay';
 import { LevelUpOverlay } from '@/components/effects/LevelUpOverlay';
@@ -189,6 +190,9 @@ const Index = () => {
 
           {/* Current State Card */}
           <CurrentStateCard onRescan={() => setScanOpen(true)} refreshKey={stateRefreshKey} />
+
+          {/* Resistance Analysis */}
+          <ResistanceCard2 />
 
           {/* Quick Actions & Protocol Progress */}
           <QuickActions
