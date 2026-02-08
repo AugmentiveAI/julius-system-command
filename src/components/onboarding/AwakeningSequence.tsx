@@ -162,7 +162,7 @@ export function AwakeningSequence({ onComplete, isReplay = false }: AwakeningSeq
         }}
       />
 
-      <div className="relative z-10 mx-auto max-w-lg px-6 text-center">
+      <div className="relative z-20 mx-auto max-w-lg px-6 text-center">
         {/* Current step lines */}
         {step && (
           <div className="space-y-3">
@@ -206,7 +206,7 @@ export function AwakeningSequence({ onComplete, isReplay = false }: AwakeningSeq
               <div className="flex flex-col items-center gap-4">
                 <button
                   onClick={handleAccept}
-                  className="group relative rounded-lg border border-primary/60 bg-primary/10 px-10 py-3 font-display text-sm uppercase tracking-[0.3em] text-primary transition-all duration-500 hover:bg-primary/20 hover:shadow-[0_0_30px_hsl(187_100%_50%/0.4)]"
+                  className="group relative cursor-pointer rounded-lg border border-primary/60 bg-primary/10 px-10 py-3 font-display text-sm uppercase tracking-[0.3em] text-primary transition-all duration-500 hover:bg-primary/20 hover:shadow-[0_0_30px_hsl(187_100%_50%/0.4)] min-h-[48px]"
                   style={{
                     boxShadow: '0 0 20px hsl(187 100% 50% / 0.2), inset 0 0 20px hsl(187 100% 50% / 0.05)',
                     opacity: 0,
@@ -219,7 +219,7 @@ export function AwakeningSequence({ onComplete, isReplay = false }: AwakeningSeq
 
                 <button
                   onClick={handleRefuse}
-                  className="rounded-lg border border-destructive/40 bg-destructive/5 px-10 py-3 font-display text-sm uppercase tracking-[0.3em] text-destructive/70 transition-all duration-500 hover:bg-destructive/10 hover:text-destructive hover:shadow-[0_0_20px_hsl(0_62%_50%/0.2)]"
+                  className="cursor-pointer rounded-lg border border-destructive/40 bg-destructive/5 px-10 py-3 font-display text-sm uppercase tracking-[0.3em] text-destructive/70 transition-all duration-500 hover:bg-destructive/10 hover:text-destructive hover:shadow-[0_0_20px_hsl(0_62%_50%/0.2)] min-h-[48px]"
                   style={{
                     opacity: 0,
                     animation: 'awaken-btn-in 0.8s ease-out 1.2s forwards',
