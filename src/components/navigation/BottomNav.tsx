@@ -32,7 +32,7 @@ export const BottomNav = () => {
             <Link
               key={path}
               to={path}
-              className={`relative flex flex-col items-center gap-1 px-6 py-2 transition-colors ${
+              className={`relative flex flex-col items-center gap-0.5 px-1 py-2 transition-colors ${
                 isActive
                   ? 'text-primary'
                   : 'text-muted-foreground hover:text-foreground'
@@ -40,7 +40,7 @@ export const BottomNav = () => {
             >
               <div className="relative">
                 <Icon
-                  className={`h-6 w-6 ${isActive ? 'text-glow-primary' : ''}`}
+                  className={`h-5 w-5 ${isActive ? 'text-glow-primary' : ''}`}
                   style={
                     isActive
                       ? { filter: 'drop-shadow(0 0 6px hsl(187 100% 50% / 0.6))' }
@@ -51,7 +51,7 @@ export const BottomNav = () => {
                   <span className={`absolute -top-1 -right-1 h-2 w-2 rounded-full ${MODE_DOT_COLORS[currentMode]}`} />
                 )}
               </div>
-              <span className="font-tech text-xs">{label}</span>
+              <span className="font-tech text-[10px] leading-tight">{label}</span>
             </Link>
           );
         })}
