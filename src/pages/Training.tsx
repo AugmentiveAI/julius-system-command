@@ -6,6 +6,7 @@ import { WORKOUT_CONFIGS } from '@/data/workouts';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { GeneticHUD } from '@/components/genetic/GeneticHUD';
+import { getSystemToast } from '@/utils/systemVoice';
 
 const WORKOUT_ICONS: Partial<Record<WorkoutType, React.ElementType>> = {
   'push-hypertrophy': Dumbbell,
@@ -37,10 +38,7 @@ const Training = () => {
 
   const handleCompleteWorkout = () => {
     completeWorkout();
-    toast({
-      title: 'Workout Complete',
-      description: `+${workout.xp} XP earned. The System acknowledges your dedication.`,
-    });
+    toast(getSystemToast('workoutComplete', { xp: workout.xp }));
   };
 
   return (

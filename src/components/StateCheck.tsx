@@ -14,6 +14,7 @@ import {
   STATE_THRESHOLDS,
 } from '@/types/playerState';
 import { useToast } from '@/hooks/use-toast';
+import { getSystemToast } from '@/utils/systemVoice';
 
 const STATE_HISTORY_KEY = 'systemStateHistory';
 
@@ -97,9 +98,7 @@ export default function StateCheck({ open, onOpenChange }: StateCheckProps) {
     }
 
     setConfirmed(true);
-    toast({
-      title: 'State logged. Quests calibrating...',
-    });
+    toast(getSystemToast('stateLogged'));
 
     setTimeout(() => {
       onOpenChange(false);

@@ -1,6 +1,7 @@
- import { useState, useEffect } from 'react';
- import { MessageSquare } from 'lucide-react';
- 
+import { useState, useEffect } from 'react';
+import { MessageSquare } from 'lucide-react';
+import { getSystemMessage } from '@/utils/systemVoice';
+
 const SYSTEM_MESSAGES = [
   "The System is watching. Complete your daily quests to grow stronger.",
   "A hunter must be relentless. Arise.",
@@ -18,15 +19,16 @@ const SYSTEM_MESSAGES = [
   "Your potential is unlimited. Your time is not.",
   "Rise. Grind. Repeat. Ascend.",
 ];
- 
- function getMessageOfDay(): string {
-   const today = new Date();
-   const dayOfYear = Math.floor(
-     (today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 
-     (1000 * 60 * 60 * 24)
-   );
-   return SYSTEM_MESSAGES[dayOfYear % SYSTEM_MESSAGES.length];
- }
+
+function getMessageOfDay(): string {
+  // Use dailyBrief voice for the rotating message
+  const today = new Date();
+  const dayOfYear = Math.floor(
+    (today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 
+    (1000 * 60 * 60 * 24)
+  );
+  return SYSTEM_MESSAGES[dayOfYear % SYSTEM_MESSAGES.length];
+}
  
  export const SystemMessage = () => {
    const [message, setMessage] = useState('');

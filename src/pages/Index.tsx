@@ -26,6 +26,7 @@ import { useWorkout } from '@/hooks/useWorkout';
 import { useDailyXP } from '@/hooks/useDailyXP';
 import { useToast } from '@/hooks/use-toast';
 import { useSystemStrategy } from '@/hooks/useSystemStrategy';
+import { getSystemToast } from '@/utils/systemVoice';
 
 const LAST_SCAN_DATE_KEY = 'systemLastScanDate';
 
@@ -61,10 +62,7 @@ const Index = () => {
   useEffect(() => {
     if (needsDailyScan() && !autoScanRef.current) {
       autoScanRef.current = true;
-      toast({
-        title: '◈ Daily diagnostic required',
-        description: 'The System must assess your condition.',
-      });
+      toast(getSystemToast('stateScanRequired'));
       setTimeout(() => setScanOpen(true), 800);
     }
   }, [toast]);
@@ -87,10 +85,7 @@ const Index = () => {
     const allMorningDone = morningQuests.length > 0 && morningQuests.every(q => q.completed);
     if (allMorningDone && !achievementRef.current.morning) {
       achievementRef.current.morning = true;
-      toast({
-        title: "⚡ MORNING PROTOCOL COMPLETE",
-        description: "All morning quests cleared. The System acknowledges.",
-      });
+      toast(getSystemToast('morningProtocol'));
     }
     if (!allMorningDone) achievementRef.current.morning = false;
   }, [quests, toast]);
@@ -100,10 +95,7 @@ const Index = () => {
     const allDone = quests.length > 0 && quests.every(q => q.completed);
     if (allDone && !achievementRef.current.allDaily) {
       achievementRef.current.allDaily = true;
-      toast({
-        title: "🏆 DAILY PROTOCOL MASTERED",
-        description: "All quests complete. You have proven worthy.",
-      });
+      toast(getSystemToast('dailyProtocol'));
     }
     if (!allDone) achievementRef.current.allDaily = false;
   }, [quests, toast]);
@@ -130,12 +122,8 @@ const Index = () => {
     logCaffeine();
     const now = new Date();
     const isAfter10 = now.getHours() >= 10;
-    toast({
-      title: isAfter10 ? '☕ Caffeine Logged — Debuff Active' : '☕ Caffeine Logged',
-      description: isAfter10
-        ? 'CYP1A2 slow metabolism warning triggered.'
-        : `Logged at ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
-    });
+    const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    toast(getSystemToast(isAfter10 ? 'caffeineDebuff' : 'caffeineLogged', { time }));
   };
 
   return (
