@@ -47,10 +47,11 @@ export interface CompletionRecord {
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
-function dayNumber(currentDate: Date): number {
-  // Day number since a fixed start date (Jan 1 2025 as epoch for the 90-day journey)
-  const epoch = new Date('2025-01-01');
-  return Math.max(1, Math.ceil((currentDate.getTime() - epoch.getTime()) / (1000 * 60 * 60 * 24)));
+function dayNumber(): number {
+  const START_DATE_KEY = 'systemStartDate';
+  const stored = typeof window !== 'undefined' ? localStorage.getItem(START_DATE_KEY) : null;
+  const startDate = stored ? new Date(stored) : new Date();
+  return Math.max(1, Math.ceil((new Date().getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1);
 }
 
 function dayOfWeek(d: Date): number {
@@ -370,7 +371,7 @@ function generatePredictions(
   const predictions: string[] = [];
 
   // Revenue trajectory
-  const wealthGrowthPerWeek = stats.wealth > 10 ? (stats.wealth - 10) / Math.max(1, dayNumber(currentDate) / 7) : 0;
+  const wealthGrowthPerWeek = stats.wealth > 10 ? (stats.wealth - 10) / Math.max(1, dayNumber() / 7) : 0;
   if (wealthGrowthPerWeek > 0) {
     const target10k = milestones.find(m => m.id === '10k-mrr');
     if (target10k && !target10k.completed) {
@@ -495,7 +496,7 @@ export function getSystemStrategy(
   playerStats?: PlayerStats,
   coldStreakDays?: number,
 ): SystemStrategy {
-  const day = dayNumber(currentDate);
+  const day = dayNumber();
   const recoveryStreak = consecutiveRecoveryDays(stateHistory);
   const weeklyRate = weeklyCompletionRate(completionHistory, currentDate);
 
