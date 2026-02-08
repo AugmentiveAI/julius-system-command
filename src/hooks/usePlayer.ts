@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Player, INITIAL_PLAYER, PlayerStats, getLowestStat, getPenaltyLevel, INITIAL_PENALTY, Rank } from '@/types/player';
+import { Player, INITIAL_PLAYER, PlayerStats, getLowestStat, getPenaltyLevel, INITIAL_PENALTY, Rank, getStatIncrement, capStat } from '@/types/player';
 import { Quest, DailyQuestState, DEFAULT_DAILY_QUESTS } from '@/types/quest';
 import { MainQuest, MainQuestState, DEFAULT_MAIN_QUESTS, getHighestRank } from '@/types/mainQuest';
 import { getLevelFromTotalXP } from '@/types/xp';
@@ -266,9 +266,14 @@ export function usePlayer() {
       description: `+${quest.xpReward} XP.`,
     });
 
-    // Update last completion date and clear penalties
+    // Update stat, last completion date, and clear penalties
+    const statIncrement = getStatIncrement(quest.stat);
     setPlayer(prev => ({
       ...prev,
+      stats: {
+        ...prev.stats,
+        [quest.stat]: capStat(prev.stats[quest.stat] + statIncrement),
+      },
       penalty: {
         ...prev.penalty,
         lastCompletionDate: getTodayDateString(),
@@ -299,10 +304,16 @@ export function usePlayer() {
       ),
     }));
 
-    // Remove XP (but don't go below 0)
+    // Remove XP and reverse stat gain
+    const statIncrement = getStatIncrement(quest.stat);
     setPlayer(prev => ({
       ...prev,
       currentXP: Math.max(0, prev.currentXP - quest.xpReward),
+      totalXP: Math.max(0, (prev.totalXP ?? 0) - quest.xpReward),
+      stats: {
+        ...prev.stats,
+        [quest.stat]: Math.max(1, prev.stats[quest.stat] - statIncrement),
+      },
     }));
   }, [questState.quests]);
 
@@ -350,6 +361,35 @@ export function usePlayer() {
     });
   }, [mainQuestState.quests, addXP, toast]);
 
+  const applyTrainingStats = useCallback(() => {
+    setPlayer(prev => ({
+      ...prev,
+      stats: {
+        ...prev.stats,
+        discipline: capStat(prev.stats.discipline + 1),
+        systems: capStat(prev.stats.systems + 0.5),
+      },
+    }));
+  }, []);
+
+  const COLD_MILESTONES = [7, 14, 30];
+
+  const applyColdStreakMilestone = useCallback((streakDays: number) => {
+    if (COLD_MILESTONES.includes(streakDays)) {
+      setPlayer(prev => ({
+        ...prev,
+        stats: {
+          ...prev.stats,
+          discipline: capStat(prev.stats.discipline + 2),
+        },
+      }));
+      toast({
+        title: "Cold Streak Milestone",
+        description: `${streakDays}-day streak! Discipline +2.`,
+      });
+    }
+  }, [toast]);
+
   const completedCount = questState.quests.filter(q => q.completed).length;
   const totalCount = questState.quests.length;
   const penaltyLevel = getPenaltyLevel(player.penalty.consecutiveZeroDays);
@@ -367,5 +407,8 @@ export function usePlayer() {
     mainQuests: mainQuestState.quests,
     completeMainQuest,
     levelUpState,
+    addXP,
+    applyTrainingStats,
+    applyColdStreakMilestone,
   };
 }

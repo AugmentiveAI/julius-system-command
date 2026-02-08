@@ -80,6 +80,25 @@ export function getLowestStat(stats: PlayerStats): keyof PlayerStats {
   return lowestKey;
 }
 
+export const STAT_CAP = 100;
+
+const STAT_INCREMENTS: Record<keyof PlayerStats, number> = {
+  sales: 0.5,
+  systems: 0.5,
+  creative: 0.5,
+  discipline: 0.3,
+  wealth: 0.3,
+  network: 0.3,
+};
+
+export function getStatIncrement(stat: keyof PlayerStats): number {
+  return STAT_INCREMENTS[stat];
+}
+
+export function capStat(value: number): number {
+  return Math.min(value, STAT_CAP);
+}
+
 export function getPenaltyLevel(consecutiveZeroDays: number): PenaltyLevel {
   if (consecutiveZeroDays >= 3) return 3;
   if (consecutiveZeroDays === 2) return 2;
