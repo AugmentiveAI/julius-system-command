@@ -197,18 +197,20 @@ export function AwakeningSequence({ onComplete, isReplay = false }: AwakeningSeq
 
         {/* Final CTA: "Will you rise?" step with buttons */}
         {showButtons && (
-          <div className="mt-10 space-y-4 animate-fade-in">
+          <div className="mt-10 space-y-4">
             {refuseMessage ? (
               <p className="font-mono text-sm text-destructive animate-fade-in">
                 There is no refusing the System.
               </p>
             ) : (
-              <div className="flex flex-col items-center gap-3">
+              <div className="flex flex-col items-center gap-4">
                 <button
                   onClick={handleAccept}
-                  className="group relative rounded-lg border border-primary/60 bg-primary/10 px-10 py-3 font-display text-sm uppercase tracking-[0.3em] text-primary transition-all duration-300 hover:bg-primary/20 hover:shadow-[0_0_30px_hsl(187_100%_50%/0.4)]"
+                  className="group relative rounded-lg border border-primary/60 bg-primary/10 px-10 py-3 font-display text-sm uppercase tracking-[0.3em] text-primary transition-all duration-500 hover:bg-primary/20 hover:shadow-[0_0_30px_hsl(187_100%_50%/0.4)]"
                   style={{
                     boxShadow: '0 0 20px hsl(187 100% 50% / 0.2), inset 0 0 20px hsl(187 100% 50% / 0.05)',
+                    opacity: 0,
+                    animation: 'awaken-btn-in 0.8s ease-out 0.6s forwards',
                   }}
                 >
                   I ACCEPT
@@ -217,14 +219,26 @@ export function AwakeningSequence({ onComplete, isReplay = false }: AwakeningSeq
 
                 <button
                   onClick={handleRefuse}
-                  className="font-mono text-xs text-muted-foreground/40 transition-colors hover:text-muted-foreground/60"
+                  className="rounded-lg border border-destructive/40 bg-destructive/5 px-10 py-3 font-display text-sm uppercase tracking-[0.3em] text-destructive/70 transition-all duration-500 hover:bg-destructive/10 hover:text-destructive hover:shadow-[0_0_20px_hsl(0_62%_50%/0.2)]"
+                  style={{
+                    opacity: 0,
+                    animation: 'awaken-btn-in 0.8s ease-out 1.2s forwards',
+                  }}
                 >
-                  ...
+                  I DECLINE
                 </button>
               </div>
             )}
           </div>
         )}
+
+        {/* Button animation keyframes */}
+        <style>{`
+          @keyframes awaken-btn-in {
+            0% { opacity: 0; transform: translateY(12px); }
+            100% { opacity: 1; transform: translateY(0); }
+          }
+        `}</style>
       </div>
 
       {/* Scanline effect */}
