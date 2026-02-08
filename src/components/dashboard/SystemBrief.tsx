@@ -53,12 +53,12 @@ export function SystemBrief({ dayNumber, dailyBrief, strategicFocus, weeklyObjec
       </div>
 
       {/* Strategic Focus */}
-      <div className="flex items-start gap-2">
+      <div className="flex items-start gap-2 sm:flex-row flex-col">
         <span className="font-mono text-[10px] tracking-wider text-muted-foreground shrink-0 pt-0.5">
           STRATEGIC FOCUS:
         </span>
         <Badge
-          className="bg-primary/15 text-primary border-primary/30 font-mono text-[10px] px-2 py-1 h-auto whitespace-normal text-left"
+          className="bg-primary/15 text-primary border-primary/30 font-mono text-[10px] sm:text-[10px] text-[9px] px-2 py-1 h-auto whitespace-normal text-left max-w-full"
         >
           {strategicFocus}
         </Badge>
