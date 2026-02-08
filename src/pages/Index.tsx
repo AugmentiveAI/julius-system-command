@@ -20,6 +20,7 @@ import { useProtocolQuests } from '@/hooks/useProtocolQuests';
 import { useWorkout } from '@/hooks/useWorkout';
 import { useDailyXP } from '@/hooks/useDailyXP';
 import { useToast } from '@/hooks/use-toast';
+import { GeneticHUD } from '@/components/genetic/GeneticHUD';
 
 const LAST_SCAN_DATE_KEY = 'systemLastScanDate';
 
@@ -139,8 +140,9 @@ const Index = () => {
       <LevelUpOverlay show={levelUpState.show} newLevel={levelUpState.newLevel} />
       <StateCheck open={scanOpen} onOpenChange={handleScanClose} />
 
-      <div className="min-h-screen bg-background px-4 pb-24 pt-6">
-        <div className="mx-auto max-w-2xl space-y-6">
+      <div className="min-h-screen bg-background pb-24 pt-6">
+        <GeneticHUD />
+        <div className="mx-auto max-w-2xl space-y-6 px-4 mt-3">
           {/* System Header */}
           <div className="flex items-center justify-center gap-3">
             <h1 className="font-display text-sm uppercase tracking-[0.3em] text-muted-foreground">

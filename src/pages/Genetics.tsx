@@ -2,6 +2,7 @@ import { JULIUS_GENETICS, GeneticTrait } from '@/types/genetics';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { SupplementChecklist } from '@/components/biometrics/SupplementChecklist';
 import { useProtocolQuests } from '@/hooks/useProtocolQuests';
+import { GeneticHUD } from '@/components/genetic/GeneticHUD';
  
  const TraitCard = ({ trait, isBuff }: { trait: GeneticTrait; isBuff: boolean }) => {
    const bgClass = isBuff 
@@ -41,8 +42,9 @@ import { useProtocolQuests } from '@/hooks/useProtocolQuests';
     }, {});
 
     return (
-      <div className="min-h-screen bg-background pb-24">
-        <div className="mx-auto max-w-2xl px-4 py-6">
+      <div className="min-h-screen bg-background pb-24 pt-6">
+        <GeneticHUD />
+        <div className="mx-auto max-w-2xl px-4 py-3">
           {/* Header */}
           <header className="mb-8 text-center">
             <h1 className="font-display text-2xl font-bold tracking-wider text-primary text-glow-primary">
