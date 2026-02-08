@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Bot, Users, Brain, FileCode, RotateCcw } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Bot, Users, Brain, FileCode, RotateCcw, Calendar } from 'lucide-react';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { CounterCard } from '@/components/inventory/CounterCard';
 import { ListCard } from '@/components/inventory/ListCard';
@@ -10,6 +10,16 @@ import { AwakeningSequence } from '@/components/onboarding/AwakeningSequence';
 
 const Inventory = () => {
   const [showReplay, setShowReplay] = useState(false);
+  const [startDate, setStartDate] = useState(() => {
+    const stored = localStorage.getItem('systemStartDate');
+    return stored || new Date().toISOString().split('T')[0];
+  });
+
+  const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newDate = e.target.value;
+    setStartDate(newDate);
+    localStorage.setItem('systemStartDate', newDate);
+  };
   const {
     inventory,
     setAutomationsDeployed,
@@ -96,8 +106,20 @@ const Inventory = () => {
         />
 
         {/* System Section */}
-        <div className="rounded-lg border border-border bg-card p-4">
-          <h3 className="font-display text-sm font-semibold text-foreground mb-3">System</h3>
+        <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+          <h3 className="font-display text-sm font-semibold text-foreground">System</h3>
+          
+          <div className="flex items-center gap-3">
+            <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <label className="font-mono text-xs text-muted-foreground shrink-0">Start Date</label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={handleStartDateChange}
+              className="flex-1 rounded-md border border-border bg-muted/30 px-3 py-1.5 font-mono text-xs text-foreground outline-none focus:border-primary/50"
+            />
+          </div>
+
           <button
             onClick={() => setShowReplay(true)}
             className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-4 py-2.5 font-mono text-xs text-muted-foreground transition-all hover:border-primary/40 hover:text-primary"
