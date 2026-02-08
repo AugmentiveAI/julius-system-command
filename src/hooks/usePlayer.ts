@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Player, INITIAL_PLAYER, PlayerStats, getLowestStat, getPenaltyLevel, INITIAL_PENALTY, Rank } from '@/types/player';
 import { Quest, DailyQuestState, DEFAULT_DAILY_QUESTS } from '@/types/quest';
 import { MainQuest, MainQuestState, DEFAULT_MAIN_QUESTS, getHighestRank } from '@/types/mainQuest';
+import { getLevelFromTotalXP } from '@/types/xp';
 import { useToast } from '@/hooks/use-toast';
 
 interface LevelUpState {
@@ -38,6 +39,13 @@ function loadPlayer(): Player {
       // Ensure penalty state exists for older saves
       if (!player.penalty) {
         player.penalty = INITIAL_PENALTY;
+      }
+      // Migrate older saves missing totalXP/coldStreak
+      if (player.totalXP === undefined) {
+        player.totalXP = 0;
+      }
+      if (player.coldStreak === undefined) {
+        player.coldStreak = 0;
       }
       return player;
     }
@@ -205,17 +213,9 @@ export function usePlayer() {
 
   const addXP = useCallback((amount: number) => {
     setPlayer(prev => {
-      let newXP = prev.currentXP + amount;
-      let newLevel = prev.level;
-      let xpToNext = prev.xpToNextLevel;
+      const newTotalXP = (prev.totalXP ?? 0) + amount;
+      const { level: newLevel, currentXP, xpToNextLevel } = getLevelFromTotalXP(newTotalXP);
       const startLevel = prev.level;
-
-      // Level up logic
-      while (newXP >= xpToNext) {
-        newXP -= xpToNext;
-        newLevel++;
-        xpToNext = Math.floor(xpToNext * 1.2);
-      }
 
       // Trigger level up effect if leveled
       if (newLevel > startLevel) {
@@ -230,9 +230,10 @@ export function usePlayer() {
 
       return {
         ...prev,
-        currentXP: newXP,
+        totalXP: newTotalXP,
+        currentXP,
         level: newLevel,
-        xpToNextLevel: xpToNext,
+        xpToNextLevel,
       };
     });
   }, [toast]);

@@ -4,6 +4,7 @@ import { StatsRadarChart } from '@/components/dashboard/StatsRadarChart';
 import { StreakCounter } from '@/components/dashboard/StreakCounter';
 import { PenaltyBanner } from '@/components/dashboard/PenaltyBanner';
 import { SystemMessage } from '@/components/dashboard/SystemMessage';
+import { DailyXPBar } from '@/components/dashboard/DailyXPBar';
 import { FlashOverlay } from '@/components/effects/FlashOverlay';
 import { LevelUpOverlay } from '@/components/effects/LevelUpOverlay';
 import { GeneticWarning } from '@/components/warnings/GeneticWarning';
@@ -11,13 +12,23 @@ import { BottomNav } from '@/components/navigation/BottomNav';
 import { usePlayer } from '@/hooks/usePlayer';
 import { useCaffeine } from '@/hooks/useCaffeine';
 import { useProtocolQuests } from '@/hooks/useProtocolQuests';
+import { useWorkout } from '@/hooks/useWorkout';
+import { useDailyXP } from '@/hooks/useDailyXP';
 import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
   const { player, penaltyLevel, showFlashEffect, dismissPenaltyBanner, levelUpState } = usePlayer();
   const { logCaffeine, hasLoggedAfter10am, warningDismissed, dismissWarning } = useCaffeine();
   const { toggleQuest, quests } = useProtocolQuests();
+  const { workout, workoutCompleted } = useWorkout();
   const { toast } = useToast();
+
+  const dailyXP = useDailyXP({
+    quests,
+    workoutCompleted,
+    workoutXP: workout.xp,
+    coldStreakDays: player.coldStreak ?? 0,
+  });
 
   const handleLogCaffeine = () => {
     logCaffeine();
@@ -81,6 +92,9 @@ const Index = () => {
 
           {/* Player Profile */}
           <PlayerProfile player={player} />
+
+          {/* Daily XP Progress */}
+          <DailyXPBar breakdown={dailyXP} />
 
           {/* Stats Radar Chart */}
           <StatsRadarChart stats={player.stats} />

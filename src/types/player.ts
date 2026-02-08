@@ -30,10 +30,12 @@ export interface Player {
   name: string;
   title: Rank;
   level: number;
+  totalXP: number;
   currentXP: number;
   xpToNextLevel: number;
   stats: PlayerStats;
   streak: number;
+  coldStreak: number;
   penalty: PenaltyState;
 }
 
@@ -48,8 +50,9 @@ export const INITIAL_PLAYER: Player = {
   name: 'Julius',
   title: 'E-Rank Hunter',
   level: 1,
+  totalXP: 0,
   currentXP: 0,
-  xpToNextLevel: 100,
+  xpToNextLevel: 500,
   stats: {
     sales: 10,
     systems: 10,
@@ -59,6 +62,7 @@ export const INITIAL_PLAYER: Player = {
     wealth: 10,
   },
   streak: 0,
+  coldStreak: 0,
   penalty: INITIAL_PENALTY,
 };
 
