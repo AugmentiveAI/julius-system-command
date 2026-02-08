@@ -1,12 +1,15 @@
-import { Bot, Users, Brain, FileCode } from 'lucide-react';
+import { useState } from 'react';
+import { Bot, Users, Brain, FileCode, RotateCcw } from 'lucide-react';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { CounterCard } from '@/components/inventory/CounterCard';
 import { ListCard } from '@/components/inventory/ListCard';
 import { CurrencyCard } from '@/components/inventory/CurrencyCard';
 import { useInventory } from '@/hooks/useInventory';
 import { GeneticHUD } from '@/components/genetic/GeneticHUD';
+import { AwakeningSequence } from '@/components/onboarding/AwakeningSequence';
 
 const Inventory = () => {
+  const [showReplay, setShowReplay] = useState(false);
   const {
     inventory,
     setAutomationsDeployed,
@@ -18,6 +21,10 @@ const Inventory = () => {
     addTemplate,
     removeTemplate,
   } = useInventory();
+
+  if (showReplay) {
+    return <AwakeningSequence onComplete={() => setShowReplay(false)} isReplay />;
+  }
 
   return (
     <div className="min-h-screen bg-background pb-24 pt-6">
@@ -87,6 +94,18 @@ const Inventory = () => {
           onRemove={removeTemplate}
           placeholder="Add new template..."
         />
+
+        {/* System Section */}
+        <div className="rounded-lg border border-border bg-card p-4">
+          <h3 className="font-display text-sm font-semibold text-foreground mb-3">System</h3>
+          <button
+            onClick={() => setShowReplay(true)}
+            className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-4 py-2.5 font-mono text-xs text-muted-foreground transition-all hover:border-primary/40 hover:text-primary"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            Replay Awakening Sequence
+          </button>
+        </div>
       </div>
 
       <BottomNav />
