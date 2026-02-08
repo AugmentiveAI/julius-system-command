@@ -413,40 +413,71 @@ export function updatePlayerPsychProfile(): void {
 // ── 4. getEveningPreCommitment ───────────────────────────────────────
 
 export interface PreCommitment {
+  questId: string;
   questName: string;
+  questCategory: string;
+  questDifficulty: string;
+  questXP: number;
+  questEstimatedMinutes: number;
   commitMessage: string;
   accepted: boolean | null;
-  date: string;
+  date: string; // date the commitment is FOR (tomorrow)
+  acceptedAt: string | null; // timestamp of acceptance
+  triggeredDate: string; // date the modal was shown (today evening)
+  isRecoveryMode: boolean;
+  completed: boolean | null; // null = not yet resolved, true = honored, false = broken
+  alternativeUsed: boolean;
 }
 
 export function getEveningPreCommitment(
-  availableQuests: { name: string; category: string; difficulty: string; xp: number }[],
+  availableQuests: { id: string; name: string; category: string; difficulty: string; xp: number; estimatedMinutes: number }[],
   currentDate: Date,
+  isRecoveryMode: boolean,
 ): PreCommitment | null {
   if (availableQuests.length === 0) return null;
 
-  // Select hardest quest
   const difficultyOrder: Record<string, number> = { S: 5, A: 4, B: 3, C: 2, D: 1 };
-  const sorted = [...availableQuests].sort(
+
+  // Filter by difficulty based on mode
+  const targetDifficulties = isRecoveryMode ? ['B', 'C'] : ['S', 'A'];
+  let candidates = availableQuests.filter(q => targetDifficulties.includes(q.difficulty));
+  if (candidates.length === 0) candidates = availableQuests;
+
+  const sorted = [...candidates].sort(
     (a, b) => (difficultyOrder[b.difficulty] ?? 0) - (difficultyOrder[a.difficulty] ?? 0),
   );
-  const hardest = sorted[0];
+  const selected = sorted[0];
 
-  const config = TECHNIQUE_LIBRARY.find(c => c.id === 'commitment_escalation');
+  const techniqueId = isRecoveryMode ? 'identity_framing' : 'commitment_escalation';
+  const config = TECHNIQUE_LIBRARY.find(c => c.id === techniqueId);
   const template = config ? pickRandom(config.templates) : 'Will you accept tomorrow\'s challenge?';
 
   const message = fillTemplate(template, {
-    questName: hardest.name,
-    questCategory: hardest.category,
-    difficulty: hardest.difficulty,
-    xp: hardest.xp,
+    questName: selected.name,
+    questCategory: selected.category,
+    difficulty: selected.difficulty,
+    xp: selected.xp,
   });
 
+  // Tomorrow's date
+  const tomorrow = new Date(currentDate);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
   const commitment: PreCommitment = {
-    questName: hardest.name,
+    questId: selected.id,
+    questName: selected.name,
+    questCategory: selected.category,
+    questDifficulty: selected.difficulty,
+    questXP: selected.xp,
+    questEstimatedMinutes: selected.estimatedMinutes ?? 45,
     commitMessage: message,
     accepted: null,
-    date: currentDate.toISOString().split('T')[0],
+    date: tomorrow.toISOString().split('T')[0],
+    acceptedAt: null,
+    triggeredDate: currentDate.toISOString().split('T')[0],
+    isRecoveryMode,
+    completed: null,
+    alternativeUsed: false,
   };
 
   localStorage.setItem(PRECOMMIT_KEY, JSON.stringify(commitment));
@@ -461,10 +492,15 @@ export function loadPreCommitment(): PreCommitment | null {
   return null;
 }
 
+export function savePreCommitment(commitment: PreCommitment): void {
+  localStorage.setItem(PRECOMMIT_KEY, JSON.stringify(commitment));
+}
+
 export function acceptPreCommitment(accepted: boolean): void {
   const commitment = loadPreCommitment();
   if (commitment) {
     commitment.accepted = accepted;
+    commitment.acceptedAt = accepted ? new Date().toISOString() : null;
     localStorage.setItem(PRECOMMIT_KEY, JSON.stringify(commitment));
   }
 }

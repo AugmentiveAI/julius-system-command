@@ -13,6 +13,7 @@ interface CalibratedQuestCardProps {
   animDelay?: number;
   persuasion?: QuestPersuasionData;
   isResistanceQuest?: boolean;
+  isPreCommitted?: boolean;
 }
 
 const DifficultyBadge = ({ difficulty }: { difficulty: QuestDifficulty }) => {
@@ -50,6 +51,7 @@ export const CalibratedQuestCard = ({
   animDelay = 0,
   persuasion,
   isResistanceQuest,
+  isPreCommitted,
 }: CalibratedQuestCardProps) => {
   const xpModified = quest.adjustedXP !== quest.baseXP;
   const [showReward, setShowReward] = useState(false);
@@ -104,14 +106,20 @@ export const CalibratedQuestCard = ({
   let borderClass = 'border-border bg-card/50 hover:border-primary/50';
   if (completed) {
     borderClass = 'border-green-500/30 bg-green-500/5';
+  } else if (isPreCommitted) {
+    borderClass = 'border-2 bg-card/50 hover:border-yellow-500/60';
   } else if (hasVariableReward) {
     borderClass = 'border-yellow-500/30 bg-card/50 hover:border-yellow-500/50 animate-shimmer-border';
   }
 
+  const preCommitStyle = isPreCommitted && !completed
+    ? { borderColor: 'hsl(45 100% 50% / 0.4)', boxShadow: '0 0 12px hsl(45 100% 50% / 0.1)' }
+    : undefined;
+
   return (
     <div
       className={`rounded-lg border p-3 transition-all duration-300 animate-fade-in relative overflow-hidden ${borderClass}`}
-      style={{ animationDelay: `${animDelay}ms` }}
+      style={{ animationDelay: `${animDelay}ms`, ...preCommitStyle }}
     >
       {/* Resistance overcome flash overlay */}
       {resistanceFlash && (
