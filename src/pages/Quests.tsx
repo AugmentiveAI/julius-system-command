@@ -28,6 +28,9 @@ import {
 } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { GeneticHUD } from '@/components/genetic/GeneticHUD';
+import { useShadowQuest } from '@/hooks/useShadowQuest';
+import { ShadowQuestCard } from '@/components/quests/ShadowQuestCard';
+import { ShadowQuestNotification } from '@/components/quests/ShadowQuestNotification';
 
 const STATE_HISTORY_KEY = 'systemStateHistory';
 const CALIBRATED_COMPLETIONS_KEY = 'systemCalibratedCompletions';
@@ -162,6 +165,21 @@ const Quests = () => {
   // Resistance data for persuasion engine
   const resistanceData = useMemo(() => loadCachedResistance(), []);
 
+  // Shadow Quest system
+  const shadowMode = todayCheck?.systemRecommendation === 'recover' ? 'recovery' as const : todayCheck?.systemRecommendation ?? null;
+  const {
+    shadowQuest,
+    isRevealed: shadowRevealed,
+    showNotification: shadowNotification,
+    timeRemaining: shadowTimeRemaining,
+    dismissNotification: dismissShadowNotification,
+    onCalibratedQuestCompleted,
+    completeShadow,
+  } = useShadowQuest(
+    shadowMode,
+    resistanceData,
+  );
+
   // Persuasion engine: generates messages for each calibrated quest
   const persuasionMap = usePersuasion(
     calibration?.recommendedQuests ?? [],
@@ -236,10 +254,12 @@ const Quests = () => {
         });
         // Record persuasion outcome
         recordCompletion(persuasionData?.technique ?? null);
+        // Notify shadow quest system
+        onCalibratedQuestCompleted();
       }
       return next;
     });
-  }, [calibration, addCompletion, persuasionMap]);
+  }, [calibration, addCompletion, persuasionMap, onCalibratedQuestCompleted]);
 
   // Also keep protocol quest toggling for protocol quests
   const handleProtocolToggle = (questId: string) => {
@@ -267,6 +287,7 @@ const Quests = () => {
   return (
     <>
       <StateCheck open={scanOpen} onOpenChange={handleScanClose} />
+      <ShadowQuestNotification show={shadowNotification} onDismiss={dismissShadowNotification} />
 
       <div className="min-h-screen bg-background pb-24 pt-6">
         <GeneticHUD />
@@ -342,6 +363,24 @@ const Quests = () => {
               <h3 className="font-mono text-xs tracking-[0.15em] text-muted-foreground px-1">
                 ◈ CALIBRATED QUESTS
               </h3>
+
+              {/* Shadow Quest */}
+              {shadowQuest && shadowRevealed && (
+                <ShadowQuestCard
+                  quest={shadowQuest}
+                  timeRemaining={shadowTimeRemaining}
+                  onComplete={() => {
+                    completeShadow();
+                    addCompletion({
+                      questId: shadowQuest.id,
+                      questTitle: shadowQuest.title,
+                      xpEarned: shadowQuest.rewardXP,
+                      completedAt: new Date().toISOString(),
+                      type: 'daily',
+                    });
+                  }}
+                />
+              )}
 
               {/* Pre-commitment banner */}
               {todayCommitment && (

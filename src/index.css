@@ -142,4 +142,31 @@
   .animate-persuasion-pulse {
     animation: persuasion-pulse 2s ease-in-out infinite;
   }
+
+  /* Shadow Quest card gradient */
+  .shadow-quest-card {
+    background: linear-gradient(
+      135deg,
+      hsl(263 91% 8% / 0.8) 0%,
+      hsl(263 91% 12% / 0.6) 50%,
+      hsl(240 20% 8% / 0.9) 100%
+    );
+  }
+
+  /* Shadow Quest particle effect */
+  .shadow-particles {
+    background-image:
+      radial-gradient(1px 1px at 20% 30%, hsl(263 91% 66% / 0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 80% 20%, hsl(263 91% 66% / 0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 40% 70%, hsl(263 91% 66% / 0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 60% 50%, hsl(263 91% 66% / 0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 10% 80%, hsl(263 91% 66% / 0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 90% 60%, hsl(263 91% 66% / 0.3) 0%, transparent 100%);
+    animation: shadow-drift 4s ease-in-out infinite alternate;
+  }
+
+  @keyframes shadow-drift {
+    0% { opacity: 0.3; transform: translateY(0); }
+    100% { opacity: 0.7; transform: translateY(-3px); }
+  }
 }
