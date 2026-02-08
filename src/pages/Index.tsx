@@ -39,7 +39,12 @@ function markScanDone() {
   localStorage.setItem(LAST_SCAN_DATE_KEY, new Date().toISOString().split('T')[0]);
 }
 
-const Index = () => {
+interface IndexProps {
+  forceFirstScan?: boolean;
+  onScanTriggered?: () => void;
+}
+
+const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
   const { player, penaltyLevel, showFlashEffect, dismissPenaltyBanner, levelUpState } = usePlayer();
   const { logCaffeine, hasLoggedAfter10am, warningDismissed, dismissWarning, logs } = useCaffeine();
   const { toggleQuest, setQuestCompleted, quests, getTimeBlockStats } = useProtocolQuests();
@@ -58,14 +63,22 @@ const Index = () => {
     coldStreakDays: player.coldStreak ?? 0,
   });
 
+  // Force first scan after awakening sequence
+  useEffect(() => {
+    if (forceFirstScan) {
+      setScanOpen(true);
+      onScanTriggered?.();
+    }
+  }, [forceFirstScan, onScanTriggered]);
+
   // Auto-trigger scan on first daily load
   useEffect(() => {
-    if (needsDailyScan() && !autoScanRef.current) {
+    if (needsDailyScan() && !autoScanRef.current && !forceFirstScan) {
       autoScanRef.current = true;
       toast(getSystemToast('stateScanRequired'));
       setTimeout(() => setScanOpen(true), 800);
     }
-  }, [toast]);
+  }, [toast, forceFirstScan]);
 
   const handleScanClose = useCallback((open: boolean) => {
     setScanOpen(open);
