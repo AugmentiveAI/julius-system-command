@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Bot, Users, Brain, FileCode, RotateCcw, Calendar } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { CounterCard } from '@/components/inventory/CounterCard';
 import { ListCard } from '@/components/inventory/ListCard';
@@ -127,6 +128,13 @@ const Inventory = () => {
             <RotateCcw className="h-3.5 w-3.5" />
             Replay Awakening Sequence
           </button>
+        </div>
+
+        {/* Hidden analytics link */}
+        <div className="text-center pt-4">
+          <Link to="/system-analytics" className="font-mono text-[10px] text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors">
+            System Analytics
+          </Link>
         </div>
       </div>
 
