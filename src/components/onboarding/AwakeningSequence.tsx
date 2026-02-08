@@ -91,6 +91,7 @@ export function AwakeningSequence({ onComplete, isReplay = false }: AwakeningSeq
   const [showButtons, setShowButtons] = useState(false);
   const [refuseMessage, setRefuseMessage] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
+  const [buttonsReady, setButtonsReady] = useState(false);
 
   // Start sequence after mount
   useEffect(() => {
@@ -130,6 +131,14 @@ export function AwakeningSequence({ onComplete, isReplay = false }: AwakeningSeq
       clearTimeout(advanceTimer);
     };
   }, [currentStep]);
+
+  // Trigger button fade-in via state (not CSS animation) for cross-browser reliability
+  useEffect(() => {
+    if (showButtons) {
+      const t = setTimeout(() => setButtonsReady(true), 100);
+      return () => clearTimeout(t);
+    }
+  }, [showButtons]);
 
   const handleAccept = useCallback(() => {
     if (!isReplay) {
@@ -215,12 +224,12 @@ export function AwakeningSequence({ onComplete, isReplay = false }: AwakeningSeq
               <div className="flex flex-col items-center gap-4 relative z-[9999]">
                 <button
                   onClick={() => { console.log('[Awakening] I ACCEPT clicked'); handleAccept(); }}
-                  onTouchEnd={(e) => { e.preventDefault(); console.log('[Awakening] I ACCEPT touchend'); handleAccept(); }}
-                  className="group relative cursor-pointer rounded-lg border border-primary/60 bg-primary/10 px-10 py-4 font-display text-sm uppercase tracking-[0.3em] text-primary transition-all duration-500 hover:bg-primary/20 hover:shadow-[0_0_30px_hsl(187_100%_50%/0.4)] min-h-[56px]"
+                  className="group relative cursor-pointer rounded-lg border border-primary/60 bg-primary/10 px-10 py-4 font-display text-sm uppercase tracking-[0.3em] text-primary transition-all duration-700 hover:bg-primary/20 hover:shadow-[0_0_30px_hsl(187_100%_50%/0.4)] min-h-[56px]"
                   style={{
                     boxShadow: '0 0 20px hsl(187 100% 50% / 0.2), inset 0 0 20px hsl(187 100% 50% / 0.05)',
-                    opacity: 0,
-                    animation: 'awaken-btn-in 0.8s ease-out 0.6s forwards',
+                    opacity: buttonsReady ? 1 : 0,
+                    transform: buttonsReady ? 'translateY(0)' : 'translateY(12px)',
+                    transition: 'opacity 0.8s ease-out, transform 0.8s ease-out',
                     position: 'relative',
                     zIndex: 9999,
                     WebkitTapHighlightColor: 'transparent',
@@ -233,11 +242,11 @@ export function AwakeningSequence({ onComplete, isReplay = false }: AwakeningSeq
 
                 <button
                   onClick={() => { console.log('[Awakening] I DECLINE clicked'); handleRefuse(); }}
-                  onTouchEnd={(e) => { e.preventDefault(); console.log('[Awakening] I DECLINE touchend'); handleRefuse(); }}
-                  className="cursor-pointer rounded-lg border border-destructive/40 bg-destructive/5 px-10 py-4 font-display text-sm uppercase tracking-[0.3em] text-destructive/70 transition-all duration-500 hover:bg-destructive/10 hover:text-destructive hover:shadow-[0_0_20px_hsl(0_62%_50%/0.2)] min-h-[56px]"
+                  className="cursor-pointer rounded-lg border border-destructive/40 bg-destructive/5 px-10 py-4 font-display text-sm uppercase tracking-[0.3em] text-destructive/70 transition-all duration-700 hover:bg-destructive/10 hover:text-destructive hover:shadow-[0_0_20px_hsl(0_62%_50%/0.2)] min-h-[56px]"
                   style={{
-                    opacity: 0,
-                    animation: 'awaken-btn-in 0.8s ease-out 1.2s forwards',
+                    opacity: buttonsReady ? 1 : 0,
+                    transform: buttonsReady ? 'translateY(0)' : 'translateY(12px)',
+                    transition: 'opacity 0.8s ease-out 0.4s, transform 0.8s ease-out 0.4s',
                     position: 'relative',
                     zIndex: 9999,
                     WebkitTapHighlightColor: 'transparent',
@@ -250,14 +259,6 @@ export function AwakeningSequence({ onComplete, isReplay = false }: AwakeningSeq
             )}
           </div>
         )}
-
-        {/* Button animation keyframes */}
-        <style>{`
-          @keyframes awaken-btn-in {
-            0% { opacity: 0; transform: translateY(12px); }
-            100% { opacity: 1; transform: translateY(0); }
-          }
-        `}</style>
       </div>
     </div>
   );
