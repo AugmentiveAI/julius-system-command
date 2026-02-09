@@ -31,6 +31,9 @@ import { useWorkout } from '@/hooks/useWorkout';
 import { getTrainingRecommendation } from '@/utils/trainingIntelligence';
 import { useNavigate } from 'react-router-dom';
 import { useSystemCommsContext } from '@/contexts/SystemCommsContext';
+import { useLootDrops } from '@/hooks/useLootDrops';
+import { LootDropToast } from '@/components/effects/LootDropToast';
+import { LootCinematicReveal } from '@/components/effects/LootCinematicReveal';
 
 // ── Storage helpers ──────────────────────────────────────────────────
 
@@ -172,6 +175,15 @@ const Quests = () => {
   const { toast } = useToast();
   const { workoutCompleted } = useWorkout();
   const navigate = useNavigate();
+  const { pendingDrop, rollForLoot, clearPendingDrop } = useLootDrops();
+
+  // Read player streak for loot rolls
+  const playerStreak = useMemo(() => {
+    try {
+      const p = JSON.parse(localStorage.getItem('the-system-player') || '{}');
+      return p.streak ?? 0;
+    } catch { return 0; }
+  }, []);
 
   // Training recommendation
   const trainingRec = useMemo(() =>
@@ -282,15 +294,19 @@ const Quests = () => {
         addCompletion({ questId: quest.id, questTitle: quest.title, xpEarned: quest.adjustedXP, completedAt: new Date().toISOString(), type: 'daily' });
         recordCompletion(persuasionData?.technique ?? null);
         onCalibratedQuestCompleted();
+        // Roll for loot drop
+        rollForLoot(quest.stat, playerStreak);
       }
       return next;
     });
-  }, [calibration, addCompletion, persuasionMap, onCalibratedQuestCompleted]);
+  }, [calibration, addCompletion, persuasionMap, onCalibratedQuestCompleted, rollForLoot, playerStreak]);
 
   const handleProtocolToggle = (questId: string) => {
     const quest = protocolQuests.find(q => q.id === questId);
     if (quest && !quest.completed) {
       addCompletion({ questId: quest.id, questTitle: quest.title, xpEarned: quest.xp + (quest.geneticBonus?.bonusXp || 0), completedAt: new Date().toISOString(), type: 'daily' });
+      // Roll for loot drop
+      rollForLoot(quest.stat, playerStreak);
     }
     toggleQuest(questId);
   };
@@ -337,6 +353,13 @@ const Quests = () => {
 
   return (
     <>
+      {/* Loot Drop Overlays */}
+      {pendingDrop && !pendingDrop.isCinematic && (
+        <LootDropToast item={pendingDrop.item} show={true} onDone={clearPendingDrop} />
+      )}
+      {pendingDrop && pendingDrop.isCinematic && (
+        <LootCinematicReveal item={pendingDrop.item} show={true} onDone={clearPendingDrop} />
+      )}
       <StateCheck open={scanOpen} onOpenChange={handleScanClose} />
       <ShadowQuestNotification show={shadowNotification} onDismiss={dismissShadowNotification} />
       <WeeklyPlanningModal
