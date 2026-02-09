@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Check, Dumbbell, Bike, Wind, Calendar } from 'lucide-react';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { useWorkout } from '@/hooks/useWorkout';
@@ -7,6 +8,11 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { GeneticHUD } from '@/components/genetic/GeneticHUD';
 import { getSystemToast } from '@/utils/systemVoice';
+import { useGeneticState } from '@/hooks/useGeneticState';
+import {
+  getTrainingRecommendation,
+  activateTrainingBuff,
+} from '@/utils/trainingIntelligence';
 
 const WORKOUT_ICONS: Partial<Record<WorkoutType, React.ElementType>> = {
   'push-hypertrophy': Dumbbell,
@@ -32,6 +38,12 @@ const Training = () => {
     allExercisesComplete,
   } = useWorkout();
   const { toast } = useToast();
+  const { geneticState, sprintsToday } = useGeneticState();
+
+  const trainingRec = useMemo(
+    () => getTrainingRecommendation(geneticState, sprintsToday, workoutCompleted),
+    [geneticState, sprintsToday, workoutCompleted]
+  );
 
   const Icon = WORKOUT_ICONS[workout.type] || Dumbbell;
   const today = new Date().getDay();
@@ -39,6 +51,17 @@ const Training = () => {
   const handleCompleteWorkout = () => {
     completeWorkout();
     toast(getSystemToast('workoutComplete', { xp: workout.xp }));
+
+    // Activate post-workout buff
+    if (trainingRec.postWorkoutBuff) {
+      activateTrainingBuff(trainingRec.postWorkoutBuff);
+      const buff = trainingRec.postWorkoutBuff;
+      toast({
+        title: `${buff.icon} ${buff.name} activated`,
+        description: buff.effect,
+        duration: 4000,
+      });
+    }
   };
 
   return (
@@ -55,6 +78,28 @@ const Training = () => {
           </h2>
         </div>
 
+        {/* Context Line — WHY the System recommends today's workout */}
+        {trainingRec.reason && (
+          <div className={`rounded-lg border p-3 ${
+            trainingRec.nudgeType === 'comt-dip'
+              ? 'border-amber-500/30 bg-amber-500/5'
+              : trainingRec.nudgeType === 'morning-activation' || trainingRec.nudgeType === 'general'
+              ? 'border-primary/30 bg-primary/5'
+              : trainingRec.nudgeType === 'post-sprint-recovery'
+              ? 'border-blue-500/30 bg-blue-500/5'
+              : 'border-border bg-card/50'
+          }`}>
+            <p className="font-tech text-sm text-foreground/80">
+              {trainingRec.reason}
+            </p>
+            {trainingRec.postWorkoutBuff && !workoutCompleted && (
+              <p className="mt-1 font-mono text-[10px] text-muted-foreground">
+                After completion: {trainingRec.postWorkoutBuff.icon} {trainingRec.postWorkoutBuff.name} — {trainingRec.postWorkoutBuff.effect}
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Today's Workout Card */}
         <div
           className={`rounded-lg border border-border bg-card p-4 ${
@@ -68,9 +113,7 @@ const Training = () => {
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div
-                className={`flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10`}
-              >
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
                 <Icon className={`h-5 w-5 ${workout.color}`} />
               </div>
               <div>
