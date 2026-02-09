@@ -12,6 +12,7 @@ import { SystemCommsBanner } from "@/components/comms/SystemCommsBanner";
 import { useSystemComms } from "@/hooks/useSystemComms";
 import { useGeneticState } from "@/hooks/useGeneticState";
 import { AwakeningSequence, isFirstRun } from "@/components/onboarding/AwakeningSequence";
+import { GoalCapture } from "@/components/onboarding/GoalCapture";
 import { PreCommitmentModal } from "@/components/quests/PreCommitmentModal";
 import { usePreCommitment } from "@/hooks/usePreCommitment";
 import { SystemCommsContext } from "@/contexts/SystemCommsContext";
@@ -27,6 +28,7 @@ const queryClient = new QueryClient();
 
 const AppContent = () => {
   const [showAwakening, setShowAwakening] = useState(isFirstRun);
+  const [showGoalCapture, setShowGoalCapture] = useState(false);
   const [triggerScan, setTriggerScan] = useState(false);
   const {
     showModal, commitment, isRecovery,
@@ -35,6 +37,17 @@ const AppContent = () => {
 
   const handleAwakeningComplete = () => {
     setShowAwakening(false);
+    setShowGoalCapture(true);
+  };
+
+  const handleGoalSubmit = (goal: string) => {
+    try {
+      const raw = localStorage.getItem('the-system-player');
+      const player = raw ? JSON.parse(raw) : {};
+      player.goal = goal;
+      localStorage.setItem('the-system-player', JSON.stringify(player));
+    } catch { /* ignore */ }
+    setShowGoalCapture(false);
     setTriggerScan(true);
   };
 
@@ -43,6 +56,7 @@ const AppContent = () => {
       <Toaster />
       <Sonner />
       {showAwakening && <AwakeningSequence onComplete={handleAwakeningComplete} />}
+      {showGoalCapture && <GoalCapture onSubmit={handleGoalSubmit} />}
       {showModal && commitment && (
         <PreCommitmentModal
           commitment={commitment}

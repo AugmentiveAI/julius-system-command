@@ -372,6 +372,10 @@ export function usePlayer() {
     }
   }, [toast]);
 
+  const setGoal = useCallback((goal: string) => {
+    setPlayer(prev => ({ ...prev, goal }));
+  }, []);
+
   const completedCount = questState.quests.filter(q => q.completed).length;
   const totalCount = questState.quests.length;
   const penaltyLevel = getPenaltyLevel(player.penalty.consecutiveZeroDays);
@@ -392,5 +396,6 @@ export function usePlayer() {
     addXP,
     applyTrainingStats,
     applyColdStreakMilestone,
+    setGoal,
   };
 }

@@ -27,6 +27,7 @@ import { useGeneticState } from '@/hooks/useGeneticState';
 import { useWeeklyPlanning, shouldShowPlanning } from '@/hooks/useWeeklyPlanning';
 import { WeeklyPlanningModal } from '@/components/planning/WeeklyPlanningModal';
 import { useToast } from '@/hooks/use-toast';
+import { getSystemToast } from '@/utils/systemVoice';
 import { useWorkout } from '@/hooks/useWorkout';
 import { getTrainingRecommendation } from '@/utils/trainingIntelligence';
 import { useNavigate } from 'react-router-dom';
@@ -245,6 +246,25 @@ const Quests = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Shield usage toast on load
+  const shieldToastShownRef = useRef(false);
+  useEffect(() => {
+    if (pillarStreak.shieldJustUsed && !shieldToastShownRef.current) {
+      shieldToastShownRef.current = true;
+      const goal = (() => {
+        try {
+          const p = JSON.parse(localStorage.getItem('the-system-player') || '{}');
+          return p.goal ?? 'becoming who you said you would be';
+        } catch { return 'becoming who you said you would be'; }
+      })();
+      toast(getSystemToast('pillarShieldUsed', { goal }));
+      // If shield is now gone, follow up
+      if (!pillarStreak.shieldAvailable) {
+        setTimeout(() => toast(getSystemToast('pillarShieldBroken', { goal })), 3000);
+      }
+    }
+  }, [pillarStreak.shieldJustUsed, pillarStreak.shieldAvailable, toast]);
+
   const calibration = useMemo<CalibrationResult | null>(() => {
     const check = todayCheck || (() => {
       // Fallback to latest check from any day
@@ -352,6 +372,14 @@ const Quests = () => {
     toggleQuest(questId);
   };
 
+  // Load player goal for identity-linked messages
+  const playerGoal = useMemo(() => {
+    try {
+      const p = JSON.parse(localStorage.getItem('the-system-player') || '{}');
+      return p.goal ?? 'becoming who you said you would be';
+    } catch { return 'becoming who you said you would be'; }
+  }, []);
+
   const handlePillarToggle = useCallback((questId: string) => {
     const quest = pillar.quests.find(q => q.id === questId);
     if (quest && !pillar.isCompleted(questId)) {
@@ -372,16 +400,23 @@ const Quests = () => {
         if (bonus > 0) {
           setPillarBonusToast(bonus);
           addCompletion({ questId: 'pillar-mastery-bonus', questTitle: 'Pillar Mastery Bonus', xpEarned: bonus, completedAt: new Date().toISOString(), type: 'daily' });
-          toast({
-            title: bonus >= 75 ? '🏆 PILLAR MASTERY — JACKPOT!' : '🏆 PILLAR MASTERY',
-            description: `All 3 pillars cleared. +${bonus} XP bonus. Streak: ${pillarStreak.streak + 1} days.`,
-            duration: 4000,
-          });
+          
+          // Identity-linked mastery message
+          toast(getSystemToast('pillarMastery', { goal: playerGoal }));
           setTimeout(() => setPillarBonusToast(null), 4000);
+
+          // Check for streak milestones (7, 14, 30)
+          const newStreak = pillarStreak.streak + 1;
+          if ([7, 14, 30].includes(newStreak)) {
+            setTimeout(() => {
+              toast(getSystemToast('pillarStreakMilestone', { streak: newStreak, goal: playerGoal }));
+              rollForLoot('discipline', playerStreak);
+            }, 2000);
+          }
         }
       }
     }
-  }, [pillar, addCompletion, rollForLoot, playerStreak, pillarStreak, toast]);
+  }, [pillar, addCompletion, rollForLoot, playerStreak, pillarStreak, toast, playerGoal]);
 
   // Auto-honor pre-commitment
   useEffect(() => {
