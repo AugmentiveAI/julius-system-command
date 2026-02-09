@@ -64,7 +64,7 @@ export const FocusModeOverlay = ({
   // All done screen
   if (allDone) {
     return (
-      <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background">
+      <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background" style={{ minHeight: '100dvh' }}>
         <div className="text-center space-y-6 px-8">
           <p className="font-mono text-xs uppercase tracking-[0.3em] text-muted-foreground">
             STATUS
@@ -91,7 +91,7 @@ export const FocusModeOverlay = ({
   // No quest available
   if (!currentQuest) {
     return (
-      <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background">
+      <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background" style={{ minHeight: '100dvh' }}>
         <div className="text-center space-y-4 px-8">
           <p className="font-mono text-sm text-muted-foreground">
             No quests available. Run a scan first.
@@ -121,7 +121,7 @@ export const FocusModeOverlay = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col bg-background">
+    <div className="fixed inset-0 z-[100] flex flex-col bg-background" style={{ minHeight: '100dvh' }}>
       {/* Top bar area — sprint counter + progress */}
       <div className="flex items-center justify-between px-5 pt-4 pb-2">
         <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
@@ -194,6 +194,7 @@ export const FocusModeOverlay = ({
         <button
           onClick={handleComplete}
           className="w-full max-w-xs h-14 rounded-lg bg-primary text-primary-foreground font-display text-sm tracking-widest uppercase transition-all hover:shadow-[0_0_24px_hsl(187_100%_50%/0.4)] active:scale-95"
+          style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
         >
           COMPLETE
         </button>

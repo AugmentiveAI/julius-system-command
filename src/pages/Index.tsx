@@ -293,7 +293,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
         }}
       />
 
-      <div className="min-h-screen bg-background pb-24 pt-2">
+      <div className="min-h-screen bg-background pt-2" style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}>
         {/* 1. Top Bar */}
         <TopBar systemRecommendation={systemRec} />
 
