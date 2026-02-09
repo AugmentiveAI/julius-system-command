@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Clock, ScanLine, Check, Sparkles, Play } from 'lucide-react';
+import { Clock, ScanLine, Check, Sparkles, Play, Brain, Zap, Target } from 'lucide-react';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import StateCheck from '@/components/StateCheck';
 import { useProtocolQuests } from '@/hooks/useProtocolQuests';
@@ -34,6 +34,8 @@ import { useSystemCommsContext } from '@/contexts/SystemCommsContext';
 import { useLootDrops } from '@/hooks/useLootDrops';
 import { LootDropToast } from '@/components/effects/LootDropToast';
 import { LootCinematicReveal } from '@/components/effects/LootCinematicReveal';
+import { usePillarQuests } from '@/hooks/usePillarQuests';
+import { PILLAR_CONFIG, Pillar } from '@/types/pillarQuests';
 
 // ── Storage helpers ──────────────────────────────────────────────────
 
@@ -176,6 +178,7 @@ const Quests = () => {
   const { workoutCompleted } = useWorkout();
   const navigate = useNavigate();
   const { pendingDrop, rollForLoot, clearPendingDrop } = useLootDrops();
+  const pillar = usePillarQuests();
 
   // Read player streak for loot rolls
   const playerStreak = useMemo(() => {
@@ -305,10 +308,18 @@ const Quests = () => {
     const quest = protocolQuests.find(q => q.id === questId);
     if (quest && !quest.completed) {
       addCompletion({ questId: quest.id, questTitle: quest.title, xpEarned: quest.xp + (quest.geneticBonus?.bonusXp || 0), completedAt: new Date().toISOString(), type: 'daily' });
-      // Roll for loot drop
       rollForLoot(quest.stat, playerStreak);
     }
     toggleQuest(questId);
+  };
+
+  const handlePillarToggle = (questId: string) => {
+    const quest = pillar.quests.find(q => q.id === questId);
+    if (quest && !pillar.isCompleted(questId)) {
+      addCompletion({ questId: quest.id, questTitle: quest.title, xpEarned: quest.xp, completedAt: new Date().toISOString(), type: 'daily' });
+      rollForLoot(quest.stat, playerStreak);
+    }
+    pillar.toggleQuest(questId);
   };
 
   // Auto-honor pre-commitment
@@ -341,8 +352,10 @@ const Quests = () => {
   const calibratedTotal = calibration?.recommendedQuests.length ?? 0;
   const calibratedDone = completedCalibrated.size;
   const protocolStats = getTotalStats();
-  const totalQuests = calibratedTotal + protocolStats.total;
-  const totalDone = calibratedDone + protocolStats.completed;
+  const pillarTotal = pillar.quests.length;
+  const pillarDone = pillar.completedCount;
+  const totalQuests = calibratedTotal + protocolStats.total + pillarTotal;
+  const totalDone = calibratedDone + protocolStats.completed + pillarDone;
   const allComplete = totalQuests > 0 && totalDone >= totalQuests;
   const progressPct = totalQuests > 0 ? (totalDone / totalQuests) * 100 : 0;
 
@@ -491,7 +504,69 @@ const Quests = () => {
             </div>
           )}
 
-          {/* Pre-committed quest (top, gold left-border) */}
+          {/* ── DAILY PILLARS ── */}
+          {pillar.quests.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between px-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-display text-xs font-bold tracking-widest text-foreground/90">
+                    DAILY PILLARS
+                  </span>
+                  <span className="font-mono text-[10px] text-muted-foreground capitalize">
+                    {pillar.dayType} day
+                  </span>
+                </div>
+                {pillar.allCompleted && (
+                  <span className="font-mono text-[10px] text-green-400">ALL CLEAR ✓</span>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 gap-2">
+                {pillar.quests.map(quest => {
+                  const done = pillar.isCompleted(quest.id);
+                  const cfg = PILLAR_CONFIG[quest.pillar];
+                  const PillarIcon = quest.pillar === 'mind' ? Brain : quest.pillar === 'body' ? Zap : Target;
+
+                  return (
+                    <button
+                      key={quest.id}
+                      onClick={() => handlePillarToggle(quest.id)}
+                      className={`flex items-center gap-3 rounded-lg border p-3 text-left transition-all ${
+                        done
+                          ? 'border-green-500/30 bg-green-500/5'
+                          : `border-border bg-card/50 hover:border-primary/20`
+                      }`}
+                    >
+                      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md border ${
+                        done ? 'border-green-500 bg-green-500/20' : cfg.glowClass + ' bg-card'
+                      }`}>
+                        {done ? (
+                          <Check className="h-4 w-4 text-green-400" />
+                        ) : (
+                          <PillarIcon className={`h-4 w-4 ${cfg.color}`} />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <h3 className={`font-tech text-sm font-semibold ${done ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
+                            {quest.title}
+                          </h3>
+                          <span className={`font-mono text-[10px] font-bold tracking-wider ${done ? 'text-muted-foreground' : cfg.color}`}>
+                            {cfg.label}
+                          </span>
+                        </div>
+                        <p className="font-mono text-[10px] text-muted-foreground mt-0.5">
+                          {quest.description}
+                          <span className="ml-2 text-primary font-semibold">+{quest.xp} XP</span>
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {todayCommitment && todayCommitment.completed === undefined && activeCheck && calibration && (
             (() => {
               const q = calibration.recommendedQuests.find(cq => cq.id === todayCommitment.questId);
