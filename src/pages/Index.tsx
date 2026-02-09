@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { TopBar } from '@/components/dashboard/TopBar';
 import { DashboardMessage } from '@/components/dashboard/DashboardMessage';
 import { ProgressRing } from '@/components/dashboard/ProgressRing';
@@ -11,6 +11,9 @@ import { LevelUpOverlay } from '@/components/effects/LevelUpOverlay';
 import { GeneticWarning } from '@/components/warnings/GeneticWarning';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { WeeklyPlanningModal } from '@/components/planning/WeeklyPlanningModal';
+import { FocusModeOverlay } from '@/components/focus/FocusModeOverlay';
+import { useFocusModeContext } from '@/contexts/FocusModeContext';
+import { useFocusMode } from '@/hooks/useFocusMode';
 import { usePlayer } from '@/hooks/usePlayer';
 import { useCaffeine } from '@/hooks/useCaffeine';
 import { useProtocolQuests } from '@/hooks/useProtocolQuests';
@@ -21,6 +24,10 @@ import { useToast } from '@/hooks/use-toast';
 import { useSystemStrategy } from '@/hooks/useSystemStrategy';
 import { getSystemToast } from '@/utils/systemVoice';
 import { useWeeklyPlanning } from '@/hooks/useWeeklyPlanning';
+import { calibrateQuests, CalibratedQuest } from '@/utils/questCalibration';
+import { usePersuasion } from '@/hooks/usePersuasion';
+import { loadCachedResistance } from '@/utils/resistanceTracker';
+import { PlayerStateCheck } from '@/types/playerState';
 
 const LAST_SCAN_DATE_KEY = 'systemLastScanDate';
 
@@ -57,6 +64,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
   const { strategy, dayNumber, playerTitle } = useSystemStrategy();
   const { logColdExposure } = useGeneticState();
   const weekly = useWeeklyPlanning();
+  const focusMode = useFocusModeContext();
 
   const [scanOpen, setScanOpen] = useState(false);
   const autoScanRef = useRef(false);
@@ -71,14 +79,86 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
   // Determine system recommendation from latest state
   const latestStateRaw = localStorage.getItem('systemStateHistory');
   let systemRec: 'push' | 'steady' | 'recover' = 'steady';
+  let latestCheck: PlayerStateCheck | null = null;
   try {
     if (latestStateRaw) {
-      const history = JSON.parse(latestStateRaw);
+      const history: PlayerStateCheck[] = JSON.parse(latestStateRaw);
       if (history.length > 0) {
         systemRec = history[history.length - 1].systemRecommendation || 'steady';
+        latestCheck = history[history.length - 1];
       }
     }
   } catch { /* ignore */ }
+
+  // Calibrated quests for focus mode
+  const calibration = useMemo(() => {
+    if (!latestCheck) return null;
+    try {
+      const stateHistory: PlayerStateCheck[] = JSON.parse(localStorage.getItem('systemStateHistory') || '[]');
+      const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
+      const recentHistory = stateHistory.filter(c => new Date(c.timestamp) >= weekAgo);
+      const completionHistory = JSON.parse(localStorage.getItem('systemCalibratedCompletions') || '[]');
+      return calibrateQuests(latestCheck, recentHistory, completionHistory, new Date());
+    } catch { return null; }
+  }, [latestCheck]);
+
+  const [completedCalibratedIds] = useState<Set<string>>(() => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const history = JSON.parse(localStorage.getItem('systemCalibratedCompletions') || '[]');
+      return new Set(history.filter((c: any) => c.completedAt?.startsWith(today)).map((c: any) => c.questId));
+    } catch { return new Set<string>(); }
+  });
+
+  const resistanceData = useMemo(() => loadCachedResistance(), []);
+  const persuasionMap = usePersuasion(calibration?.recommendedQuests ?? [], latestCheck, resistanceData);
+
+  // Pre-commitment
+  const preCommitmentRaw = localStorage.getItem('systemPreCommitment');
+  let preCommittedId: string | null = null;
+  try {
+    if (preCommitmentRaw) {
+      const pc = JSON.parse(preCommitmentRaw);
+      if (pc.date === new Date().toISOString().split('T')[0] && pc.accepted) {
+        preCommittedId = pc.questId;
+      }
+    }
+  } catch { /* ignore */ }
+
+  const focus = useFocusMode(
+    calibration?.recommendedQuests ?? [],
+    completedCalibratedIds,
+    quests,
+    preCommittedId,
+  );
+
+  // Handle focus mode quest completion
+  const handleFocusComplete = useCallback(() => {
+    if (!focus.currentQuest) return;
+    const q = focus.currentQuest;
+    // Toggle in protocol quests if it's a protocol quest
+    const protocolQuest = quests.find(pq => pq.id === q.id);
+    if (protocolQuest && !protocolQuest.completed) {
+      toggleQuest(q.id);
+    }
+    focus.completeCurrentQuest();
+  }, [focus, quests, toggleQuest]);
+
+  const handleFocusSkip = useCallback(() => {
+    focus.skipCurrentQuest();
+  }, [focus]);
+
+  const handleFocusExit = useCallback(() => {
+    focusMode.deactivate();
+  }, [focusMode]);
+
+  const handleFocusCompleteQuest = useCallback((questId: string) => {
+    // Also toggle protocol quest if applicable
+    const protocolQuest = quests.find(pq => pq.id === questId);
+    if (protocolQuest && !protocolQuest.completed) {
+      toggleQuest(questId);
+    }
+  }, [quests, toggleQuest]);
 
   // Force first scan after awakening sequence
   useEffect(() => {
@@ -162,11 +242,34 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
   const completedQuests = quests.filter(q => q.completed).length;
   const oneLiner = buildDailyOneLiner(strategy.dailyBrief);
 
+  const currentPersuasion = focus.currentQuest
+    ? persuasionMap.get(focus.currentQuest.id) ?? null
+    : null;
+
   return (
     <>
       <FlashOverlay show={showFlashEffect} />
       <LevelUpOverlay show={levelUpState.show} newLevel={levelUpState.newLevel} />
       <StateCheck open={scanOpen} onOpenChange={handleScanClose} />
+
+      {/* Focus Mode Overlay */}
+      <FocusModeOverlay
+        active={focusMode.active}
+        currentQuest={focus.currentQuest}
+        allDone={focus.allDone}
+        remainingCount={focus.remainingCount}
+        totalCount={focus.totalCount}
+        completedCount={focus.completedCount}
+        lastXPAwarded={focus.lastXPAwarded}
+        showXPAnimation={focus.showXPAnimation}
+        persuasionData={currentPersuasion}
+        sprintTimeRemaining={null}
+        onComplete={handleFocusComplete}
+        onSkip={handleFocusSkip}
+        onExit={handleFocusExit}
+        onCompleteQuest={handleFocusCompleteQuest}
+      />
+
       <WeeklyPlanningModal
         open={weekly.showModal}
         onOpenChange={weekly.setShowModal}
