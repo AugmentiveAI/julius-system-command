@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { loadProfile } from '@/utils/persuasionEngine';
 import { PersuasionTechnique, TECHNIQUE_LIBRARY } from '@/types/persuasionEngine';
 import { getShadowState } from '@/utils/shadowQuests';
@@ -72,6 +71,7 @@ const TECHNIQUE_LABELS: Record<PersuasionTechnique, string> = {
 // ── Component ────────────────────────────────────────────────────────
 
 const SystemAnalytics = () => {
+  const navigate = useNavigate();
   const profile = useMemo(() => loadProfile(), []);
   const outcomeLog = useMemo(() => loadOutcomeLog(), []);
   const preCommitHistory = useMemo(() => loadPreCommitHistory(), []);
@@ -209,15 +209,13 @@ const SystemAnalytics = () => {
     <div className="min-h-screen bg-background pb-12 pt-6">
       <div className="mx-auto max-w-3xl px-4 space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <Link to="/more" className="text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-          <div>
-            <h1 className="font-mono text-lg font-bold text-foreground">System Analytics</h1>
-            <p className="font-mono text-xs text-muted-foreground">Persuasion Engine Performance Dashboard</p>
-          </div>
-        </div>
+        <button onClick={() => navigate('/more')} className="font-mono text-xs text-primary mb-4">
+          ← Back
+        </button>
+        <h1 className="font-display text-sm uppercase tracking-[0.3em] text-muted-foreground text-center mb-1">
+          System Analytics
+        </h1>
+        <p className="font-mono text-xs text-muted-foreground text-center mb-2">Persuasion Engine Performance Dashboard</p>
 
         {/* 1. Technique Effectiveness */}
         <Section title="Technique Effectiveness">
