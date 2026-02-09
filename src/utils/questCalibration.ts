@@ -6,6 +6,8 @@ import {
   QUEST_TEMPLATES,
   CATEGORY_STAT_MAP,
 } from '@/types/questDifficulty';
+import { getDayProfile } from '@/utils/weeklyRhythm';
+import { scoreRevenueImpact, prioritizeByRevenue } from '@/utils/revenueImpact';
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -265,6 +267,29 @@ export function calibrateQuests(
       }
     }
   }
+
+  // ── Revenue prioritization (weekly rhythm) ──
+
+  const dayProfile = getDayProfile(currentTime);
+  quests = prioritizeByRevenue(
+    quests,
+    dayProfile.revenueWeight,
+    (q) => {
+      const tpl = QUEST_TEMPLATES.find(t => t.id === q.id);
+      return tpl ? scoreRevenueImpact(tpl) : { impact: 'none', score: 0, reason: 'Unknown quest' };
+    },
+  );
+
+  // Cap quest count to day's maxSprints worth of sprint quests
+  const maxSprints = dayProfile.maxSprints;
+  let sprintsSeen = 0;
+  quests = quests.filter(q => {
+    if (q.sprintCount > 0) {
+      sprintsSeen += q.sprintCount;
+      if (sprintsSeen > maxSprints) return false;
+    }
+    return true;
+  });
 
   // ── COMT time-of-day modifiers ──
 
