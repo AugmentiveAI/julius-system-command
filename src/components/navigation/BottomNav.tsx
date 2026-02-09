@@ -1,15 +1,13 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Scroll, Dumbbell, Trophy, Dna, Backpack, BookOpen } from 'lucide-react';
+import { Home, Swords, Dumbbell, TrendingUp, MoreHorizontal } from 'lucide-react';
 import { useCurrentMode } from '@/components/dashboard/CurrentStateCard';
 
 const navItems = [
-  { path: '/', label: 'Dashboard', icon: Home },
-  { path: '/quests', label: 'Quests', icon: Scroll },
-  { path: '/training', label: 'Training', icon: Dumbbell },
-  { path: '/milestones', label: 'Milestones', icon: Trophy },
-  { path: '/genetics', label: 'Genetics', icon: Dna },
-  { path: '/inventory', label: 'Inventory', icon: Backpack },
-  { path: '/history', label: 'History', icon: BookOpen },
+  { path: '/', label: 'Home', icon: Home },
+  { path: '/quests', label: 'Quests', icon: Swords },
+  { path: '/training', label: 'Train', icon: Dumbbell },
+  { path: '/progress', label: 'Progress', icon: TrendingUp },
+  { path: '/more', label: 'More', icon: MoreHorizontal },
 ];
 
 const MODE_DOT_COLORS: Record<string, string> = {
@@ -24,7 +22,7 @@ export const BottomNav = () => {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 border-t border-border bg-card/95 backdrop-blur-sm">
-      <div className="mx-auto flex max-w-2xl items-center justify-around py-2">
+      <div className="mx-auto flex max-w-md items-center justify-around py-2">
         {navItems.map(({ path, label, icon: Icon }) => {
           const isActive = location.pathname === path;
           const showDot = path === '/' && currentMode;
@@ -32,15 +30,13 @@ export const BottomNav = () => {
             <Link
               key={path}
               to={path}
-              className={`relative flex flex-col items-center gap-0.5 px-1 py-2 transition-colors ${
-                isActive
-                  ? 'text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
+              className={`relative flex flex-col items-center gap-0.5 px-3 py-2 transition-colors ${
+                isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               <div className="relative">
                 <Icon
-                  className={`h-5 w-5 ${isActive ? 'text-glow-primary' : ''}`}
+                  className={`h-5 w-5`}
                   style={
                     isActive
                       ? { filter: 'drop-shadow(0 0 6px hsl(187 100% 50% / 0.6))' }
