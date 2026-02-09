@@ -1,7 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { PreCommitment } from '@/utils/persuasionEngine';
 import { DIFFICULTY_BADGE_CONFIG, QuestDifficulty } from '@/types/questDifficulty';
-import { Swords, Clock, Zap, X } from 'lucide-react';
+import { Swords, Clock, Zap, X, Brain, Target } from 'lucide-react';
+import { PILLAR_QUESTS } from '@/data/pillarQuests';
+import { getDayProfile } from '@/utils/weeklyRhythm';
+import { PILLAR_CONFIG, Pillar } from '@/types/pillarQuests';
 
 interface PreCommitmentModalProps {
   commitment: PreCommitment;
@@ -20,6 +23,14 @@ export const PreCommitmentModal = ({
 }: PreCommitmentModalProps) => {
   const [accepted, setAccepted] = useState(false);
   const [visible, setVisible] = useState(false);
+
+  // Get tomorrow's pillars for preview
+  const tomorrowPillars = useMemo(() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const dayProfile = getDayProfile(tomorrow);
+    return PILLAR_QUESTS.filter(q => q.dayTypes.includes(dayProfile.dayType));
+  }, []);
 
   // Fade in
   useEffect(() => {
@@ -128,8 +139,34 @@ export const PreCommitmentModal = ({
               <p className={`font-mono text-xs italic leading-relaxed ${
                 isRecovery ? 'text-secondary/80' : 'text-foreground/80'
               }`}>
-                {commitment.commitMessage}
+              {commitment.commitMessage}
               </p>
+
+              {/* Tomorrow's Pillars Preview */}
+              {tomorrowPillars.length > 0 && (
+                <div className="space-y-2">
+                  <p className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
+                    Tomorrow's Pillars
+                  </p>
+                  <div className="flex gap-2">
+                    {tomorrowPillars.map(pq => {
+                      const cfg = PILLAR_CONFIG[pq.pillar];
+                      const Icon = pq.pillar === 'mind' ? Brain : pq.pillar === 'body' ? Zap : Target;
+                      return (
+                        <div
+                          key={pq.id}
+                          className={`flex-1 rounded-md border p-2 text-center ${cfg.glowClass} bg-card/50`}
+                        >
+                          <Icon className={`h-4 w-4 mx-auto ${cfg.color}`} />
+                          <p className="font-mono text-[9px] text-muted-foreground mt-1 truncate">
+                            {pq.title}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Buttons */}

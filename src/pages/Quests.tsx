@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Clock, ScanLine, Check, Sparkles, Play, Brain, Zap, Target } from 'lucide-react';
+import { Clock, ScanLine, Check, Sparkles, Play, Brain, Zap, Target, Shield, ShieldOff } from 'lucide-react';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import StateCheck from '@/components/StateCheck';
 import { useProtocolQuests } from '@/hooks/useProtocolQuests';
@@ -36,6 +36,8 @@ import { LootDropToast } from '@/components/effects/LootDropToast';
 import { LootCinematicReveal } from '@/components/effects/LootCinematicReveal';
 import { usePillarQuests } from '@/hooks/usePillarQuests';
 import { PILLAR_CONFIG, Pillar } from '@/types/pillarQuests';
+import { usePillarStreak } from '@/hooks/usePillarStreak';
+import { PillarConfirmation } from '@/components/quests/PillarConfirmation';
 
 // ── Storage helpers ──────────────────────────────────────────────────
 
@@ -179,6 +181,43 @@ const Quests = () => {
   const navigate = useNavigate();
   const { pendingDrop, rollForLoot, clearPendingDrop } = useLootDrops();
   const pillar = usePillarQuests();
+  const pillarStreak = usePillarStreak();
+  const [pillarBonusToast, setPillarBonusToast] = useState<number | null>(null);
+
+  // Morning confirmation — require if pillars were previewed last night but not yet confirmed today
+  const [pillarsConfirmed, setPillarsConfirmed] = useState(() => {
+    try {
+      const stored = localStorage.getItem('systemPillarConfirmation');
+      if (!stored) return false;
+      const data = JSON.parse(stored);
+      return data.confirmedDate === new Date().toISOString().split('T')[0];
+    } catch { return false; }
+  });
+
+  // Check if pre-commitment previewed pillars last night
+  const needsPillarConfirmation = useMemo(() => {
+    if (pillarsConfirmed) return false;
+    try {
+      const raw = localStorage.getItem('systemPreCommitment');
+      if (!raw) return false;
+      const pc = JSON.parse(raw);
+      // If there was a pre-commitment accepted yesterday evening, pillars were previewed
+      if (pc.accepted && pc.acceptedAt) {
+        const acceptDate = new Date(pc.acceptedAt).toISOString().split('T')[0];
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        return acceptDate === yesterday.toISOString().split('T')[0];
+      }
+    } catch { /* ignore */ }
+    return false;
+  }, [pillarsConfirmed]);
+
+  const handlePillarConfirm = useCallback(() => {
+    const today = new Date().toISOString().split('T')[0];
+    localStorage.setItem('systemPillarConfirmation', JSON.stringify({ confirmedDate: today }));
+    setPillarsConfirmed(true);
+    toast({ title: '⚔️ Pillars Confirmed', description: 'The System holds you accountable.', duration: 2000 });
+  }, [toast]);
 
   // Read player streak for loot rolls
   const playerStreak = useMemo(() => {
@@ -313,14 +352,36 @@ const Quests = () => {
     toggleQuest(questId);
   };
 
-  const handlePillarToggle = (questId: string) => {
+  const handlePillarToggle = useCallback((questId: string) => {
     const quest = pillar.quests.find(q => q.id === questId);
     if (quest && !pillar.isCompleted(questId)) {
       addCompletion({ questId: quest.id, questTitle: quest.title, xpEarned: quest.xp, completedAt: new Date().toISOString(), type: 'daily' });
       rollForLoot(quest.stat, playerStreak);
     }
     pillar.toggleQuest(questId);
-  };
+
+    // Check if all pillars now complete (after this toggle)
+    const wasCompleted = pillar.isCompleted(questId);
+    if (!wasCompleted) {
+      // Will become completed — check if this makes all 3 done
+      const othersDone = pillar.quests
+        .filter(q => q.id !== questId)
+        .every(q => pillar.isCompleted(q.id));
+      if (othersDone && !pillarStreak.hasCompletedToday) {
+        const bonus = pillarStreak.recordAllPillarsComplete();
+        if (bonus > 0) {
+          setPillarBonusToast(bonus);
+          addCompletion({ questId: 'pillar-mastery-bonus', questTitle: 'Pillar Mastery Bonus', xpEarned: bonus, completedAt: new Date().toISOString(), type: 'daily' });
+          toast({
+            title: bonus >= 75 ? '🏆 PILLAR MASTERY — JACKPOT!' : '🏆 PILLAR MASTERY',
+            description: `All 3 pillars cleared. +${bonus} XP bonus. Streak: ${pillarStreak.streak + 1} days.`,
+            duration: 4000,
+          });
+          setTimeout(() => setPillarBonusToast(null), 4000);
+        }
+      }
+    }
+  }, [pillar, addCompletion, rollForLoot, playerStreak, pillarStreak, toast]);
 
   // Auto-honor pre-commitment
   useEffect(() => {
@@ -504,6 +565,11 @@ const Quests = () => {
             </div>
           )}
 
+          {/* Morning Pillar Confirmation */}
+          {needsPillarConfirmation && pillar.quests.length > 0 && (
+            <PillarConfirmation quests={pillar.quests} onConfirm={handlePillarConfirm} />
+          )}
+
           {/* ── DAILY PILLARS ── */}
           {pillar.quests.length > 0 && (
             <div className="space-y-2">
@@ -516,10 +582,35 @@ const Quests = () => {
                     {pillar.dayType} day
                   </span>
                 </div>
-                {pillar.allCompleted && (
-                  <span className="font-mono text-[10px] text-green-400">ALL CLEAR ✓</span>
-                )}
+                <div className="flex items-center gap-2">
+                  {/* Shield indicator */}
+                  <div className="flex items-center gap-1" title={pillarStreak.shieldAvailable ? 'Pillar Shield active — 1 free miss this week' : 'Shield used this week'}>
+                    {pillarStreak.shieldAvailable ? (
+                      <Shield className="h-3.5 w-3.5 text-primary" />
+                    ) : (
+                      <ShieldOff className="h-3.5 w-3.5 text-muted-foreground/40" />
+                    )}
+                  </div>
+                  {/* Streak */}
+                  {pillarStreak.streak > 0 && (
+                    <span className="font-mono text-[10px] text-secondary font-bold">
+                      🔥 {pillarStreak.streak}
+                    </span>
+                  )}
+                  {pillar.allCompleted && (
+                    <span className="font-mono text-[10px] text-green-400">✓</span>
+                  )}
+                </div>
               </div>
+
+              {/* Variable bonus banner */}
+              {pillarBonusToast && (
+                <div className="rounded-lg border border-primary/40 bg-primary/10 p-2 text-center animate-in fade-in duration-500">
+                  <span className="font-mono text-xs text-primary font-bold">
+                    ⚡ PILLAR MASTERY — +{pillarBonusToast} XP
+                  </span>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 gap-2">
                 {pillar.quests.map(quest => {
