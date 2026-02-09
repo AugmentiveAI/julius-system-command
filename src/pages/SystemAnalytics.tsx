@@ -210,7 +210,7 @@ const SystemAnalytics = () => {
       <div className="mx-auto max-w-3xl px-4 space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <Link to="/inventory" className="text-muted-foreground hover:text-foreground transition-colors">
+          <Link to="/more" className="text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
