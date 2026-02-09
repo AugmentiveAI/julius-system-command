@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Clock, ScanLine, Check, Sparkles, Play } from 'lucide-react';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import StateCheck from '@/components/StateCheck';
@@ -30,6 +30,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useWorkout } from '@/hooks/useWorkout';
 import { getTrainingRecommendation } from '@/utils/trainingIntelligence';
 import { useNavigate } from 'react-router-dom';
+import { useSystemCommsContext } from '@/contexts/SystemCommsContext';
 
 // ── Storage helpers ──────────────────────────────────────────────────
 
@@ -223,6 +224,39 @@ const Quests = () => {
     calibration.recommendedQuests.forEach(q => groups[assignTimeBlock(q)].push(q));
     return groups;
   }, [calibration]);
+
+  // Enqueue quest-context comms
+  const { enqueue: enqueueComm } = useSystemCommsContext();
+  const commsEnqueuedRef = useRef(false);
+
+  useEffect(() => {
+    if (!calibration || commsEnqueuedRef.current) return;
+    commsEnqueuedRef.current = true;
+    const isSprint = [5, 6].includes(new Date().getDay());
+    const resistanceIds = new Set(resistanceData?.hardAvoidanceQuests?.map(q => q.questId) ?? []);
+
+    for (const q of calibration.recommendedQuests) {
+      if (q.difficulty === 'S') {
+        enqueueComm({ id: 'srank-assigned', message: 'S-Rank assigned. High difficulty. High reward. The System chose this for a reason.', priority: 'quest' });
+        break;
+      }
+    }
+    for (const q of calibration.recommendedQuests) {
+      if (resistanceIds.has(q.id)) {
+        enqueueComm({ id: 'resistance-quest', message: 'This quest targets a weak point. Completing it reduces your resistance score.', priority: 'quest' });
+        break;
+      }
+    }
+    if (isSprint) {
+      const hasRevenue = calibration.recommendedQuests.some(q => q.stat === 'sales' || q.stat === 'wealth');
+      if (hasRevenue) {
+        enqueueComm({ id: 'revenue-sprint', message: 'Revenue quest. This directly moves you toward $10K MRR.', priority: 'quest' });
+      }
+    }
+    if (todayCommitment && todayCommitment.completed === undefined) {
+      enqueueComm({ id: 'precommit-reminder', message: 'You committed to this last night. Honor it.', priority: 'quest' });
+    }
+  }, [calibration, resistanceData, enqueueComm, todayCommitment]);
 
   const handleScanClose = useCallback((open: boolean) => {
     setScanOpen(open);

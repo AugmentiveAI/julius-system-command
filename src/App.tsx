@@ -8,9 +8,13 @@ import { HistoryProvider } from "@/contexts/HistoryContext";
 import { FocusModeProvider } from "@/contexts/FocusModeContext";
 import { FocusFAB } from "@/components/focus/FocusFAB";
 import { useFocusModeContext } from "@/contexts/FocusModeContext";
+import { SystemCommsBanner } from "@/components/comms/SystemCommsBanner";
+import { useSystemComms } from "@/hooks/useSystemComms";
+import { useGeneticState } from "@/hooks/useGeneticState";
 import { AwakeningSequence, isFirstRun } from "@/components/onboarding/AwakeningSequence";
 import { PreCommitmentModal } from "@/components/quests/PreCommitmentModal";
 import { usePreCommitment } from "@/hooks/usePreCommitment";
+import { SystemCommsContext } from "@/contexts/SystemCommsContext";
 import Index from "./pages/Index";
 import Quests from "./pages/Quests";
 import Training from "./pages/Training";
@@ -64,12 +68,56 @@ const AppContent = () => {
 };
 
 const AppWithFAB = () => {
-  const { active, activate } = useFocusModeContext();
+  const { active: focusActive, activate } = useFocusModeContext();
+  const { geneticState, sprintsToday } = useGeneticState();
+
+  // Determine system rec and sprint active from localStorage
+  let systemRec: string | null = null;
+  try {
+    const raw = localStorage.getItem('systemStateHistory');
+    if (raw) {
+      const history = JSON.parse(raw);
+      if (history.length > 0) systemRec = history[history.length - 1].systemRecommendation || null;
+    }
+  } catch { /* ignore */ }
+
+  // Check if sprint timer is active
+  let isSprintActive = false;
+  try {
+    const raw = localStorage.getItem('systemSprintTimer');
+    if (raw) {
+      const data = JSON.parse(raw);
+      isSprintActive = data.phase === 'sprinting' || data.phase === 'break' || data.phase === 'extended-break';
+    }
+  } catch { /* ignore */ }
+
+  // Check training completion
+  let trainingCompleted = false;
+  try {
+    const raw = localStorage.getItem('systemWorkoutData');
+    if (raw) {
+      const data = JSON.parse(raw);
+      trainingCompleted = data.completedToday === true;
+    }
+  } catch { /* ignore */ }
+
+  const comms = useSystemComms({
+    comtPhase: geneticState.comtPhase,
+    sprintsToday,
+    systemRec,
+    consecutiveCompleted: 0,
+    consecutiveSkipped: 0,
+    trainingCompleted,
+    isFocusMode: focusActive,
+    isSprintActive,
+  });
+
   return (
-    <>
+    <SystemCommsContext.Provider value={{ enqueue: comms.enqueue }}>
       <AppContent />
-      <FocusFAB onClick={activate} active={active} />
-    </>
+      <SystemCommsBanner comm={comms.activeBanner} visible={comms.visible} onDismiss={comms.dismiss} />
+      <FocusFAB onClick={activate} active={focusActive} />
+    </SystemCommsContext.Provider>
   );
 };
 
