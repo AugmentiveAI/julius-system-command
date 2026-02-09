@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Clock, ScanLine, Check, Sparkles } from 'lucide-react';
+import { Clock, ScanLine, Check, Sparkles, Play } from 'lucide-react';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import StateCheck from '@/components/StateCheck';
 import { useProtocolQuests } from '@/hooks/useProtocolQuests';
@@ -21,6 +21,9 @@ import { Progress } from '@/components/ui/progress';
 import { useShadowQuest } from '@/hooks/useShadowQuest';
 import { ShadowQuestNotification } from '@/components/quests/ShadowQuestNotification';
 import { FramingColor } from '@/hooks/usePersuasion';
+import { useSprintTimer } from '@/hooks/useSprintTimer';
+import { SprintOverlay } from '@/components/quests/SprintOverlay';
+import { useGeneticState } from '@/hooks/useGeneticState';
 
 // ── Storage helpers ──────────────────────────────────────────────────
 
@@ -155,6 +158,10 @@ const Quests = () => {
     } catch { return new Set(); }
   });
 
+  // Sprint timer
+  const { logSprint } = useGeneticState();
+  const sprint = useSprintTimer();
+
   useEffect(() => {
     const interval = setInterval(() => setTimeUntilReset(getTimeUntilMidnight()), 60000);
     return () => clearInterval(interval);
@@ -266,21 +273,51 @@ const Quests = () => {
   const allComplete = totalQuests > 0 && totalDone >= totalQuests;
   const progressPct = totalQuests > 0 ? (totalDone / totalQuests) * 100 : 0;
 
+  // Sprint quest completion handler
+  const handleSprintMarkComplete = useCallback((questId: string) => {
+    handleCalibratedToggle(questId);
+  }, [handleCalibratedToggle]);
+
   return (
     <>
       <StateCheck open={scanOpen} onOpenChange={handleScanClose} />
       <ShadowQuestNotification show={shadowNotification} onDismiss={dismissShadowNotification} />
 
+      {/* Sprint timer overlay */}
+      <SprintOverlay
+        state={sprint.state}
+        availableQuests={calibration?.recommendedQuests ?? []}
+        completedQuestIds={completedCalibrated}
+        onStartSprint={sprint.startSprint}
+        onComplete={sprint.handleCompletion}
+        onStartNext={sprint.startNextSprint}
+        onCancel={sprint.cancelSprint}
+        onLogSprint={logSprint}
+        onMarkQuestComplete={handleSprintMarkComplete}
+        isLimitReached={sprint.isLimitReached}
+      />
+
       <div className="min-h-screen bg-background pb-24 pt-4">
         <div className="mx-auto max-w-md space-y-4 px-4">
 
-          {/* 1. TOP: Mode badge + reset timer */}
+          {/* 1. TOP: Mode badge + sprint button + reset timer */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className={`h-2.5 w-2.5 rounded-full ${modeBadge.dot}`} />
-              <span className={`font-mono text-xs font-bold tracking-wider ${modeBadge.text}`}>
-                {modeBadge.label}
-              </span>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <div className={`h-2.5 w-2.5 rounded-full ${modeBadge.dot}`} />
+                <span className={`font-mono text-xs font-bold tracking-wider ${modeBadge.text}`}>
+                  {modeBadge.label}
+                </span>
+              </div>
+              {activeCheck && calibration && (
+                <button
+                  onClick={sprint.openSelection}
+                  className="flex items-center gap-1.5 rounded-md border border-primary/30 bg-primary/10 px-2.5 py-1 font-mono text-xs font-bold tracking-wider text-primary transition-all hover:bg-primary/20 hover:border-primary/50"
+                >
+                  <Play className="h-3 w-3" />
+                  SPRINT
+                </button>
+              )}
             </div>
             <div className="flex items-center gap-1.5 text-muted-foreground">
               <Clock className="h-3.5 w-3.5" />
