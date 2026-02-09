@@ -147,7 +147,6 @@ const Quests = () => {
   const { todayCommitment, resolveCommitment } = usePreCommitment();
   const [scanOpen, setScanOpen] = useState(false);
   const [todayCheck, setTodayCheck] = useState<PlayerStateCheck | null>(getLatestTodayCheck);
-  const [unlocked, setUnlocked] = useState(!!todayCheck);
   const [timeUntilReset, setTimeUntilReset] = useState(getTimeUntilMidnight);
   const [completedCalibrated, setCompletedCalibrated] = useState<Set<string>>(() => {
     try {
@@ -162,8 +161,17 @@ const Quests = () => {
   }, []);
 
   const calibration = useMemo<CalibrationResult | null>(() => {
-    if (!todayCheck) return null;
-    return calibrateQuests(todayCheck, getStateHistory(), getCompletionHistory(), new Date());
+    const check = todayCheck || (() => {
+      // Fallback to latest check from any day
+      try {
+        const stored = localStorage.getItem(STATE_HISTORY_KEY);
+        if (!stored) return null;
+        const checks: PlayerStateCheck[] = JSON.parse(stored);
+        return checks.length > 0 ? checks[checks.length - 1] : null;
+      } catch { return null; }
+    })();
+    if (!check) return null;
+    return calibrateQuests(check, getStateHistory(), getCompletionHistory(), new Date());
   }, [todayCheck]);
 
   const resistanceData = useMemo(() => loadCachedResistance(), []);
@@ -191,7 +199,6 @@ const Quests = () => {
     if (!open) {
       const check = getLatestTodayCheck();
       setTodayCheck(check);
-      if (check) setTimeout(() => setUnlocked(true), 100);
     }
   }, []);
 
@@ -233,7 +240,21 @@ const Quests = () => {
   }, [todayCommitment, completedCalibrated, resolveCommitment, addCompletion]);
 
   const hasScan = !!todayCheck;
-  const mode = todayCheck?.systemRecommendation || 'steady';
+
+  // Fallback to yesterday's last check if no scan today
+  const fallbackCheck = useMemo<PlayerStateCheck | null>(() => {
+    if (hasScan) return null;
+    try {
+      const stored = localStorage.getItem(STATE_HISTORY_KEY);
+      if (!stored) return null;
+      const checks: PlayerStateCheck[] = JSON.parse(stored);
+      if (checks.length > 0) return checks[checks.length - 1];
+    } catch { /* ignore */ }
+    return null;
+  }, [hasScan]);
+
+  const activeCheck = todayCheck || fallbackCheck;
+  const mode = activeCheck?.systemRecommendation || 'steady';
   const modeBadge = MODE_BADGE[mode] || MODE_BADGE.steady;
 
   // Total counts across both calibrated and protocol quests
@@ -269,12 +290,24 @@ const Quests = () => {
             </div>
           </div>
 
-          {/* Scan required state */}
-          {!hasScan && (
+          {/* Gentle nudge when no scan today */}
+          {!hasScan && fallbackCheck && (
+            <button
+              onClick={() => setScanOpen(true)}
+              className="w-full rounded-lg border border-border bg-card/50 p-3 text-left transition-all hover:border-primary/30"
+            >
+              <p className="font-mono text-xs text-muted-foreground">
+                ⚠️ No scan today. Using yesterday's data. <span className="text-primary">Tap to scan.</span>
+              </p>
+            </button>
+          )}
+
+          {/* No data at all */}
+          {!hasScan && !fallbackCheck && (
             <div className="rounded-lg border border-border bg-card p-6 text-center space-y-3">
               <ScanLine className="h-8 w-8 text-primary mx-auto animate-pulse" />
               <p className="font-mono text-xs text-muted-foreground">
-                Complete daily scan to unlock quests
+                Run your first scan to calibrate quests
               </p>
               <Button
                 onClick={() => setScanOpen(true)}
@@ -287,7 +320,7 @@ const Quests = () => {
           )}
 
           {/* Pre-committed quest (top, gold left-border) */}
-          {todayCommitment && todayCommitment.completed === undefined && hasScan && calibration && (
+          {todayCommitment && todayCommitment.completed === undefined && activeCheck && calibration && (
             (() => {
               const q = calibration.recommendedQuests.find(cq => cq.id === todayCommitment.questId);
               if (!q) return null;
@@ -327,7 +360,7 @@ const Quests = () => {
           )}
 
           {/* Shadow quest */}
-          {shadowQuest && shadowRevealed && hasScan && (
+          {shadowQuest && shadowRevealed && activeCheck && (
             <div
               className={`rounded-lg border bg-card/50 p-3 transition-all ${shadowQuest.completed ? 'border-green-500/30 bg-green-500/5' : 'border-border'}`}
               style={{ borderLeft: '3px solid hsl(263 91% 66% / 0.6)' }}
@@ -372,7 +405,7 @@ const Quests = () => {
           )}
 
           {/* Calibrated quests by time block */}
-          {hasScan && calibration && groupedQuests && (
+          {activeCheck && calibration && groupedQuests && (
             <div className="space-y-5">
               {TIME_BLOCKS_ORDER.map(block => {
                 const blockQuests = groupedQuests[block];
