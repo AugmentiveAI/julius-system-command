@@ -11,10 +11,8 @@ import { usePreCommitment } from "@/hooks/usePreCommitment";
 import Index from "./pages/Index";
 import Quests from "./pages/Quests";
 import Training from "./pages/Training";
-import Milestones from "./pages/Milestones";
-import Inventory from "./pages/Inventory";
-import History from "./pages/History";
-import Genetics from "./pages/Genetics";
+import Progress from "./pages/Progress";
+import More from "./pages/More";
 import NotFound from "./pages/NotFound";
 import SystemAnalytics from "./pages/SystemAnalytics";
 
@@ -24,12 +22,8 @@ const AppContent = () => {
   const [showAwakening, setShowAwakening] = useState(isFirstRun);
   const [triggerScan, setTriggerScan] = useState(false);
   const {
-    showModal,
-    commitment,
-    isRecovery,
-    handleAccept,
-    handleRequestAlternative,
-    handleDismiss,
+    showModal, commitment, isRecovery,
+    handleAccept, handleRequestAlternative, handleDismiss,
   } = usePreCommitment();
 
   const handleAwakeningComplete = () => {
@@ -41,9 +35,7 @@ const AppContent = () => {
     <>
       <Toaster />
       <Sonner />
-      {showAwakening && (
-        <AwakeningSequence onComplete={handleAwakeningComplete} />
-      )}
+      {showAwakening && <AwakeningSequence onComplete={handleAwakeningComplete} />}
       {showModal && commitment && (
         <PreCommitmentModal
           commitment={commitment}
@@ -58,10 +50,8 @@ const AppContent = () => {
           <Route path="/" element={<Index forceFirstScan={triggerScan} onScanTriggered={() => setTriggerScan(false)} />} />
           <Route path="/quests" element={<Quests />} />
           <Route path="/training" element={<Training />} />
-          <Route path="/milestones" element={<Milestones />} />
-          <Route path="/inventory" element={<Inventory />} />
-          <Route path="/history" element={<History />} />
-          <Route path="/genetics" element={<Genetics />} />
+          <Route path="/progress" element={<Progress />} />
+          <Route path="/more" element={<More />} />
           <Route path="/system-analytics" element={<SystemAnalytics />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
@@ -70,16 +60,14 @@ const AppContent = () => {
   );
 };
 
-const App = () => {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <HistoryProvider>
-          <AppContent />
-        </HistoryProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
-  );
-};
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <HistoryProvider>
+        <AppContent />
+      </HistoryProvider>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
 
 export default App;
