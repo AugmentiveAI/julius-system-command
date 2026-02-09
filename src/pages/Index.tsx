@@ -1,29 +1,21 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Coffee, ScanLine } from 'lucide-react';
-import { PlayerProfile } from '@/components/dashboard/PlayerProfile';
-import { StatsRadarChart } from '@/components/dashboard/StatsRadarChart';
-import { StreakCounter } from '@/components/dashboard/StreakCounter';
+import { TopBar } from '@/components/dashboard/TopBar';
+import { DashboardMessage } from '@/components/dashboard/DashboardMessage';
+import { ProgressRing } from '@/components/dashboard/ProgressRing';
+import { TodaySnapshot } from '@/components/dashboard/TodaySnapshot';
+import { DashboardActions } from '@/components/dashboard/DashboardActions';
 import { PenaltyBanner } from '@/components/dashboard/PenaltyBanner';
-import { SystemMessage } from '@/components/dashboard/SystemMessage';
-import { DailyXPBar } from '@/components/dashboard/DailyXPBar';
-import { QuickActions } from '@/components/dashboard/QuickActions';
-import { CurrentStateCard } from '@/components/dashboard/CurrentStateCard';
-import { ResistanceCard2 } from '@/components/dashboard/ResistanceCard';
-import { ShadowMonarchBar } from '@/components/dashboard/ShadowMonarchBar';
-import { SystemBrief } from '@/components/dashboard/SystemBrief';
-import { SystemPredictions } from '@/components/dashboard/SystemPredictions';
-import { SystemWarnings } from '@/components/dashboard/SystemWarnings';
 import StateCheck from '@/components/StateCheck';
 import { FlashOverlay } from '@/components/effects/FlashOverlay';
 import { LevelUpOverlay } from '@/components/effects/LevelUpOverlay';
 import { GeneticWarning } from '@/components/warnings/GeneticWarning';
 import { BottomNav } from '@/components/navigation/BottomNav';
-import { GeneticHUD } from '@/components/genetic/GeneticHUD';
 import { usePlayer } from '@/hooks/usePlayer';
 import { useCaffeine } from '@/hooks/useCaffeine';
 import { useProtocolQuests } from '@/hooks/useProtocolQuests';
 import { useWorkout } from '@/hooks/useWorkout';
 import { useDailyXP } from '@/hooks/useDailyXP';
+import { useGeneticState } from '@/hooks/useGeneticState';
 import { useToast } from '@/hooks/use-toast';
 import { useSystemStrategy } from '@/hooks/useSystemStrategy';
 import { getSystemToast } from '@/utils/systemVoice';
@@ -39,6 +31,16 @@ function markScanDone() {
   localStorage.setItem(LAST_SCAN_DATE_KEY, new Date().toISOString().split('T')[0]);
 }
 
+/** Build a concise one-line daily message from strategy data */
+function buildDailyOneLiner(brief: string): string {
+  // Take just the first sentence of the daily brief
+  const firstSentence = brief.split(/[.!]/).filter(Boolean)[0]?.trim();
+  if (firstSentence && firstSentence.length <= 80) return firstSentence + '.';
+  // Fallback: truncate
+  if (firstSentence) return firstSentence.slice(0, 77) + '...';
+  return 'The System awaits. Begin your quests.';
+}
+
 interface IndexProps {
   forceFirstScan?: boolean;
   onScanTriggered?: () => void;
@@ -47,13 +49,13 @@ interface IndexProps {
 const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
   const { player, penaltyLevel, showFlashEffect, dismissPenaltyBanner, levelUpState } = usePlayer();
   const { logCaffeine, hasLoggedAfter10am, warningDismissed, dismissWarning, logs } = useCaffeine();
-  const { toggleQuest, setQuestCompleted, quests, getTimeBlockStats } = useProtocolQuests();
+  const { toggleQuest, setQuestCompleted, quests } = useProtocolQuests();
   const { workout, workoutCompleted } = useWorkout();
   const { toast } = useToast();
   const { strategy, dayNumber, playerTitle } = useSystemStrategy();
+  const { logColdExposure } = useGeneticState();
 
   const [scanOpen, setScanOpen] = useState(false);
-  const [stateRefreshKey, setStateRefreshKey] = useState(0);
   const autoScanRef = useRef(false);
 
   const dailyXP = useDailyXP({
@@ -62,6 +64,18 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
     workoutXP: workout.xp,
     coldStreakDays: player.coldStreak ?? 0,
   });
+
+  // Determine system recommendation from latest state
+  const latestStateRaw = localStorage.getItem('systemStateHistory');
+  let systemRec: 'push' | 'steady' | 'recover' = 'steady';
+  try {
+    if (latestStateRaw) {
+      const history = JSON.parse(latestStateRaw);
+      if (history.length > 0) {
+        systemRec = history[history.length - 1].systemRecommendation || 'steady';
+      }
+    }
+  } catch { /* ignore */ }
 
   // Force first scan after awakening sequence
   useEffect(() => {
@@ -82,17 +96,13 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
 
   const handleScanClose = useCallback((open: boolean) => {
     setScanOpen(open);
-    if (!open) {
-      markScanDone();
-      setStateRefreshKey(k => k + 1);
-    }
+    if (!open) markScanDone();
   }, []);
 
   // --- Cross-system sync effects ---
   const syncedRef = useRef({ workout: false, caffeine: false });
   const achievementRef = useRef({ morning: false, allDaily: false });
 
-  // Achievement: Morning Protocol Complete
   useEffect(() => {
     const morningQuests = quests.filter(q => q.timeBlock === 'morning');
     const allMorningDone = morningQuests.length > 0 && morningQuests.every(q => q.completed);
@@ -103,7 +113,6 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
     if (!allMorningDone) achievementRef.current.morning = false;
   }, [quests, toast]);
 
-  // Achievement: Daily Protocol Mastered
   useEffect(() => {
     const allDone = quests.length > 0 && quests.every(q => q.completed);
     if (allDone && !achievementRef.current.allDaily) {
@@ -113,22 +122,16 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
     if (!allDone) achievementRef.current.allDaily = false;
   }, [quests, toast]);
 
-  // Auto-complete "scheduled-training" quest when workout is completed
   useEffect(() => {
     if (workoutCompleted && !syncedRef.current.workout) {
       syncedRef.current.workout = true;
       setQuestCompleted('scheduled-training', true);
     }
-    if (!workoutCompleted) {
-      syncedRef.current.workout = false;
-    }
+    if (!workoutCompleted) syncedRef.current.workout = false;
   }, [workoutCompleted, setQuestCompleted]);
 
-  // Auto-fail "caffeine-cutoff" quest when caffeine logged after 10am
   useEffect(() => {
-    if (hasLoggedAfter10am) {
-      setQuestCompleted('caffeine-cutoff', false);
-    }
+    if (hasLoggedAfter10am) setQuestCompleted('caffeine-cutoff', false);
   }, [hasLoggedAfter10am, setQuestCompleted]);
 
   const handleLogCaffeine = () => {
@@ -139,38 +142,34 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
     toast(getSystemToast(isAfter10 ? 'caffeineDebuff' : 'caffeineLogged', { time }));
   };
 
+  const handleLogCold = () => {
+    logColdExposure();
+    setQuestCompleted('cold-exposure', true);
+    toast({ title: '🧊 Cold Exposure Logged', description: 'The System acknowledges your discipline.' });
+  };
+
+  // Supplement quest states for the checklist
+  const supplementIds = ['morning-supplements', 'midday-supplements', 'evening-supplements'];
+  const supplementStates: Record<string, boolean> = {};
+  supplementIds.forEach(id => {
+    const q = quests.find(q => q.id === id);
+    supplementStates[id] = q?.completed ?? false;
+  });
+
+  const completedQuests = quests.filter(q => q.completed).length;
+  const oneLiner = buildDailyOneLiner(strategy.dailyBrief);
+
   return (
     <>
       <FlashOverlay show={showFlashEffect} />
       <LevelUpOverlay show={levelUpState.show} newLevel={levelUpState.newLevel} />
       <StateCheck open={scanOpen} onOpenChange={handleScanClose} />
 
-      <div className="min-h-screen bg-background pb-24 pt-6">
-        <GeneticHUD />
-        <div className="mx-auto max-w-2xl space-y-6 px-4 mt-3">
-          {/* System Header */}
-          <div className="flex items-center justify-center gap-3">
-            <h1 className="font-display text-sm uppercase tracking-[0.3em] text-muted-foreground">
-              [ The System ]
-            </h1>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setScanOpen(true)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary/40 bg-primary/10 transition-all hover:bg-primary/20 hover:shadow-[0_0_12px_hsl(187,100%,50%,0.3)]"
-                title="System Scan"
-              >
-                <ScanLine className="h-4 w-4 text-primary" style={{ filter: 'drop-shadow(0 0 4px hsl(187 100% 50% / 0.6))' }} />
-              </button>
-              <button
-                onClick={handleLogCaffeine}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card transition-colors hover:border-primary/50 hover:bg-primary/10"
-                title="Log caffeine"
-              >
-                <Coffee className="h-4 w-4 text-muted-foreground" />
-              </button>
-            </div>
-          </div>
+      <div className="min-h-screen bg-background pb-24 pt-2">
+        {/* 1. Top Bar */}
+        <TopBar systemRecommendation={systemRec} />
 
+        <div className="mx-auto max-w-md space-y-5 px-4 mt-2">
           {/* Caffeine Warning */}
           {hasLoggedAfter10am && !warningDismissed && (
             <GeneticWarning
@@ -189,51 +188,34 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
             isDismissed={player.penalty.bannerDismissedForSession}
           />
 
-          {/* 1. Shadow Monarch Progress Bar */}
-          <ShadowMonarchBar progress={strategy.shadowMonarchProgress} title={playerTitle} />
+          {/* 2. System Message + CTA */}
+          <DashboardMessage message={oneLiner} />
 
-          {/* 2. System Brief */}
-          <SystemBrief
-            dayNumber={dayNumber}
-            dailyBrief={strategy.dailyBrief}
-            strategicFocus={strategy.strategicFocus}
-            weeklyObjective={strategy.weeklyObjective}
+          {/* 3. Progress Ring */}
+          <ProgressRing
+            progress={strategy.shadowMonarchProgress}
+            title={playerTitle}
+            currentXP={player.currentXP}
+            xpToNextLevel={player.xpToNextLevel}
+            level={player.level}
           />
 
-          {/* 3. System Warnings (only when warnings exist) */}
-          <SystemWarnings warnings={strategy.warnings} />
-
-          {/* 4. Current State Card */}
-          <CurrentStateCard onRescan={() => setScanOpen(true)} refreshKey={stateRefreshKey} />
-
-          {/* 5. Player Profile + Daily XP */}
-          <PlayerProfile player={player} />
-          <DailyXPBar breakdown={dailyXP} />
-
-          {/* 6. Stats Radar Chart */}
-          <StatsRadarChart stats={player.stats} />
-
-          {/* 7. Resistance Analysis */}
-          <ResistanceCard2 />
-
-          {/* 8. Quick Actions (Active Quests summary) */}
-          <QuickActions
-            quests={quests}
-            workout={workout}
-            workoutCompleted={workoutCompleted}
-            hasLoggedAfter10am={hasLoggedAfter10am}
-            caffeineLogCount={logs.length}
-            getTimeBlockStats={getTimeBlockStats}
+          {/* 4. Today's Snapshot */}
+          <TodaySnapshot
+            questsCompleted={completedQuests}
+            questsTotal={quests.length}
+            xpToday={dailyXP.total}
+            streak={player.streak}
           />
 
-          {/* 9. Streak Counter */}
-          <StreakCounter streak={player.streak} />
-
-          {/* 10. System Predictions (collapsed by default) */}
-          <SystemPredictions predictions={strategy.predictions} />
-
-          {/* System Message of the Day */}
-          <SystemMessage />
+          {/* 5. Quick Actions */}
+          <DashboardActions
+            onScan={() => setScanOpen(true)}
+            onCold={handleLogCold}
+            onCaffeine={handleLogCaffeine}
+            supplementStates={supplementStates}
+            onToggleSupplement={toggleQuest}
+          />
         </div>
 
         <BottomNav />
