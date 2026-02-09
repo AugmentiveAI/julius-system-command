@@ -24,6 +24,9 @@ import { FramingColor } from '@/hooks/usePersuasion';
 import { useSprintTimer } from '@/hooks/useSprintTimer';
 import { SprintOverlay } from '@/components/quests/SprintOverlay';
 import { useGeneticState } from '@/hooks/useGeneticState';
+import { useWeeklyPlanning, shouldShowPlanning } from '@/hooks/useWeeklyPlanning';
+import { WeeklyPlanningModal } from '@/components/planning/WeeklyPlanningModal';
+import { useToast } from '@/hooks/use-toast';
 
 // ── Storage helpers ──────────────────────────────────────────────────
 
@@ -161,6 +164,14 @@ const Quests = () => {
   // Sprint timer
   const { logSprint } = useGeneticState();
   const sprint = useSprintTimer();
+  const weekly = useWeeklyPlanning();
+  const { toast } = useToast();
+
+  // Show planning nudge on Thursday if no plan
+  const showPlanningNudge = useMemo(() => {
+    const day = new Date().getDay();
+    return (day >= 4 && day <= 6) && !weekly.plan?.locked;
+  }, [weekly.plan]);
 
   useEffect(() => {
     const interval = setInterval(() => setTimeUntilReset(getTimeUntilMidnight()), 60000);
@@ -282,6 +293,28 @@ const Quests = () => {
     <>
       <StateCheck open={scanOpen} onOpenChange={handleScanClose} />
       <ShadowQuestNotification show={shadowNotification} onDismiss={dismissShadowNotification} />
+      <WeeklyPlanningModal
+        open={weekly.showModal}
+        onOpenChange={weekly.setShowModal}
+        summary={weekly.summary}
+        initialPriorities={weekly.autoPriorities}
+        initialAllocation={weekly.defaultAllocation}
+        onLock={(priorities, allocation) => {
+          weekly.lockPlan(priorities, allocation);
+          const totalBlocks = allocation.thursday.length + allocation.friday.length + allocation.saturday.length;
+          toast({
+            title: 'Sprint plan locked.',
+            description: `${totalBlocks} sprint blocks allocated across 3 days. Execute.`,
+            duration: 3000,
+          });
+        }}
+        onDismiss={weekly.dismiss}
+        isAutoView={weekly.trigger === 'thursday-fallback' && !weekly.plan?.locked}
+        onApprove={() => {
+          weekly.autoLockPlan();
+          toast({ title: 'Auto-plan approved.', duration: 1500 });
+        }}
+      />
 
       {/* Sprint timer overlay */}
       <SprintOverlay
@@ -335,6 +368,19 @@ const Quests = () => {
             >
               <p className="font-mono text-xs text-muted-foreground">
                 ⚠️ No scan today. Using yesterday's data. <span className="text-primary">Tap to scan.</span>
+              </p>
+            </button>
+          )}
+
+          {/* Sprint plan nudge */}
+          {showPlanningNudge && (
+            <button
+              onClick={weekly.openPlanning}
+              className="w-full rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-left transition-all hover:border-amber-500/50"
+            >
+              <p className="font-mono text-xs text-muted-foreground">
+                📋 No sprint plan detected. The System has generated one.{' '}
+                <span className="text-amber-400">Tap to review.</span>
               </p>
             </button>
           )}

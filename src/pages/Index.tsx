@@ -10,6 +10,7 @@ import { FlashOverlay } from '@/components/effects/FlashOverlay';
 import { LevelUpOverlay } from '@/components/effects/LevelUpOverlay';
 import { GeneticWarning } from '@/components/warnings/GeneticWarning';
 import { BottomNav } from '@/components/navigation/BottomNav';
+import { WeeklyPlanningModal } from '@/components/planning/WeeklyPlanningModal';
 import { usePlayer } from '@/hooks/usePlayer';
 import { useCaffeine } from '@/hooks/useCaffeine';
 import { useProtocolQuests } from '@/hooks/useProtocolQuests';
@@ -19,6 +20,7 @@ import { useGeneticState } from '@/hooks/useGeneticState';
 import { useToast } from '@/hooks/use-toast';
 import { useSystemStrategy } from '@/hooks/useSystemStrategy';
 import { getSystemToast } from '@/utils/systemVoice';
+import { useWeeklyPlanning } from '@/hooks/useWeeklyPlanning';
 
 const LAST_SCAN_DATE_KEY = 'systemLastScanDate';
 
@@ -54,6 +56,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
   const { toast } = useToast();
   const { strategy, dayNumber, playerTitle } = useSystemStrategy();
   const { logColdExposure } = useGeneticState();
+  const weekly = useWeeklyPlanning();
 
   const [scanOpen, setScanOpen] = useState(false);
   const autoScanRef = useRef(false);
@@ -164,6 +167,28 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
       <FlashOverlay show={showFlashEffect} />
       <LevelUpOverlay show={levelUpState.show} newLevel={levelUpState.newLevel} />
       <StateCheck open={scanOpen} onOpenChange={handleScanClose} />
+      <WeeklyPlanningModal
+        open={weekly.showModal}
+        onOpenChange={weekly.setShowModal}
+        summary={weekly.summary}
+        initialPriorities={weekly.autoPriorities}
+        initialAllocation={weekly.defaultAllocation}
+        onLock={(priorities, allocation) => {
+          weekly.lockPlan(priorities, allocation);
+          const totalBlocks = allocation.thursday.length + allocation.friday.length + allocation.saturday.length;
+          toast({
+            title: 'Sprint plan locked.',
+            description: `${totalBlocks} sprint blocks allocated across 3 days. Execute.`,
+            duration: 3000,
+          });
+        }}
+        onDismiss={weekly.dismiss}
+        isAutoView={weekly.trigger === 'thursday-fallback' && !weekly.plan?.locked}
+        onApprove={() => {
+          weekly.autoLockPlan();
+          toast({ title: 'Auto-plan approved.', duration: 1500 });
+        }}
+      />
 
       <div className="min-h-screen bg-background pb-24 pt-2">
         {/* 1. Top Bar */}
