@@ -28,6 +28,9 @@ import { calibrateQuests, CalibratedQuest } from '@/utils/questCalibration';
 import { usePersuasion } from '@/hooks/usePersuasion';
 import { loadCachedResistance } from '@/utils/resistanceTracker';
 import { PlayerStateCheck } from '@/types/playerState';
+import { useLootDrops } from '@/hooks/useLootDrops';
+import { LootDropToast } from '@/components/effects/LootDropToast';
+import { LootCinematicReveal } from '@/components/effects/LootCinematicReveal';
 
 const LAST_SCAN_DATE_KEY = 'systemLastScanDate';
 
@@ -132,6 +135,8 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
     preCommittedId,
   );
 
+  const { pendingDrop, rollForLoot, clearPendingDrop } = useLootDrops();
+
   // Handle focus mode quest completion
   const handleFocusComplete = useCallback(() => {
     if (!focus.currentQuest) return;
@@ -142,7 +147,11 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
       toggleQuest(q.id);
     }
     focus.completeCurrentQuest();
-  }, [focus, quests, toggleQuest]);
+
+    // Roll for loot drop
+    const stat = protocolQuest?.stat ?? 'discipline';
+    rollForLoot(stat, player.streak);
+  }, [focus, quests, toggleQuest, rollForLoot, player.streak]);
 
   const handleFocusSkip = useCallback(() => {
     focus.skipCurrentQuest();
@@ -251,6 +260,14 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
       <FlashOverlay show={showFlashEffect} />
       <LevelUpOverlay show={levelUpState.show} newLevel={levelUpState.newLevel} />
       <StateCheck open={scanOpen} onOpenChange={handleScanClose} />
+
+      {/* Loot Drop Overlays */}
+      {pendingDrop && !pendingDrop.isCinematic && (
+        <LootDropToast item={pendingDrop.item} show={true} onDone={clearPendingDrop} />
+      )}
+      {pendingDrop && pendingDrop.isCinematic && (
+        <LootCinematicReveal item={pendingDrop.item} show={true} onDone={clearPendingDrop} />
+      )}
 
       {/* Focus Mode Overlay */}
       <FocusModeOverlay
