@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { Eye } from 'lucide-react';
 import { useGeneticState } from '@/hooks/useGeneticState';
 import { COMTPhase } from '@/utils/geneticEngine';
 import { getDayNumber } from '@/hooks/useSystemStrategy';
+import { useFocusModeContext } from '@/contexts/FocusModeContext';
 import {
   Popover,
   PopoverContent,
@@ -27,6 +29,7 @@ interface TopBarProps {
 
 export const TopBar = ({ systemRecommendation }: TopBarProps) => {
   const { geneticState, sprintsToday } = useGeneticState();
+  const { active: focusActive, toggle: toggleFocus } = useFocusModeContext();
   const dayNumber = getDayNumber();
   const mode = MODE_CONFIG[systemRecommendation] || MODE_CONFIG.steady;
 
@@ -71,8 +74,19 @@ export const TopBar = ({ systemRecommendation }: TopBarProps) => {
         </PopoverContent>
       </Popover>
 
-      {/* Right: Sprint counter + Day */}
+      {/* Right: Focus toggle + Sprint counter + Day */}
       <div className="flex items-center gap-3">
+        <button
+          onClick={toggleFocus}
+          className={`flex items-center justify-center rounded-md p-1.5 transition-colors ${
+            focusActive
+              ? 'bg-primary/20 text-primary'
+              : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+          }`}
+          title={focusActive ? 'Exit Focus Mode' : 'Enter Focus Mode'}
+        >
+          <Eye className="h-4 w-4" />
+        </button>
         <Popover>
           <PopoverTrigger asChild>
             <button className="flex items-center gap-1 rounded-md px-2 py-1 font-mono text-xs font-bold text-foreground transition-colors hover:bg-muted/50">

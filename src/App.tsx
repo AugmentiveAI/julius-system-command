@@ -5,6 +5,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HistoryProvider } from "@/contexts/HistoryContext";
+import { FocusModeProvider } from "@/contexts/FocusModeContext";
+import { FocusFAB } from "@/components/focus/FocusFAB";
+import { useFocusModeContext } from "@/contexts/FocusModeContext";
 import { AwakeningSequence, isFirstRun } from "@/components/onboarding/AwakeningSequence";
 import { PreCommitmentModal } from "@/components/quests/PreCommitmentModal";
 import { usePreCommitment } from "@/hooks/usePreCommitment";
@@ -60,11 +63,23 @@ const AppContent = () => {
   );
 };
 
+const AppWithFAB = () => {
+  const { active, activate } = useFocusModeContext();
+  return (
+    <>
+      <AppContent />
+      <FocusFAB onClick={activate} active={active} />
+    </>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <HistoryProvider>
-        <AppContent />
+        <FocusModeProvider>
+          <AppWithFAB />
+        </FocusModeProvider>
       </HistoryProvider>
     </TooltipProvider>
   </QueryClientProvider>
