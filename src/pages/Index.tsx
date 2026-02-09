@@ -31,6 +31,7 @@ import { PlayerStateCheck } from '@/types/playerState';
 import { useLootDrops } from '@/hooks/useLootDrops';
 import { LootDropToast } from '@/components/effects/LootDropToast';
 import { LootCinematicReveal } from '@/components/effects/LootCinematicReveal';
+import { usePillarQuests } from '@/hooks/usePillarQuests';
 
 const LAST_SCAN_DATE_KEY = 'systemLastScanDate';
 
@@ -68,6 +69,13 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
   const { logColdExposure } = useGeneticState();
   const weekly = useWeeklyPlanning();
   const focusMode = useFocusModeContext();
+  const pillar = usePillarQuests();
+
+  const pillarArcs = useMemo(() => [
+    { pillar: 'mind' as const, completed: pillar.quests.filter(q => q.pillar === 'mind').every(q => pillar.isCompleted(q.id)) },
+    { pillar: 'body' as const, completed: pillar.quests.filter(q => q.pillar === 'body').every(q => pillar.isCompleted(q.id)) },
+    { pillar: 'skill' as const, completed: pillar.quests.filter(q => q.pillar === 'skill').every(q => pillar.isCompleted(q.id)) },
+  ], [pillar]);
 
   const [scanOpen, setScanOpen] = useState(false);
   const autoScanRef = useRef(false);
@@ -345,6 +353,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
             currentXP={player.currentXP}
             xpToNextLevel={player.xpToNextLevel}
             level={player.level}
+            pillarArcs={pillarArcs}
           />
 
           {/* 4. Today's Snapshot */}
