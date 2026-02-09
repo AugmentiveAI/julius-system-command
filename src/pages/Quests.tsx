@@ -27,6 +27,9 @@ import { useGeneticState } from '@/hooks/useGeneticState';
 import { useWeeklyPlanning, shouldShowPlanning } from '@/hooks/useWeeklyPlanning';
 import { WeeklyPlanningModal } from '@/components/planning/WeeklyPlanningModal';
 import { useToast } from '@/hooks/use-toast';
+import { useWorkout } from '@/hooks/useWorkout';
+import { getTrainingRecommendation } from '@/utils/trainingIntelligence';
+import { useNavigate } from 'react-router-dom';
 
 // ── Storage helpers ──────────────────────────────────────────────────
 
@@ -162,10 +165,19 @@ const Quests = () => {
   });
 
   // Sprint timer
-  const { logSprint } = useGeneticState();
+  const { logSprint, geneticState, sprintsToday } = useGeneticState();
   const sprint = useSprintTimer();
   const weekly = useWeeklyPlanning();
   const { toast } = useToast();
+  const { workoutCompleted } = useWorkout();
+  const navigate = useNavigate();
+
+  // Training recommendation
+  const trainingRec = useMemo(() =>
+    getTrainingRecommendation(geneticState, sprintsToday, workoutCompleted),
+    [geneticState, sprintsToday, workoutCompleted]
+  );
+  const showTrainingNudge = trainingRec.shouldTrainNow && trainingRec.nudgeMessage && !workoutCompleted;
 
   // Show planning nudge on Thursday if no plan
   const showPlanningNudge = useMemo(() => {
@@ -368,6 +380,26 @@ const Quests = () => {
             >
               <p className="font-mono text-xs text-muted-foreground">
                 ⚠️ No scan today. Using yesterday's data. <span className="text-primary">Tap to scan.</span>
+              </p>
+            </button>
+          )}
+
+          {/* Training nudge */}
+          {showTrainingNudge && (
+            <button
+              onClick={() => navigate('/training')}
+              className={`w-full rounded-lg border p-3 text-left transition-all ${
+                trainingRec.nudgeType === 'comt-dip'
+                  ? 'border-amber-500/30 bg-amber-500/5 hover:border-amber-500/50'
+                  : trainingRec.nudgeType === 'post-sprint-recovery'
+                  ? 'border-blue-500/30 bg-blue-500/5 hover:border-blue-500/50'
+                  : 'border-green-500/30 bg-green-500/5 hover:border-green-500/50'
+              }`}
+            >
+              <p className="font-mono text-xs text-muted-foreground">
+                {trainingRec.nudgeType === 'comt-dip' ? '📉' : trainingRec.nudgeType === 'morning-activation' ? '💥' : '🌿'}{' '}
+                {trainingRec.nudgeMessage}{' '}
+                <span className="text-primary">Tap to train → {trainingRec.estimatedDuration}</span>
               </p>
             </button>
           )}
