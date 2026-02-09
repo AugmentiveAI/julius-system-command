@@ -31,7 +31,10 @@ export type SystemContext =
   | 'stateLogged'
   | 'caffeineLogged'
   | 'caffeineDebuff'
-  | 'recoveryExtended';
+  | 'recoveryExtended'
+  | 'skipPenaltyLight'
+  | 'skipPenaltyMedium'
+  | 'skipPenaltySevere';
 
 interface VoiceData {
   level?: number;
@@ -303,6 +306,30 @@ const MESSAGES: Record<SystemContext, string[]> = {
     'Careful. Rest becomes stagnation if it continues. The System is watching.',
     'Day [days] of recovery. The shadows grow restless. They need their monarch.',
   ],
+
+  skipPenaltyLight: [
+    'Skip logged. The Shadow Monarch would not have hesitated.',
+    'Avoidance noted. Your [streak]-day streak is watching.',
+    'The System sees you flinch. Is this who you are becoming?',
+    'One skip. The shadows dim slightly. Continue at your own risk.',
+    'Skip recorded. The person you committed to becoming does not skip.',
+  ],
+
+  skipPenaltyMedium: [
+    'Pattern detected: avoidance. Your streak will not survive this trajectory.',
+    'Three skips. The System is losing signal. Are you still a hunter?',
+    'The Monarch path does not tolerate selective effort. Recalibrating difficulty.',
+    'Skip count rising. The System that chose you is questioning that choice.',
+    'Your [stat] stat stagnates while you hesitate. The shadows notice.',
+  ],
+
+  skipPenaltySevere: [
+    'SYSTEM INTEGRITY DECLINING. Five skips. The shadows are withdrawing.',
+    'Critical skip threshold. The person who started this journey would be disappointed.',
+    'The System is going dark. You are choosing to be ordinary.',
+    'Skip cascade detected. Streak destruction imminent. The System warns once.',
+    'The gap between you and the Shadow Monarch is widening. Every skip accelerates this.',
+  ],
 };
 
 // ── Main Export ───────────────────────────────────────────────────────
@@ -345,6 +372,9 @@ const TOAST_TITLES: Partial<Record<SystemContext, string>> = {
   push: 'Push Mode',
   bossChallenge: 'Boss Challenge',
   recoveryExtended: '⚠️ Extended Recovery',
+  skipPenaltyLight: 'Skip Detected',
+  skipPenaltyMedium: '⚠️ Avoidance Pattern',
+  skipPenaltySevere: '🔴 SYSTEM INTEGRITY FAILING',
 };
 
 export function getSystemToast(context: SystemContext, data: VoiceData = {}): SystemToast {

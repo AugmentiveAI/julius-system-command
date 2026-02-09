@@ -14,6 +14,8 @@ export interface FocusQuest {
   revenueScore: number;
 }
 
+export type DegradationLevel = 0 | 1 | 2 | 3;
+
 interface FocusModeState {
   active: boolean;
   currentIndex: number;
@@ -21,6 +23,7 @@ interface FocusModeState {
   completedIds: string[];
   lastXPAwarded: number | null;
   showXPAnimation: boolean;
+  sessionSkipCount: number;
 }
 
 const STORAGE_KEY = 'systemFocusMode';
@@ -49,7 +52,15 @@ function defaultState(): FocusModeState {
     completedIds: [],
     lastXPAwarded: null,
     showXPAnimation: false,
+    sessionSkipCount: 0,
   };
+}
+
+export function getDegradationLevel(skipCount: number): DegradationLevel {
+  if (skipCount >= 5) return 3;
+  if (skipCount >= 3) return 2;
+  if (skipCount >= 1) return 1;
+  return 0;
 }
 
 function saveState(state: FocusModeState) {
@@ -181,8 +192,12 @@ export function useFocusMode(
       ...prev,
       skippedIds: [...prev.skippedIds, currentQuest.id],
       showXPAnimation: false,
+      sessionSkipCount: prev.sessionSkipCount + 1,
     }));
   }, [currentQuest]);
+
+  const degradationLevel = getDegradationLevel(state.sessionSkipCount);
+  const sessionSkipCount = state.sessionSkipCount;
 
   return {
     active: state.active,
@@ -193,6 +208,8 @@ export function useFocusMode(
     completedCount: state.completedIds.length,
     lastXPAwarded: state.lastXPAwarded,
     showXPAnimation: state.showXPAnimation,
+    degradationLevel,
+    sessionSkipCount,
     toggle,
     activate,
     deactivate,
