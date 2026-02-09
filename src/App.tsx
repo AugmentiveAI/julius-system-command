@@ -13,6 +13,7 @@ import { useSystemComms } from "@/hooks/useSystemComms";
 import { useGeneticState } from "@/hooks/useGeneticState";
 import { AwakeningSequence, isFirstRun } from "@/components/onboarding/AwakeningSequence";
 import { GoalCapture } from "@/components/onboarding/GoalCapture";
+import { SystemBriefing } from "@/components/onboarding/SystemBriefing";
 import { PreCommitmentModal } from "@/components/quests/PreCommitmentModal";
 import { usePreCommitment } from "@/hooks/usePreCommitment";
 import { SystemCommsContext } from "@/contexts/SystemCommsContext";
@@ -29,6 +30,7 @@ const queryClient = new QueryClient();
 const AppContent = () => {
   const [showAwakening, setShowAwakening] = useState(isFirstRun);
   const [showGoalCapture, setShowGoalCapture] = useState(false);
+  const [showBriefing, setShowBriefing] = useState(false);
   const [triggerScan, setTriggerScan] = useState(false);
   const {
     showModal, commitment, isRecovery,
@@ -48,6 +50,11 @@ const AppContent = () => {
       localStorage.setItem('the-system-player', JSON.stringify(player));
     } catch { /* ignore */ }
     setShowGoalCapture(false);
+    setShowBriefing(true);
+  };
+
+  const handleBriefingComplete = () => {
+    setShowBriefing(false);
     setTriggerScan(true);
   };
 
@@ -57,6 +64,7 @@ const AppContent = () => {
       <Sonner />
       {showAwakening && <AwakeningSequence onComplete={handleAwakeningComplete} />}
       {showGoalCapture && <GoalCapture onSubmit={handleGoalSubmit} />}
+      {showBriefing && <SystemBriefing onComplete={handleBriefingComplete} />}
       {showModal && commitment && (
         <PreCommitmentModal
           commitment={commitment}
