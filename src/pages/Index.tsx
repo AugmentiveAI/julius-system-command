@@ -264,6 +264,8 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
         showXPAnimation={focus.showXPAnimation}
         persuasionData={currentPersuasion}
         sprintTimeRemaining={null}
+        degradationLevel={focus.degradationLevel}
+        sessionSkipCount={focus.sessionSkipCount}
         onComplete={handleFocusComplete}
         onSkip={handleFocusSkip}
         onExit={handleFocusExit}
