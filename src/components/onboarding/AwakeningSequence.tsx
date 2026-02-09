@@ -224,12 +224,14 @@ export function AwakeningSequence({ onComplete, isReplay = false }: AwakeningSeq
               <div className="flex flex-col items-center gap-4 relative z-[9999]">
                 <button
                   onClick={() => { console.log('[Awakening] I ACCEPT clicked'); handleAccept(); }}
-                  className="group relative cursor-pointer rounded-lg border border-primary/60 bg-primary/10 px-10 py-4 font-display text-sm uppercase tracking-[0.3em] text-primary transition-all duration-700 hover:bg-primary/20 hover:shadow-[0_0_30px_hsl(187_100%_50%/0.4)] min-h-[56px]"
+                  onTouchEnd={(e) => { e.preventDefault(); console.log('[Awakening] I ACCEPT touchend'); handleAccept(); }}
+                  className="group relative cursor-pointer rounded-lg border border-primary/60 bg-primary/10 px-10 py-4 font-display text-sm uppercase tracking-[0.3em] text-primary hover:bg-primary/20 hover:shadow-[0_0_30px_hsl(187_100%_50%/0.4)] min-h-[56px]"
                   style={{
                     boxShadow: '0 0 20px hsl(187 100% 50% / 0.2), inset 0 0 20px hsl(187 100% 50% / 0.05)',
                     opacity: buttonsReady ? 1 : 0,
                     transform: buttonsReady ? 'translateY(0)' : 'translateY(12px)',
                     transition: 'opacity 0.8s ease-out, transform 0.8s ease-out',
+                    pointerEvents: buttonsReady ? 'auto' : 'none',
                     position: 'relative',
                     zIndex: 9999,
                     WebkitTapHighlightColor: 'transparent',
@@ -242,11 +244,13 @@ export function AwakeningSequence({ onComplete, isReplay = false }: AwakeningSeq
 
                 <button
                   onClick={() => { console.log('[Awakening] I DECLINE clicked'); handleRefuse(); }}
-                  className="cursor-pointer rounded-lg border border-destructive/40 bg-destructive/5 px-10 py-4 font-display text-sm uppercase tracking-[0.3em] text-destructive/70 transition-all duration-700 hover:bg-destructive/10 hover:text-destructive hover:shadow-[0_0_20px_hsl(0_62%_50%/0.2)] min-h-[56px]"
+                  onTouchEnd={(e) => { e.preventDefault(); console.log('[Awakening] I DECLINE touchend'); handleRefuse(); }}
+                  className="cursor-pointer rounded-lg border border-destructive/40 bg-destructive/5 px-10 py-4 font-display text-sm uppercase tracking-[0.3em] text-destructive/70 hover:bg-destructive/10 hover:text-destructive hover:shadow-[0_0_20px_hsl(0_62%_50%/0.2)] min-h-[56px]"
                   style={{
                     opacity: buttonsReady ? 1 : 0,
                     transform: buttonsReady ? 'translateY(0)' : 'translateY(12px)',
                     transition: 'opacity 0.8s ease-out 0.4s, transform 0.8s ease-out 0.4s',
+                    pointerEvents: buttonsReady ? 'auto' : 'none',
                     position: 'relative',
                     zIndex: 9999,
                     WebkitTapHighlightColor: 'transparent',
