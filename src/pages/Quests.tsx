@@ -1,18 +1,14 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Clock, ScanLine } from 'lucide-react';
+import { Clock, ScanLine, Check, Sparkles } from 'lucide-react';
 import { BottomNav } from '@/components/navigation/BottomNav';
-import { TimeBlockSection } from '@/components/quests/TimeBlockSection';
-import { CalibrationBanner } from '@/components/quests/CalibrationBanner';
-import { CalibrationDetails } from '@/components/quests/CalibrationDetails';
-import { CalibratedQuestCard } from '@/components/quests/CalibratedQuestCard';
 import StateCheck from '@/components/StateCheck';
 import { useProtocolQuests } from '@/hooks/useProtocolQuests';
 import { useHistoryContext } from '@/contexts/HistoryContext';
-import { usePersuasion, recordCompletion, recordSkip } from '@/hooks/usePersuasion';
+import { usePersuasion, recordCompletion } from '@/hooks/usePersuasion';
 import { usePreCommitment } from '@/hooks/usePreCommitment';
-import { PreCommitmentBanner } from '@/components/quests/PreCommitmentBanner';
 import { QuestTimeBlock, TIME_BLOCK_CONFIG } from '@/types/quests';
 import { PlayerStateCheck } from '@/types/playerState';
+import { DIFFICULTY_BADGE_CONFIG, QuestDifficulty } from '@/types/questDifficulty';
 import {
   calibrateQuests,
   CalibrationResult,
@@ -20,17 +16,13 @@ import {
   QuestCompletionRecord,
 } from '@/utils/questCalibration';
 import { loadCachedResistance } from '@/utils/resistanceTracker';
-import { ChevronDown, Brain, Moon, Dumbbell } from 'lucide-react';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
-import { GeneticHUD } from '@/components/genetic/GeneticHUD';
+import { Progress } from '@/components/ui/progress';
 import { useShadowQuest } from '@/hooks/useShadowQuest';
-import { ShadowQuestCard } from '@/components/quests/ShadowQuestCard';
 import { ShadowQuestNotification } from '@/components/quests/ShadowQuestNotification';
+import { FramingColor } from '@/hooks/usePersuasion';
+
+// ── Storage helpers ──────────────────────────────────────────────────
 
 const STATE_HISTORY_KEY = 'systemStateHistory';
 const CALIBRATED_COMPLETIONS_KEY = 'systemCalibratedCompletions';
@@ -70,9 +62,7 @@ function saveCompletionRecord(record: QuestCompletionRecord) {
   try {
     const history = getCompletionHistory();
     history.push(record);
-    // Keep last 200
-    const trimmed = history.slice(-200);
-    localStorage.setItem(CALIBRATED_COMPLETIONS_KEY, JSON.stringify(trimmed));
+    localStorage.setItem(CALIBRATED_COMPLETIONS_KEY, JSON.stringify(history.slice(-200)));
   } catch { /* ignore */ }
 }
 
@@ -87,22 +77,11 @@ function getTimeUntilMidnight(): { hours: number; minutes: number } {
   };
 }
 
-function getRecentCompletionRate(completions: QuestCompletionRecord[]): number {
-  if (completions.length === 0) return 0;
-  const weekAgo = new Date();
-  weekAgo.setDate(weekAgo.getDate() - 7);
-  const recent = completions.filter(c => new Date(c.completedAt) >= weekAgo);
-  // Rough estimate: assume ~5 quests per day * 7 = 35 possible
-  return Math.min(100, Math.round((recent.length / 35) * 100));
-}
-
-// Assign calibrated quests to time blocks based on their stat
 function assignTimeBlock(quest: CalibratedQuest): QuestTimeBlock {
-  if (quest.isBreak) return 'morning'; // breaks go wherever, default morning
+  if (quest.isBreak) return 'morning';
   switch (quest.stat) {
     case 'discipline':
-      if (quest.id.includes('walk') || quest.id.includes('cold')) return 'morning';
-      if (quest.id.includes('supplement')) return 'morning';
+      if (quest.id.includes('walk') || quest.id.includes('cold') || quest.id.includes('supplement')) return 'morning';
       return 'evening';
     case 'systems':
       if (quest.id.includes('second-wind')) return 'evening';
@@ -119,17 +98,50 @@ function assignTimeBlock(quest: CalibratedQuest): QuestTimeBlock {
   }
 }
 
-const TIME_BLOCKS_ORDER: QuestTimeBlock[] = ['morning', 'midday', 'afternoon', 'evening'];
+// ── Mode config ──────────────────────────────────────────────────────
 
-const TIME_BLOCK_ICONS: Record<QuestTimeBlock, React.ElementType> = {
-  morning: Clock,
-  midday: Dumbbell,
-  afternoon: Brain,
-  evening: Moon,
+const MODE_BADGE: Record<string, { label: string; dot: string; text: string }> = {
+  push: { label: 'PUSH', dot: 'bg-green-400', text: 'text-green-400' },
+  steady: { label: 'STEADY', dot: 'bg-amber-400', text: 'text-amber-400' },
+  recover: { label: 'RECOVERY', dot: 'bg-red-400', text: 'text-red-400' },
 };
 
+// ── Persuasion color helper ──────────────────────────────────────────
+
+function getPersuasionColor(framing: FramingColor): string {
+  switch (framing) {
+    case 'loss': return 'text-red-400/80';
+    case 'identity': return 'text-foreground/70';
+    case 'variable': return 'text-yellow-400/80';
+    case 'scarcity': return 'text-primary/80';
+    default: return 'text-muted-foreground';
+  }
+}
+
+// ── Difficulty badge ─────────────────────────────────────────────────
+
+const DiffBadge = ({ d }: { d: QuestDifficulty }) => {
+  const c = DIFFICULTY_BADGE_CONFIG[d];
+  return (
+    <span
+      className={`inline-flex items-center justify-center h-5 w-5 rounded text-[10px] font-mono font-bold border shrink-0 ${c.className}`}
+      style={c.glow ? { boxShadow: c.glow } : undefined}
+    >
+      {c.label}
+    </span>
+  );
+};
+
+// ── Time block order ─────────────────────────────────────────────────
+
+const TIME_BLOCKS_ORDER: QuestTimeBlock[] = ['morning', 'midday', 'afternoon', 'evening'];
+
+// =====================================================================
+// QUESTS PAGE
+// =====================================================================
+
 const Quests = () => {
-  const { quests: protocolQuests, toggleQuest, getQuestsByTimeBlock, getTimeBlockStats, getTotalStats } =
+  const { quests: protocolQuests, toggleQuest, getTimeBlockStats, getTotalStats, getQuestsByTimeBlock } =
     useProtocolQuests();
   const { addCompletion } = useHistoryContext();
   const { todayCommitment, resolveCommitment } = usePreCommitment();
@@ -140,77 +152,37 @@ const Quests = () => {
   const [completedCalibrated, setCompletedCalibrated] = useState<Set<string>>(() => {
     try {
       const today = new Date().toISOString().split('T')[0];
-      const history = getCompletionHistory();
-      return new Set(history.filter(c => c.completedAt.startsWith(today)).map(c => c.questId));
+      return new Set(getCompletionHistory().filter(c => c.completedAt.startsWith(today)).map(c => c.questId));
     } catch { return new Set(); }
   });
 
-  // Timer
   useEffect(() => {
     const interval = setInterval(() => setTimeUntilReset(getTimeUntilMidnight()), 60000);
     return () => clearInterval(interval);
   }, []);
 
-  // Calibration result
   const calibration = useMemo<CalibrationResult | null>(() => {
     if (!todayCheck) return null;
-    return calibrateQuests(
-      todayCheck,
-      getStateHistory(),
-      getCompletionHistory(),
-      new Date(),
-    );
+    return calibrateQuests(todayCheck, getStateHistory(), getCompletionHistory(), new Date());
   }, [todayCheck]);
 
-  // Resistance data for persuasion engine
   const resistanceData = useMemo(() => loadCachedResistance(), []);
 
-  // Shadow Quest system
   const shadowMode = todayCheck?.systemRecommendation === 'recover' ? 'recovery' as const : todayCheck?.systemRecommendation ?? null;
   const {
-    shadowQuest,
-    isRevealed: shadowRevealed,
-    showNotification: shadowNotification,
-    timeRemaining: shadowTimeRemaining,
-    dismissNotification: dismissShadowNotification,
-    onCalibratedQuestCompleted,
-    completeShadow,
-  } = useShadowQuest(
-    shadowMode,
-    resistanceData,
-  );
+    shadowQuest, isRevealed: shadowRevealed, showNotification: shadowNotification,
+    timeRemaining: shadowTimeRemaining, dismissNotification: dismissShadowNotification,
+    onCalibratedQuestCompleted, completeShadow,
+  } = useShadowQuest(shadowMode, resistanceData);
 
-  // Persuasion engine: generates messages for each calibrated quest
   const persuasionMap = usePersuasion(
-    calibration?.recommendedQuests ?? [],
-    todayCheck,
-    resistanceData,
+    calibration?.recommendedQuests ?? [], todayCheck, resistanceData,
   );
 
-  // Resistance quest IDs for display
-  const resistanceQuestIds = useMemo(() => {
-    const ids = new Set<string>();
-    if (resistanceData) {
-      for (const rp of resistanceData.hardAvoidanceQuests) {
-        ids.add(rp.questId);
-      }
-    }
-    return ids;
-  }, [resistanceData]);
-
-  // Group calibrated quests by time block
   const groupedQuests = useMemo(() => {
     if (!calibration) return null;
-    const groups: Record<QuestTimeBlock, CalibratedQuest[]> = {
-      morning: [],
-      midday: [],
-      afternoon: [],
-      evening: [],
-    };
-    calibration.recommendedQuests.forEach(q => {
-      const block = assignTimeBlock(q);
-      groups[block].push(q);
-    });
+    const groups: Record<QuestTimeBlock, CalibratedQuest[]> = { morning: [], midday: [], afternoon: [], evening: [] };
+    calibration.recommendedQuests.forEach(q => groups[assignTimeBlock(q)].push(q));
     return groups;
   }, [calibration]);
 
@@ -219,10 +191,7 @@ const Quests = () => {
     if (!open) {
       const check = getLatestTodayCheck();
       setTodayCheck(check);
-      if (check) {
-        // Animate unlock
-        setTimeout(() => setUnlocked(true), 100);
-      }
+      if (check) setTimeout(() => setUnlocked(true), 100);
     }
   }, []);
 
@@ -230,7 +199,6 @@ const Quests = () => {
     if (!calibration) return;
     const quest = calibration.recommendedQuests.find(q => q.id === questId);
     if (!quest) return;
-
     const persuasionData = persuasionMap.get(questId);
 
     setCompletedCalibrated(prev => {
@@ -239,269 +207,320 @@ const Quests = () => {
         next.delete(questId);
       } else {
         next.add(questId);
-        // Log completion
-        saveCompletionRecord({
-          questId: quest.id,
-          completedAt: new Date().toISOString(),
-          stat: quest.stat,
-        });
-        addCompletion({
-          questId: quest.id,
-          questTitle: quest.title,
-          xpEarned: quest.adjustedXP,
-          completedAt: new Date().toISOString(),
-          type: 'daily',
-        });
-        // Record persuasion outcome
+        saveCompletionRecord({ questId: quest.id, completedAt: new Date().toISOString(), stat: quest.stat });
+        addCompletion({ questId: quest.id, questTitle: quest.title, xpEarned: quest.adjustedXP, completedAt: new Date().toISOString(), type: 'daily' });
         recordCompletion(persuasionData?.technique ?? null);
-        // Notify shadow quest system
         onCalibratedQuestCompleted();
       }
       return next;
     });
   }, [calibration, addCompletion, persuasionMap, onCalibratedQuestCompleted]);
 
-  // Also keep protocol quest toggling for protocol quests
   const handleProtocolToggle = (questId: string) => {
     const quest = protocolQuests.find(q => q.id === questId);
     if (quest && !quest.completed) {
-      const totalXp = quest.xp + (quest.geneticBonus?.bonusXp || 0);
-      addCompletion({
-        questId: quest.id,
-        questTitle: quest.title,
-        xpEarned: totalXp,
-        completedAt: new Date().toISOString(),
-        type: 'daily',
-      });
+      addCompletion({ questId: quest.id, questTitle: quest.title, xpEarned: quest.xp + (quest.geneticBonus?.bonusXp || 0), completedAt: new Date().toISOString(), type: 'daily' });
     }
     toggleQuest(questId);
   };
 
-  const totalStats = getTotalStats();
+  // Auto-honor pre-commitment
+  useEffect(() => {
+    if (todayCommitment && todayCommitment.completed === undefined && completedCalibrated.has(todayCommitment.questId)) {
+      resolveCommitment(true);
+      addCompletion({ questId: 'precommit-bonus', questTitle: 'Pre-Commitment Bonus', xpEarned: 25, completedAt: new Date().toISOString(), type: 'daily' });
+    }
+  }, [todayCommitment, completedCalibrated, resolveCommitment, addCompletion]);
+
   const hasScan = !!todayCheck;
-  const xpMultiplier = calibration
-    ? (todayCheck?.systemRecommendation === 'push' ? 1.25
-      : todayCheck?.systemRecommendation === 'recover' ? 0.75 : 1)
-    : 1;
+  const mode = todayCheck?.systemRecommendation || 'steady';
+  const modeBadge = MODE_BADGE[mode] || MODE_BADGE.steady;
+
+  // Total counts across both calibrated and protocol quests
+  const calibratedTotal = calibration?.recommendedQuests.length ?? 0;
+  const calibratedDone = completedCalibrated.size;
+  const protocolStats = getTotalStats();
+  const totalQuests = calibratedTotal + protocolStats.total;
+  const totalDone = calibratedDone + protocolStats.completed;
+  const allComplete = totalQuests > 0 && totalDone >= totalQuests;
+  const progressPct = totalQuests > 0 ? (totalDone / totalQuests) * 100 : 0;
 
   return (
     <>
       <StateCheck open={scanOpen} onOpenChange={handleScanClose} />
       <ShadowQuestNotification show={shadowNotification} onDismiss={dismissShadowNotification} />
 
-      <div className="min-h-screen bg-background pb-24 pt-6">
-        <GeneticHUD />
-        <div className="mx-auto max-w-2xl space-y-4 px-4 mt-3">
-          {/* System Header */}
-          <div className="text-center">
-            <h1 className="font-display text-sm uppercase tracking-[0.3em] text-muted-foreground">
-              [ The System ]
-            </h1>
+      <div className="min-h-screen bg-background pb-24 pt-4">
+        <div className="mx-auto max-w-md space-y-4 px-4">
+
+          {/* 1. TOP: Mode badge + reset timer */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className={`h-2.5 w-2.5 rounded-full ${modeBadge.dot}`} />
+              <span className={`font-mono text-xs font-bold tracking-wider ${modeBadge.text}`}>
+                {modeBadge.label}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <Clock className="h-3.5 w-3.5" />
+              <span className="font-mono text-xs">
+                {timeUntilReset.hours}h {timeUntilReset.minutes}m
+              </span>
+            </div>
           </div>
 
-          {/* Calibration Banner or Locked State */}
-          {hasScan && calibration && todayCheck ? (
-            <CalibrationBanner
-              mode={todayCheck.systemRecommendation}
-              intensity={calibration.intensity}
-              systemMessage={calibration.systemMessage}
-              xpMultiplier={xpMultiplier}
-              geneticAlert={calibration.geneticAlert}
-              recoveryBonus={todayCheck.systemRecommendation === 'recover'}
-            />
-          ) : (
-            <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-6 text-center space-y-4">
-              <ScanLine className="h-10 w-10 text-amber-400 mx-auto animate-pulse" />
-              <div>
-                <h2 className="font-mono text-sm font-bold tracking-[0.15em] text-amber-400">
-                  SYSTEM SCAN REQUIRED
-                </h2>
-                <p className="font-mono text-xs text-muted-foreground mt-1">
-                  Complete daily diagnostic to unlock quests.
-                </p>
-              </div>
+          {/* Scan required state */}
+          {!hasScan && (
+            <div className="rounded-lg border border-border bg-card p-6 text-center space-y-3">
+              <ScanLine className="h-8 w-8 text-primary mx-auto animate-pulse" />
+              <p className="font-mono text-xs text-muted-foreground">
+                Complete daily scan to unlock quests
+              </p>
               <Button
                 onClick={() => setScanOpen(true)}
-                className="font-mono tracking-[0.15em] text-sm bg-primary/10 border border-primary/50 text-primary hover:bg-primary/20"
+                className="font-mono tracking-wider text-xs"
+                variant="outline"
               >
                 RUN SCAN
               </Button>
             </div>
           )}
 
-          {/* Daily XP Header */}
-          <div className="rounded-lg border border-border bg-card p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="font-display text-xl font-bold text-foreground">
-                  Daily Protocol
-                </h2>
-                <p className="mt-1 font-tech text-lg">
-                  <span className="text-primary">{totalStats.earnedXp}</span>
-                  <span className="text-muted-foreground"> / {totalStats.totalXp} XP</span>
-                </p>
-              </div>
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Clock className="h-4 w-4" />
-                <span className="font-tech text-sm">
-                  Resets in {timeUntilReset.hours}h {timeUntilReset.minutes}m
-                </span>
+          {/* Pre-committed quest (top, gold left-border) */}
+          {todayCommitment && todayCommitment.completed === undefined && hasScan && calibration && (
+            (() => {
+              const q = calibration.recommendedQuests.find(cq => cq.id === todayCommitment.questId);
+              if (!q) return null;
+              const done = completedCalibrated.has(q.id);
+              return (
+                <div
+                  className={`rounded-lg border bg-card/50 p-3 transition-all ${done ? 'border-green-500/30 bg-green-500/5' : 'border-border'}`}
+                  style={{ borderLeft: '3px solid hsl(45 100% 50% / 0.6)' }}
+                >
+                  <div className="flex items-start gap-3">
+                    <button
+                      onClick={() => handleCalibratedToggle(q.id)}
+                      className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-all ${
+                        done ? 'border-green-500 bg-green-500' : 'border-muted-foreground hover:border-primary'
+                      }`}
+                    >
+                      {done && <Check className="h-3 w-3 text-white" />}
+                    </button>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <h3 className={`font-tech text-sm font-semibold ${done ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
+                          {q.title}
+                        </h3>
+                        <DiffBadge d={q.difficulty} />
+                      </div>
+                      <div className="mt-0.5 flex items-center gap-2 text-xs">
+                        <span className="text-primary font-semibold">+{q.adjustedXP} XP</span>
+                      </div>
+                      <p className="mt-1 font-mono text-[10px] text-muted-foreground italic">
+                        Committed last night
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()
+          )}
+
+          {/* Shadow quest */}
+          {shadowQuest && shadowRevealed && hasScan && (
+            <div
+              className={`rounded-lg border bg-card/50 p-3 transition-all ${shadowQuest.completed ? 'border-green-500/30 bg-green-500/5' : 'border-border'}`}
+              style={{ borderLeft: '3px solid hsl(263 91% 66% / 0.6)' }}
+            >
+              <div className="flex items-start gap-3">
+                <button
+                  onClick={() => {
+                    if (!shadowQuest.completed && !shadowQuest.expired) {
+                      completeShadow();
+                      addCompletion({ questId: shadowQuest.id, questTitle: shadowQuest.title, xpEarned: shadowQuest.rewardXP, completedAt: new Date().toISOString(), type: 'daily' });
+                    }
+                  }}
+                  className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-all ${
+                    shadowQuest.completed ? 'border-secondary bg-secondary' : 'border-secondary/60 hover:border-secondary'
+                  }`}
+                >
+                  {shadowQuest.completed && <Check className="h-3 w-3 text-secondary-foreground" />}
+                </button>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-[10px] tracking-wider text-secondary uppercase">SHADOW</span>
+                      <h3 className={`font-tech text-sm font-semibold ${shadowQuest.completed ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
+                        {shadowQuest.title}
+                      </h3>
+                    </div>
+                  </div>
+                  <div className="mt-0.5 flex items-center gap-2 text-xs">
+                    <span className="text-secondary font-semibold">+{shadowQuest.rewardXP} XP</span>
+                    {shadowQuest.variableReward.isActive && !shadowQuest.completed && (
+                      <Sparkles className="h-3 w-3 text-yellow-400/70" />
+                    )}
+                    {!shadowQuest.completed && !shadowQuest.expired && shadowTimeRemaining && (
+                      <span className="text-muted-foreground font-mono">
+                        {shadowTimeRemaining.minutes}:{String(shadowTimeRemaining.seconds).padStart(2, '0')}
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
-            {totalStats.completed === totalStats.total && (
-              <div className="mt-3 rounded-md bg-green-500/10 px-3 py-2 text-center">
-                <p className="font-tech text-sm text-green-400">
-                  Protocol complete. The System is pleased.
-                </p>
-              </div>
-            )}
-          </div>
+          )}
 
-          {/* Calibrated Quests (if scan done) */}
+          {/* Calibrated quests by time block */}
           {hasScan && calibration && groupedQuests && (
-            <div className="space-y-3">
-              <h3 className="font-mono text-xs tracking-[0.15em] text-muted-foreground px-1">
-                ◈ CALIBRATED QUESTS
-              </h3>
-
-              {/* Shadow Quest */}
-              {shadowQuest && shadowRevealed && (
-                <ShadowQuestCard
-                  quest={shadowQuest}
-                  timeRemaining={shadowTimeRemaining}
-                  onComplete={() => {
-                    completeShadow();
-                    addCompletion({
-                      questId: shadowQuest.id,
-                      questTitle: shadowQuest.title,
-                      xpEarned: shadowQuest.rewardXP,
-                      completedAt: new Date().toISOString(),
-                      type: 'daily',
-                    });
-                  }}
-                />
-              )}
-
-              {/* Pre-commitment banner */}
-              {todayCommitment && (
-                <PreCommitmentBanner
-                  commitment={todayCommitment}
-                  questCompleted={completedCalibrated.has(todayCommitment.questId)}
-                  onHonored={() => {
-                    resolveCommitment(true);
-                    // Award bonus XP via history
-                    addCompletion({
-                      questId: 'precommit-bonus',
-                      questTitle: 'Pre-Commitment Bonus',
-                      xpEarned: 25,
-                      completedAt: new Date().toISOString(),
-                      type: 'daily',
-                    });
-                  }}
-                />
-              )}
-
+            <div className="space-y-5">
               {TIME_BLOCKS_ORDER.map(block => {
                 const blockQuests = groupedQuests[block];
                 if (blockQuests.length === 0) return null;
                 const config = TIME_BLOCK_CONFIG[block];
-                const Icon = TIME_BLOCK_ICONS[block];
-                const blockCompleted = blockQuests.filter(q => completedCalibrated.has(q.id)).length;
 
                 return (
-                  <Collapsible key={block} defaultOpen>
-                    <div className={`rounded-lg border ${config.borderColor} ${config.bgColor} overflow-hidden`}>
-                      <CollapsibleTrigger asChild>
-                        <button className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors">
-                          <div className="flex items-center gap-3">
-                            <Icon className={`h-5 w-5 ${config.color}`} />
-                            <div className="text-left">
-                              <h3 className={`font-display text-sm font-semibold ${config.color}`}>
-                                {config.label}
-                              </h3>
-                              <p className="text-xs text-muted-foreground">{config.time}</p>
+                  <div key={block} className="space-y-2">
+                    {/* Simple header with divider */}
+                    <div className="flex items-center gap-3 px-1">
+                      <span className="font-mono text-xs font-semibold text-muted-foreground">
+                        {config.label}
+                      </span>
+                      <span className="font-mono text-[10px] text-muted-foreground/60">
+                        {config.time}
+                      </span>
+                      <div className="flex-1 h-px bg-border" />
+                    </div>
+
+                    {/* Quest cards */}
+                    <div className="space-y-2">
+                      {blockQuests.map(quest => {
+                        const done = completedCalibrated.has(quest.id);
+                        const persuasion = persuasionMap.get(quest.id);
+                        const hasVariableReward = persuasion?.variableReward?.isActive ?? false;
+                        const hasMessage = !!persuasion?.message && !done;
+                        const isPreCommitted = todayCommitment?.questId === quest.id;
+
+                        // Skip pre-committed quest here since it's shown at top
+                        if (isPreCommitted) return null;
+
+                        return (
+                          <div
+                            key={quest.id}
+                            className={`rounded-lg border p-3 transition-all ${
+                              done ? 'border-green-500/30 bg-green-500/5' : 'border-border bg-card/50 hover:border-primary/30'
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <button
+                                onClick={() => handleCalibratedToggle(quest.id)}
+                                className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-all ${
+                                  done ? 'border-green-500 bg-green-500' : 'border-muted-foreground hover:border-primary'
+                                }`}
+                              >
+                                {done && <Check className="h-3 w-3 text-white" />}
+                              </button>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between">
+                                  <h3 className={`font-tech text-sm font-semibold ${done ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
+                                    {quest.title}
+                                  </h3>
+                                  <DiffBadge d={quest.difficulty} />
+                                </div>
+                                <div className="mt-0.5 flex items-center gap-1.5 text-xs">
+                                  <span className="text-primary font-semibold">
+                                    +{quest.adjustedXP} XP
+                                  </span>
+                                  {hasVariableReward && !done && (
+                                    <Sparkles className="h-3 w-3 text-yellow-400/70" />
+                                  )}
+                                </div>
+                                {hasMessage && persuasion?.message && (
+                                  <p className={`mt-1 font-mono text-[11px] italic leading-snug truncate ${getPersuasionColor(persuasion.framingColor)}`}>
+                                    {persuasion.message}
+                                  </p>
+                                )}
+                              </div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-4">
-                            <p className={`font-tech text-sm ${blockCompleted === blockQuests.length ? 'text-green-400' : 'text-foreground'}`}>
-                              {blockCompleted}/{blockQuests.length}
-                            </p>
-                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                          </div>
-                        </button>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <div className="px-4 pb-4 space-y-2">
-                          {blockQuests.map((quest, i) => (
-                            <CalibratedQuestCard
-                              key={quest.id}
-                              quest={quest}
-                              completed={completedCalibrated.has(quest.id)}
-                              locked={!unlocked}
-                              onToggle={handleCalibratedToggle}
-                              animDelay={unlocked ? i * 200 : 0}
-                              persuasion={persuasionMap.get(quest.id)}
-                              isResistanceQuest={resistanceQuestIds.has(quest.id)}
-                              isPreCommitted={todayCommitment?.questId === quest.id}
-                            />
-                          ))}
-                        </div>
-                      </CollapsibleContent>
+                        );
+                      })}
                     </div>
-                  </Collapsible>
+                  </div>
                 );
               })}
             </div>
           )}
 
-          {/* Locked placeholder when no scan */}
-          {!hasScan && (
-            <div className="space-y-3">
-              <h3 className="font-mono text-xs tracking-[0.15em] text-muted-foreground px-1">
-                ◈ CALIBRATED QUESTS
-              </h3>
-              {[1, 2, 3, 4].map(i => (
-                <div key={i} className="rounded-lg border border-border/30 bg-card/20 p-3 opacity-30">
-                  <div className="flex items-center gap-3">
-                    <div className="h-5 w-5 rounded border-2 border-muted-foreground/30 flex items-center justify-center">
-                      <ScanLine className="h-3 w-3 text-muted-foreground/30" />
-                    </div>
-                    <div className="flex-1 space-y-2">
-                      <div className="h-3 w-3/4 bg-muted-foreground/15 rounded" />
-                      <div className="h-2 w-1/2 bg-muted-foreground/10 rounded" />
-                    </div>
+          {/* Protocol quests by time block */}
+          <div className="space-y-5">
+            {TIME_BLOCKS_ORDER.map(block => {
+              const blockQuests = getQuestsByTimeBlock(block);
+              if (blockQuests.length === 0) return null;
+              const config = TIME_BLOCK_CONFIG[block];
+
+              return (
+                <div key={`proto-${block}`} className="space-y-2">
+                  <div className="flex items-center gap-3 px-1">
+                    <span className="font-mono text-xs font-semibold text-muted-foreground">
+                      {config.label}
+                    </span>
+                    <span className="font-mono text-[10px] text-muted-foreground/60">
+                      {config.time}
+                    </span>
+                    <div className="flex-1 h-px bg-border" />
+                  </div>
+
+                  <div className="space-y-2">
+                    {blockQuests.map(quest => {
+                      const totalXp = quest.xp + (quest.geneticBonus?.bonusXp || 0);
+                      return (
+                        <div
+                          key={quest.id}
+                          className={`rounded-lg border p-3 transition-all ${
+                            quest.completed ? 'border-green-500/30 bg-green-500/5' : 'border-border bg-card/50 hover:border-primary/30'
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <button
+                              onClick={() => handleProtocolToggle(quest.id)}
+                              className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-all ${
+                                quest.completed ? 'border-green-500 bg-green-500' : 'border-muted-foreground hover:border-primary'
+                              }`}
+                            >
+                              {quest.completed && <Check className="h-3 w-3 text-white" />}
+                            </button>
+                            <div className="flex-1 min-w-0">
+                              <h3 className={`font-tech text-sm font-semibold ${quest.completed ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
+                                {quest.title}
+                              </h3>
+                              <div className="mt-0.5 text-xs">
+                                <span className="text-primary font-semibold">+{totalXp} XP</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-
-          {/* Protocol Time Block Sections (always shown) */}
-          <div className="space-y-3">
-            <h3 className="font-mono text-xs tracking-[0.15em] text-muted-foreground px-1">
-              ◈ PROTOCOL QUESTS
-            </h3>
-            {TIME_BLOCKS_ORDER.map(timeBlock => (
-              <TimeBlockSection
-                key={timeBlock}
-                timeBlock={timeBlock}
-                quests={getQuestsByTimeBlock(timeBlock)}
-                stats={getTimeBlockStats(timeBlock)}
-                onToggleQuest={handleProtocolToggle}
-              />
-            ))}
+              );
+            })}
           </div>
 
-          {/* Why These Quests */}
-          {hasScan && calibration && todayCheck && (
-            <CalibrationDetails
-              currentState={todayCheck}
-              intensity={calibration.intensity}
-              questCount={calibration.recommendedQuests.length}
-              geneticAlert={calibration.geneticAlert}
-              recentCompletionRate={getRecentCompletionRate(getCompletionHistory())}
-            />
-          )}
+          {/* 6. BOTTOM: Completion summary */}
+          <div className="space-y-2 pt-2">
+            <Progress value={progressPct} className="h-1.5" />
+            {allComplete ? (
+              <p className="text-center font-mono text-xs text-green-400">
+                All quests complete. The System is satisfied.
+              </p>
+            ) : (
+              <p className="text-center font-mono text-xs text-muted-foreground">
+                {totalDone} of {totalQuests} quests complete
+              </p>
+            )}
+          </div>
         </div>
 
         <BottomNav />
