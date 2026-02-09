@@ -65,6 +65,7 @@ export function usePillarStreak() {
             ...prev,
             shieldAvailable: false,
             shieldUsedDate: yesterday,
+            // streak preserved
           };
         }
         return {
@@ -74,6 +75,9 @@ export function usePillarStreak() {
       });
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /** Whether shield was just consumed (for external toast triggering) */
+  const shieldJustUsed = state.shieldUsedDate === getYesterdayStr() && !state.shieldAvailable;
 
   /** Call when all 3 pillars are completed today */
   const recordAllPillarsComplete = useCallback((): number => {
@@ -102,6 +106,7 @@ export function usePillarStreak() {
     streak: state.currentStreak,
     shieldAvailable: state.shieldAvailable,
     shieldUsedDate: state.shieldUsedDate,
+    shieldJustUsed,
     hasCompletedToday,
     recordAllPillarsComplete,
     lastBonus: state.bonusHistory.length > 0 ? state.bonusHistory[state.bonusHistory.length - 1] : null,

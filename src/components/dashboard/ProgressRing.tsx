@@ -12,6 +12,7 @@ interface ProgressRingProps {
   xpToNextLevel: number;
   level: number;
   pillarArcs?: PillarArc[];
+  dimmed?: boolean; // dim the ring when pillars were missed yesterday
 }
 
 const PILLAR_COLORS = {
@@ -20,7 +21,7 @@ const PILLAR_COLORS = {
   skill: { active: 'hsl(45 100% 60%)', inactive: 'hsl(45 100% 60% / 0.15)' },
 };
 
-export const ProgressRing = ({ progress, title, currentXP, xpToNextLevel, level, pillarArcs }: ProgressRingProps) => {
+export const ProgressRing = ({ progress, title, currentXP, xpToNextLevel, level, pillarArcs, dimmed }: ProgressRingProps) => {
   const [animatedProgress, setAnimatedProgress] = useState(0);
 
   useEffect(() => {
@@ -46,7 +47,7 @@ export const ProgressRing = ({ progress, title, currentXP, xpToNextLevel, level,
   const pillarOrder: Array<'mind' | 'body' | 'skill'> = ['mind', 'body', 'skill'];
 
   return (
-    <div className="flex flex-col items-center gap-2 py-2">
+    <div className={`flex flex-col items-center gap-2 py-2 transition-all duration-700 ${dimmed ? 'opacity-50 grayscale-[40%]' : ''}`}>
       <div className="relative" style={{ width: size, height: size }}>
         <svg width={size} height={size} className="-rotate-90">
           {/* Background track */}

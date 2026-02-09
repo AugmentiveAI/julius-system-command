@@ -37,6 +37,7 @@ export interface Player {
   streak: number;
   coldStreak: number;
   penalty: PenaltyState;
+  goal?: string; // user's dream/goal in one sentence
 }
 
 export const INITIAL_PENALTY: PenaltyState = {

@@ -32,7 +32,7 @@ import { useLootDrops } from '@/hooks/useLootDrops';
 import { LootDropToast } from '@/components/effects/LootDropToast';
 import { LootCinematicReveal } from '@/components/effects/LootCinematicReveal';
 import { usePillarQuests } from '@/hooks/usePillarQuests';
-
+import { usePillarStreak } from '@/hooks/usePillarStreak';
 const LAST_SCAN_DATE_KEY = 'systemLastScanDate';
 
 function needsDailyScan(): boolean {
@@ -60,7 +60,7 @@ interface IndexProps {
 }
 
 const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
-  const { player, penaltyLevel, showFlashEffect, dismissPenaltyBanner, levelUpState } = usePlayer();
+  const { player, penaltyLevel, showFlashEffect, dismissPenaltyBanner, levelUpState, setGoal } = usePlayer();
   const { logCaffeine, hasLoggedAfter10am, warningDismissed, dismissWarning, logs } = useCaffeine();
   const { toggleQuest, setQuestCompleted, quests } = useProtocolQuests();
   const { workout, workoutCompleted } = useWorkout();
@@ -70,12 +70,24 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
   const weekly = useWeeklyPlanning();
   const focusMode = useFocusModeContext();
   const pillar = usePillarQuests();
+  const pillarStreak = usePillarStreak();
+
+  // Detect if pillars were missed yesterday (for dimming + silent brief)
+  const pillarsMissedYesterday = useMemo(() => {
+    if (pillarStreak.streak > 0) return false; // streak is alive
+    if (pillarStreak.hasCompletedToday) return false;
+    // If lastCompletedDate exists but isn't today or yesterday, pillars were missed
+    return !pillarStreak.hasCompletedToday && pillarStreak.streak === 0;
+  }, [pillarStreak]);
 
   const pillarArcs = useMemo(() => [
     { pillar: 'mind' as const, completed: pillar.quests.filter(q => q.pillar === 'mind').every(q => pillar.isCompleted(q.id)) },
     { pillar: 'body' as const, completed: pillar.quests.filter(q => q.pillar === 'body').every(q => pillar.isCompleted(q.id)) },
     { pillar: 'skill' as const, completed: pillar.quests.filter(q => q.pillar === 'skill').every(q => pillar.isCompleted(q.id)) },
   ], [pillar]);
+
+  const [goalInput, setGoalInput] = useState('');
+  const [goalDismissed, setGoalDismissed] = useState(false);
 
   const [scanOpen, setScanOpen] = useState(false);
   const autoScanRef = useRef(false);
@@ -343,8 +355,42 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
             isDismissed={player.penalty.bannerDismissedForSession}
           />
 
+          {/* Goal capture for existing users */}
+          {!player.goal && !goalDismissed && (
+            <div className="rounded-lg border border-primary/30 bg-card/80 p-4 space-y-3">
+              <p className="font-mono text-[10px] tracking-widest text-primary uppercase">System Calibration Required</p>
+              <p className="font-mono text-xs text-muted-foreground">What are you building toward? One sentence.</p>
+              <input
+                type="text"
+                value={goalInput}
+                onChange={(e) => setGoalInput(e.target.value)}
+                placeholder="e.g., Build my consultancy to $10K MRR"
+                maxLength={120}
+                className="w-full rounded-md border border-border bg-background/50 px-3 py-2 font-mono text-xs text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:outline-none"
+                onKeyDown={(e) => { if (e.key === 'Enter' && goalInput.trim()) { setGoal(goalInput.trim()); } }}
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { if (goalInput.trim()) setGoal(goalInput.trim()); }}
+                  disabled={!goalInput.trim()}
+                  className={`flex-1 py-2 rounded-md font-mono text-[10px] tracking-wider transition-all ${
+                    goalInput.trim() ? 'border border-primary/50 bg-primary/10 text-primary' : 'border border-border text-muted-foreground/40'
+                  }`}
+                >
+                  CONFIRM
+                </button>
+                <button
+                  onClick={() => setGoalDismissed(true)}
+                  className="py-2 px-3 rounded-md font-mono text-[10px] text-muted-foreground/50 hover:text-muted-foreground"
+                >
+                  Later
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* 2. System Message + CTA */}
-          <DashboardMessage message={oneLiner} />
+          <DashboardMessage message={pillarsMissedYesterday ? '…' : oneLiner} />
 
           {/* 3. Progress Ring */}
           <ProgressRing
@@ -354,6 +400,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
             xpToNextLevel={player.xpToNextLevel}
             level={player.level}
             pillarArcs={pillarArcs}
+            dimmed={pillarsMissedYesterday && !pillar.completedCount}
           />
 
           {/* 4. Today's Snapshot */}

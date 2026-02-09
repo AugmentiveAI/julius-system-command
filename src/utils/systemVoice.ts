@@ -34,7 +34,13 @@ export type SystemContext =
   | 'recoveryExtended'
   | 'skipPenaltyLight'
   | 'skipPenaltyMedium'
-  | 'skipPenaltySevere';
+  | 'skipPenaltySevere'
+  | 'pillarMastery'
+  | 'pillarMissed'
+  | 'pillarMissedSilent'
+  | 'pillarShieldUsed'
+  | 'pillarShieldBroken'
+  | 'pillarStreakMilestone';
 
 interface VoiceData {
   level?: number;
@@ -330,6 +336,50 @@ const MESSAGES: Record<SystemContext, string[]> = {
     'Skip cascade detected. Streak destruction imminent. The System warns once.',
     'The gap between you and the Shadow Monarch is widening. Every skip accelerates this.',
   ],
+
+  pillarMastery: [
+    'All three pillars hold. The foundation is unbreakable.',
+    'Mind. Body. Skill. Every pillar completed is a brick in the foundation of [goal].',
+    'The person building [goal] showed up today. The System recorded this.',
+    'Three pillars. Zero excuses. [goal] gets closer.',
+    'Complete discipline across all pillars. This is how [goal] becomes real.',
+  ],
+
+  pillarMissed: [
+    '[goal] requires consistency. The System noted your absence.',
+    'A pillar fell today. The person building [goal] would not have allowed this.',
+    'The foundation weakens. [goal] does not build itself.',
+    'One day missed. The System remembers. Does the person pursuing [goal] remember too?',
+    'The pillars cracked. [goal] requires all three. Every day.',
+  ],
+
+  pillarMissedSilent: [
+    '…',
+  ],
+
+  pillarShieldUsed: [
+    'Shield absorbed the impact. One remains this week.',
+    'The Pillar Shield held. Your streak survives — this time.',
+    'Shield consumed. The System protected your streak. Do not waste this.',
+    'One shield. One save. The person building [goal] gets a second chance.',
+    'Shield activated. Streak preserved. But the System noticed.',
+  ],
+
+  pillarShieldBroken: [
+    'No shield. The streak stands exposed.',
+    'The shield is gone. Miss again and the streak falls. [goal] demands better.',
+    'Shield depleted for this week. Every remaining day matters.',
+    'No more protection. The person pursuing [goal] must show up now.',
+    'Unshielded. The System cannot protect those who do not protect themselves.',
+  ],
+
+  pillarStreakMilestone: [
+    '[streak] days of pillars held. The foundation grows stronger.',
+    'Pillar streak: [streak]. The person building [goal] is proving it.',
+    '[streak]-day pillar streak. The System shows something resembling respect.',
+    'Every pillar. [streak] consecutive days. [goal] is no longer a dream — it is a trajectory.',
+    'Milestone: [streak] days. The shadows acknowledge this consistency.',
+  ],
 };
 
 // ── Main Export ───────────────────────────────────────────────────────
@@ -375,6 +425,12 @@ const TOAST_TITLES: Partial<Record<SystemContext, string>> = {
   skipPenaltyLight: 'Skip Detected',
   skipPenaltyMedium: '⚠️ Avoidance Pattern',
   skipPenaltySevere: '🔴 SYSTEM INTEGRITY FAILING',
+  pillarMastery: '🏛️ ALL PILLARS HOLD',
+  pillarMissed: 'Pillar Missed',
+  pillarMissedSilent: '',
+  pillarShieldUsed: '🛡️ Shield Activated',
+  pillarShieldBroken: '🛡️ Shield Depleted',
+  pillarStreakMilestone: '🏛️ Pillar Streak Milestone',
 };
 
 export function getSystemToast(context: SystemContext, data: VoiceData = {}): SystemToast {
