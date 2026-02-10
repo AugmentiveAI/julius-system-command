@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Eye } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { Eye, RefreshCw } from 'lucide-react';
 import { useGeneticState } from '@/hooks/useGeneticState';
 import { COMTPhase } from '@/utils/geneticEngine';
 import { getDayNumber } from '@/hooks/useSystemStrategy';
@@ -25,13 +25,21 @@ const COMT_LABELS: Record<COMTPhase, string> = {
 
 interface TopBarProps {
   systemRecommendation: 'push' | 'steady' | 'recover';
+  onForceRefresh?: () => void;
 }
 
-export const TopBar = ({ systemRecommendation }: TopBarProps) => {
+export const TopBar = ({ systemRecommendation, onForceRefresh }: TopBarProps) => {
   const { geneticState, sprintsToday } = useGeneticState();
   const { active: focusActive, toggle: toggleFocus } = useFocusModeContext();
   const dayNumber = getDayNumber();
   const mode = MODE_CONFIG[systemRecommendation] || MODE_CONFIG.steady;
+  const [spinning, setSpinning] = useState(false);
+
+  const handleRefresh = useCallback(() => {
+    setSpinning(true);
+    onForceRefresh?.();
+    setTimeout(() => setSpinning(false), 800);
+  }, [onForceRefresh]);
 
   return (
     <div className="flex items-center justify-between px-4 py-2">
@@ -75,7 +83,14 @@ export const TopBar = ({ systemRecommendation }: TopBarProps) => {
       </Popover>
 
       {/* Right: Focus toggle + Sprint counter + Day */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
+        <button
+          onClick={handleRefresh}
+          className="flex items-center justify-center rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+          title="Force daily refresh"
+        >
+          <RefreshCw className={`h-4 w-4 transition-transform ${spinning ? 'animate-spin' : ''}`} />
+        </button>
         <button
           onClick={toggleFocus}
           className={`flex items-center justify-center rounded-md p-1.5 transition-colors ${

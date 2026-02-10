@@ -266,6 +266,13 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
     toast(getSystemToast(isAfter10 ? 'caffeineDebuff' : 'caffeineLogged', { time }));
   };
 
+  const handleForceRefresh = useCallback(() => {
+    // Clear the daily scan flag so it re-triggers
+    localStorage.removeItem(LAST_SCAN_DATE_KEY);
+    // Reload the page to force all hooks to re-initialize with fresh date checks
+    window.location.reload();
+  }, []);
+
   const handleLogCold = () => {
     logColdExposure();
     setQuestCompleted('cold-exposure', true);
@@ -346,7 +353,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
 
       <div className="min-h-screen bg-background pt-2" style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}>
         {/* 1. Top Bar */}
-        <TopBar systemRecommendation={systemRec} />
+        <TopBar systemRecommendation={systemRec} onForceRefresh={handleForceRefresh} />
 
         <div className="mx-auto max-w-md space-y-5 px-4 mt-2">
           {/* Caffeine Warning */}
