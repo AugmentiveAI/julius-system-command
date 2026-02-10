@@ -40,17 +40,30 @@ export function usePillarQuests() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
 
-  // Daily reset
+  // Daily reset (including when app resumes from background)
   useEffect(() => {
-    const today = getTodayDateString();
-    if (state.lastResetDate !== today) {
-      setState({
-        quests: getTodayPillarQuests(),
-        completed: [],
-        lastResetDate: today,
+    const checkReset = () => {
+      const today = getTodayDateString();
+      setState(prev => {
+        if (prev.lastResetDate !== today) {
+          return {
+            quests: getTodayPillarQuests(),
+            completed: [],
+            lastResetDate: today,
+          };
+        }
+        return prev;
       });
-    }
-  }, [state.lastResetDate]);
+    };
+
+    checkReset();
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') checkReset();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, []);
 
   const toggleQuest = useCallback((questId: string) => {
     setState(prev => {

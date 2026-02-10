@@ -123,81 +123,83 @@ export function usePlayer() {
     localStorage.setItem(MAIN_QUESTS_STORAGE_KEY, JSON.stringify(mainQuestState));
   }, [mainQuestState]);
 
-  // Check for daily reset and process penalties
+  // Check for daily reset and process penalties (including app resume from background)
   useEffect(() => {
-    const today = getTodayDateString();
-    
-    if (questState.lastResetDate !== today && !penaltyProcessedRef.current) {
-      penaltyProcessedRef.current = true;
-      
-      const previousCompletedCount = questState.quests.filter(q => q.completed).length;
-      const allCompleted = previousCompletedCount === questState.quests.length;
-      
-      // Reset quests for new day
-      setQuestState({
-        quests: DEFAULT_DAILY_QUESTS.map(q => ({ ...q, completed: false })),
-        lastResetDate: today,
-        previousDayCompletedCount: previousCompletedCount,
-      });
+    const processReset = () => {
+      const today = getTodayDateString();
+      if (questState.lastResetDate !== today && !penaltyProcessedRef.current) {
+        penaltyProcessedRef.current = true;
+        
+        const previousCompletedCount = questState.quests.filter(q => q.completed).length;
+        
+        // Reset quests for new day
+        setQuestState({
+          quests: DEFAULT_DAILY_QUESTS.map(q => ({ ...q, completed: false })),
+          lastResetDate: today,
+          previousDayCompletedCount: previousCompletedCount,
+        });
 
-      setPlayer(prev => {
-        let newPenalty = { ...prev.penalty, bannerDismissedForSession: false };
-        let newStats = { ...prev.stats };
-        let newStreak = prev.streak;
+        setPlayer(prev => {
+          let newPenalty = { ...prev.penalty, bannerDismissedForSession: false };
+          let newStats = { ...prev.stats };
+          let newStreak = prev.streak;
 
-        // Calculate consecutive zero days
-        if (previousCompletedCount === 0) {
-          // Zero quests completed yesterday
-          newPenalty.consecutiveZeroDays += 1;
-          
-          // Apply penalties based on level
-          const penaltyLevel = getPenaltyLevel(newPenalty.consecutiveZeroDays);
-          
-          if (penaltyLevel >= 2 && !newPenalty.penaltyAppliedForCurrentLevel) {
-            const lowestStat = getLowestStat(newStats);
-            const reduction = penaltyLevel === 3 ? 2 : 1;
-            newStats[lowestStat] = Math.max(1, newStats[lowestStat] - reduction);
-            newPenalty.penaltyAppliedForCurrentLevel = true;
+          if (previousCompletedCount === 0) {
+            newPenalty.consecutiveZeroDays += 1;
+            const penaltyLevel = getPenaltyLevel(newPenalty.consecutiveZeroDays);
+            
+            if (penaltyLevel >= 2 && !newPenalty.penaltyAppliedForCurrentLevel) {
+              const lowestStat = getLowestStat(newStats);
+              const reduction = penaltyLevel === 3 ? 2 : 1;
+              newStats[lowestStat] = Math.max(1, newStats[lowestStat] - reduction);
+              newPenalty.penaltyAppliedForCurrentLevel = true;
 
-            if (penaltyLevel === 3) {
-              setShowFlashEffect(true);
-              setTimeout(() => setShowFlashEffect(false), 500);
+              if (penaltyLevel === 3) {
+                setShowFlashEffect(true);
+                setTimeout(() => setShowFlashEffect(false), 500);
+              }
+
+              toast({
+                ...getSystemToast('penaltyCritical', {
+                  stat: lowestStat.charAt(0).toUpperCase() + lowestStat.slice(1),
+                  reduction,
+                }),
+                variant: "destructive",
+              });
+            } else if (penaltyLevel === 1) {
+              toast(getSystemToast('penaltyWarning'));
             }
 
-            toast({
-              ...getSystemToast('penaltyCritical', {
-                stat: lowestStat.charAt(0).toUpperCase() + lowestStat.slice(1),
-                reduction,
-              }),
-              variant: "destructive",
-            });
-          } else if (penaltyLevel === 1) {
-            toast(getSystemToast('penaltyWarning'));
+            if (newStreak > 0) {
+              newStreak = 0;
+              toast({
+                ...getSystemToast('streakLost'),
+                variant: "destructive",
+              });
+            }
+          } else {
+            newPenalty.consecutiveZeroDays = 0;
+            newPenalty.lastCompletionDate = questState.lastResetDate;
+            newPenalty.penaltyAppliedForCurrentLevel = false;
           }
 
-          // Reset streak on zero completion day
-          if (newStreak > 0) {
-            newStreak = 0;
-            toast({
-              ...getSystemToast('streakLost'),
-              variant: "destructive",
-            });
-          }
-        } else {
-          // At least one quest was completed
-          newPenalty.consecutiveZeroDays = 0;
-          newPenalty.lastCompletionDate = questState.lastResetDate;
-          newPenalty.penaltyAppliedForCurrentLevel = false;
-        }
+          return {
+            ...prev,
+            stats: newStats,
+            streak: newStreak,
+            penalty: newPenalty,
+          };
+        });
+      }
+    };
 
-        return {
-          ...prev,
-          stats: newStats,
-          streak: newStreak,
-          penalty: newPenalty,
-        };
-      });
-    }
+    processReset();
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') processReset();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, [questState.lastResetDate, questState.quests, toast]);
 
   // Reset processed ref when date changes
