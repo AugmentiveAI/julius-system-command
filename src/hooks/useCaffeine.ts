@@ -8,24 +8,18 @@ interface CaffeineState {
 
 const STORAGE_KEY = 'the-system-caffeine';
 
-function getTodayKey(): string {
-  return new Date().toISOString().split('T')[0];
-}
-
-function loadState(): CaffeineState {
-  const today = getTodayKey();
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const parsed: CaffeineState = JSON.parse(stored);
-      if (parsed.lastResetDate === today) return parsed;
-    }
-  } catch {}
-  return { logs: [], lastResetDate: today, warningDismissed: false };
-}
-
 export function useCaffeine() {
-  const [state, setState] = useState<CaffeineState>(loadState);
+  const [state, setState] = useState<CaffeineState>(() => {
+    const today = new Date().toISOString().split('T')[0];
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed: CaffeineState = JSON.parse(stored);
+        if (parsed.lastResetDate === today) return parsed;
+      }
+    } catch {}
+    return { logs: [], lastResetDate: today, warningDismissed: false };
+  });
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -33,7 +27,7 @@ export function useCaffeine() {
 
   // Daily reset check
   useEffect(() => {
-    const today = getTodayKey();
+    const today = new Date().toISOString().split('T')[0];
     if (state.lastResetDate !== today) {
       setState({ logs: [], lastResetDate: today, warningDismissed: false });
     }
