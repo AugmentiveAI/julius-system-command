@@ -107,6 +107,8 @@ export function usePlayer() {
   const [levelUpState, setLevelUpState] = useState<LevelUpState>({ show: false, newLevel: 0 });
   const { toast } = useToast();
   const penaltyProcessedRef = useRef(false);
+  const questStateRef = useRef(questState);
+  useEffect(() => { questStateRef.current = questState; }, [questState]);
 
   // Persist player to localStorage
   useEffect(() => {
@@ -127,10 +129,11 @@ export function usePlayer() {
   useEffect(() => {
     const processReset = () => {
       const today = getTodayDateString();
-      if (questState.lastResetDate !== today && !penaltyProcessedRef.current) {
+      const currentQuestState = questStateRef.current;
+      if (currentQuestState.lastResetDate !== today && !penaltyProcessedRef.current) {
         penaltyProcessedRef.current = true;
         
-        const previousCompletedCount = questState.quests.filter(q => q.completed).length;
+        const previousCompletedCount = currentQuestState.quests.filter(q => q.completed).length;
         
         // Reset quests for new day
         setQuestState({
@@ -179,7 +182,7 @@ export function usePlayer() {
             }
           } else {
             newPenalty.consecutiveZeroDays = 0;
-            newPenalty.lastCompletionDate = questState.lastResetDate;
+            newPenalty.lastCompletionDate = currentQuestState.lastResetDate;
             newPenalty.penaltyAppliedForCurrentLevel = false;
           }
 
@@ -200,7 +203,7 @@ export function usePlayer() {
     };
     document.addEventListener('visibilitychange', handleVisibility);
     return () => document.removeEventListener('visibilitychange', handleVisibility);
-  }, [questState.lastResetDate, questState.quests, toast]);
+  }, [toast]);
 
   // Reset processed ref when date changes
   useEffect(() => {
