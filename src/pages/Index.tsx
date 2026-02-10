@@ -197,13 +197,25 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
     }
   }, [forceFirstScan, onScanTriggered]);
 
-  // Auto-trigger scan on first daily load
+  // Auto-trigger scan on first daily load or when returning from background
   useEffect(() => {
-    if (needsDailyScan() && !autoScanRef.current && !forceFirstScan) {
+    const checkScan = () => {
+      if (needsDailyScan() && !forceFirstScan) {
+        toast(getSystemToast('stateScanRequired'));
+        setTimeout(() => setScanOpen(true), 800);
+      }
+    };
+
+    if (!autoScanRef.current) {
       autoScanRef.current = true;
-      toast(getSystemToast('stateScanRequired'));
-      setTimeout(() => setScanOpen(true), 800);
+      checkScan();
     }
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') checkScan();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, [toast, forceFirstScan]);
 
   const handleScanClose = useCallback((open: boolean) => {

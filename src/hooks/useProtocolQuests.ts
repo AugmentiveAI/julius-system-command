@@ -47,16 +47,29 @@ export function useProtocolQuests() {
     localStorage.setItem(PROTOCOL_QUESTS_STORAGE_KEY, JSON.stringify(state));
   }, [state]);
 
-  // Check for daily reset
+  // Check for daily reset (including when app resumes from background)
   useEffect(() => {
-    const today = getTodayDateString();
-    if (state.lastResetDate !== today) {
-      setState({
-        quests: DAILY_PROTOCOL.map(q => ({ ...q, completed: false })),
-        lastResetDate: today,
+    const checkReset = () => {
+      const today = getTodayDateString();
+      setState(prev => {
+        if (prev.lastResetDate !== today) {
+          return {
+            quests: DAILY_PROTOCOL.map(q => ({ ...q, completed: false })),
+            lastResetDate: today,
+          };
+        }
+        return prev;
       });
-    }
-  }, [state.lastResetDate]);
+    };
+
+    checkReset();
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') checkReset();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, []);
 
   const toggleQuest = useCallback((questId: string) => {
     setState(prev => ({
