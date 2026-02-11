@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getDayProfile } from '@/utils/weeklyRhythm';
+import { getSystemDate } from '@/utils/dayCycleEngine';
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -53,7 +54,7 @@ function loadSprint(): StoredSprint | null {
     if (!stored) return null;
     const data: StoredSprint = JSON.parse(stored);
     // Invalidate if different day
-    if (data.date !== new Date().toISOString().split('T')[0]) {
+    if (data.date !== getSystemDate()) {
       localStorage.removeItem(SPRINT_STORAGE_KEY);
       return null;
     }
@@ -156,7 +157,7 @@ export function useSprintTimer() {
       startedAt: Date.now(),
       totalSeconds: total,
       selectedQuests: quests,
-      date: new Date().toISOString().split('T')[0],
+      date: getSystemDate(),
     });
   }, []);
 

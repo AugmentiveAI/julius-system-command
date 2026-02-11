@@ -33,15 +33,16 @@ import { LootDropToast } from '@/components/effects/LootDropToast';
 import { LootCinematicReveal } from '@/components/effects/LootCinematicReveal';
 import { usePillarQuests } from '@/hooks/usePillarQuests';
 import { usePillarStreak } from '@/hooks/usePillarStreak';
+import { getSystemDate } from '@/utils/dayCycleEngine';
 const LAST_SCAN_DATE_KEY = 'systemLastScanDate';
 
 function needsDailyScan(): boolean {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getSystemDate();
   return localStorage.getItem(LAST_SCAN_DATE_KEY) !== today;
 }
 
 function markScanDone() {
-  localStorage.setItem(LAST_SCAN_DATE_KEY, new Date().toISOString().split('T')[0]);
+  localStorage.setItem(LAST_SCAN_DATE_KEY, getSystemDate());
 }
 
 /** Build a concise one-line daily message from strategy data */
@@ -127,7 +128,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
 
   const [completedCalibratedIds] = useState<Set<string>>(() => {
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = getSystemDate();
       const history = JSON.parse(localStorage.getItem('systemCalibratedCompletions') || '[]');
       return new Set(history.filter((c: any) => c.completedAt?.startsWith(today)).map((c: any) => c.questId));
     } catch { return new Set<string>(); }
@@ -142,7 +143,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
   try {
     if (preCommitmentRaw) {
       const pc = JSON.parse(preCommitmentRaw);
-      if (pc.date === new Date().toISOString().split('T')[0] && pc.accepted) {
+      if (pc.date === getSystemDate() && pc.accepted) {
         preCommittedId = pc.questId;
       }
     }

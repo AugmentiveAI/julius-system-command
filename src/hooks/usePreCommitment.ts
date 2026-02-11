@@ -7,6 +7,7 @@ import {
   loadProfile,
 } from '@/utils/persuasionEngine';
 import { QUEST_TEMPLATES } from '@/types/questDifficulty';
+import { getSystemDate } from '@/utils/dayCycleEngine';
 
 // ── Constants ────────────────────────────────────────────────────────
 
@@ -24,12 +25,12 @@ function hasTriggeredTonight(): boolean {
   try {
     const stored = localStorage.getItem(PRECOMMIT_TRIGGER_KEY);
     if (!stored) return false;
-    return stored === new Date().toISOString().split('T')[0];
+    return stored === getSystemDate();
   } catch { return false; }
 }
 
 function markTriggeredTonight(): void {
-  localStorage.setItem(PRECOMMIT_TRIGGER_KEY, new Date().toISOString().split('T')[0]);
+  localStorage.setItem(PRECOMMIT_TRIGGER_KEY, getSystemDate());
 }
 
 function getCurrentMode(): 'push' | 'steady' | 'recover' | null {
@@ -38,9 +39,9 @@ function getCurrentMode(): 'push' | 'steady' | 'recover' | null {
     if (!stored) return null;
     const checks = JSON.parse(stored);
     if (checks.length === 0) return null;
-    const today = new Date().toISOString().split('T')[0];
+    const today = getSystemDate();
     const todayChecks = checks.filter((c: any) =>
-      new Date(c.timestamp).toISOString().split('T')[0] === today,
+      new Date(c.timestamp).toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' }) === today,
     );
     if (todayChecks.length > 0) return todayChecks[todayChecks.length - 1].systemRecommendation;
     return checks[checks.length - 1].systemRecommendation;
@@ -49,7 +50,7 @@ function getCurrentMode(): 'push' | 'steady' | 'recover' | null {
 
 function isTodayCommitmentDate(commitment: PreCommitment | null): boolean {
   if (!commitment) return false;
-  const today = new Date().toISOString().split('T')[0];
+  const today = getSystemDate();
   return commitment.date === today && commitment.accepted === true;
 }
 

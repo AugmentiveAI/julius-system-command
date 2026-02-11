@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { getSystemDate } from '@/utils/dayCycleEngine';
 import { getSystemStrategy, SystemStrategy, CompletionRecord } from '@/utils/systemIntelligence';
 import { getGeneticState } from '@/utils/geneticEngine';
 import { analyzeResistance, CompletionEntry } from '@/utils/resistanceTracker';
@@ -87,7 +88,7 @@ function loadGeneticHUD() {
     const stored = localStorage.getItem(GENETIC_HUD_KEY);
     if (stored) {
       const data = JSON.parse(stored);
-      const today = new Date().toISOString().split('T')[0];
+      const today = getSystemDate();
       if (data.sprintDate !== today) {
         data.sprintsToday = 0;
       }
@@ -101,7 +102,7 @@ export function getDayNumber(): number {
   const stored = localStorage.getItem(START_DATE_KEY);
   const startDate = stored ? new Date(stored) : new Date();
   if (!stored) {
-    localStorage.setItem(START_DATE_KEY, new Date().toISOString().split('T')[0]);
+    localStorage.setItem(START_DATE_KEY, getSystemDate());
   }
   return Math.max(1, Math.ceil((new Date().getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1);
 }

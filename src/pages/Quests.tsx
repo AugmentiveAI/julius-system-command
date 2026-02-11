@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Clock, ScanLine, Check, Sparkles, Play, Brain, Zap, Target, Shield, ShieldOff } from 'lucide-react';
+import { getSystemDate, getTimeUntilMidnightPST } from '@/utils/dayCycleEngine';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import StateCheck from '@/components/StateCheck';
 import { useProtocolQuests } from '@/hooks/useProtocolQuests';
@@ -50,9 +51,9 @@ function getLatestTodayCheck(): PlayerStateCheck | null {
     const stored = localStorage.getItem(STATE_HISTORY_KEY);
     if (!stored) return null;
     const checks: PlayerStateCheck[] = JSON.parse(stored);
-    const today = new Date().toISOString().split('T')[0];
+    const today = getSystemDate();
     const todayChecks = checks.filter(c =>
-      new Date(c.timestamp).toISOString().split('T')[0] === today
+      new Date(c.timestamp).toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' }) === today
     );
     return todayChecks.length > 0 ? todayChecks[todayChecks.length - 1] : null;
   } catch { return null; }
@@ -85,14 +86,7 @@ function saveCompletionRecord(record: QuestCompletionRecord) {
 }
 
 function getTimeUntilMidnight(): { hours: number; minutes: number } {
-  const now = new Date();
-  const midnight = new Date(now);
-  midnight.setHours(24, 0, 0, 0);
-  const diff = midnight.getTime() - now.getTime();
-  return {
-    hours: Math.floor(diff / (1000 * 60 * 60)),
-    minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
-  };
+  return getTimeUntilMidnightPST();
 }
 
 function assignTimeBlock(quest: CalibratedQuest): QuestTimeBlock {
@@ -168,7 +162,7 @@ const Quests = () => {
   const [timeUntilReset, setTimeUntilReset] = useState(getTimeUntilMidnight);
   const [completedCalibrated, setCompletedCalibrated] = useState<Set<string>>(() => {
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = getSystemDate();
       return new Set(getCompletionHistory().filter(c => c.completedAt.startsWith(today)).map(c => c.questId));
     } catch { return new Set(); }
   });
@@ -191,7 +185,7 @@ const Quests = () => {
       const stored = localStorage.getItem('systemPillarConfirmation');
       if (!stored) return false;
       const data = JSON.parse(stored);
-      return data.confirmedDate === new Date().toISOString().split('T')[0];
+      return data.confirmedDate === getSystemDate();
     } catch { return false; }
   });
 
@@ -214,7 +208,7 @@ const Quests = () => {
   }, [pillarsConfirmed]);
 
   const handlePillarConfirm = useCallback(() => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getSystemDate();
     localStorage.setItem('systemPillarConfirmation', JSON.stringify({ confirmedDate: today }));
     setPillarsConfirmed(true);
     toast({ title: '⚔️ Pillars Confirmed', description: 'The System holds you accountable.', duration: 2000 });

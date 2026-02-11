@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Workout, WorkoutType, WEEKLY_SCHEDULE } from '@/types/training';
 import { getWorkoutForType } from '@/data/workouts';
+import { getSystemDate, getSystemDayOfWeek } from '@/utils/dayCycleEngine';
 
 interface WorkoutState {
   workout: Workout;
@@ -11,11 +12,11 @@ interface WorkoutState {
 const WORKOUT_STORAGE_KEY = 'the-system-workout';
 
 function getTodayDateString(): string {
-  return new Date().toISOString().split('T')[0];
+  return getSystemDate();
 }
 
 function getTodayWorkoutType(): WorkoutType {
-  const dayOfWeek = new Date().getDay();
+  const dayOfWeek = getSystemDayOfWeek();
   return WEEKLY_SCHEDULE[dayOfWeek];
 }
 

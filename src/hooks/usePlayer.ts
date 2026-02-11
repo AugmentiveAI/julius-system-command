@@ -5,6 +5,7 @@ import { MainQuest, MainQuestState, DEFAULT_MAIN_QUESTS, getHighestRank } from '
 import { getLevelFromTotalXP } from '@/types/xp';
 import { useToast } from '@/hooks/use-toast';
 import { getSystemToast } from '@/utils/systemVoice';
+import { getSystemDate } from '@/utils/dayCycleEngine';
 
 interface LevelUpState {
   show: boolean;
@@ -16,20 +17,7 @@ const QUESTS_STORAGE_KEY = 'the-system-quests';
 const MAIN_QUESTS_STORAGE_KEY = 'the-system-main-quests';
 
 function getTodayDateString(): string {
-  return new Date().toISOString().split('T')[0];
-}
-
-function getYesterdayDateString(): string {
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  return yesterday.toISOString().split('T')[0];
-}
-
-function daysBetween(date1: string, date2: string): number {
-  const d1 = new Date(date1);
-  const d2 = new Date(date2);
-  const diffTime = Math.abs(d2.getTime() - d1.getTime());
-  return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  return getSystemDate();
 }
 
 function loadPlayer(): Player {

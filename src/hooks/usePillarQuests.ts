@@ -2,11 +2,12 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Pillar, PillarQuest, PillarQuestState } from '@/types/pillarQuests';
 import { PILLAR_QUESTS } from '@/data/pillarQuests';
 import { getDayProfile } from '@/utils/weeklyRhythm';
+import { getSystemDate } from '@/utils/dayCycleEngine';
 
 const STORAGE_KEY = 'the-system-pillar-quests';
 
 function getTodayDateString(): string {
-  return new Date().toISOString().split('T')[0];
+  return getSystemDate();
 }
 
 function getTodayPillarQuests(): PillarQuest[] {
