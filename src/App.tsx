@@ -6,6 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HistoryProvider } from "@/contexts/HistoryContext";
 import { FocusModeProvider } from "@/contexts/FocusModeContext";
+import { DayCycleProvider } from "@/contexts/DayCycleContext";
+import { getSystemDate } from "@/utils/dayCycleEngine";
 import { FocusFAB } from "@/components/focus/FocusFAB";
 import { useFocusModeContext } from "@/contexts/FocusModeContext";
 import { SystemCommsBanner } from "@/components/comms/SystemCommsBanner";
@@ -143,13 +145,46 @@ const AppWithFAB = () => {
   );
 };
 
+const getDayDataFallback = () => {
+  // Read current day data from localStorage for archiving
+  try {
+    const protocolRaw = localStorage.getItem('the-system-protocol-quests');
+    const protocol = protocolRaw ? JSON.parse(protocolRaw) : { quests: [] };
+    const quests = protocol.quests || [];
+    const completed = quests.filter((q: any) => q.completed).length;
+    const totalXP = quests
+      .filter((q: any) => q.completed)
+      .reduce((sum: number, q: any) => sum + (q.xp || 0) + (q.geneticBonus?.bonusXp || 0), 0);
+
+    const stateRaw = localStorage.getItem('systemStateHistory');
+    let mode = 'steady';
+    if (stateRaw) {
+      const history = JSON.parse(stateRaw);
+      if (history.length > 0) mode = history[history.length - 1].systemRecommendation || 'steady';
+    }
+
+    const sprintRaw = localStorage.getItem('systemSprintTimer');
+    let sprints = 0;
+    if (sprintRaw) {
+      const data = JSON.parse(sprintRaw);
+      sprints = data.currentSprint ? data.currentSprint - 1 : 0;
+    }
+
+    return { questsCompleted: completed, questsTotal: quests.length, xpEarned: totalXP, mode, sprintsCompleted: sprints };
+  } catch {
+    return { questsCompleted: 0, questsTotal: 0, xpEarned: 0, mode: 'steady', sprintsCompleted: 0 };
+  }
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <HistoryProvider>
-        <FocusModeProvider>
-          <AppWithFAB />
-        </FocusModeProvider>
+        <DayCycleProvider getCurrentDayData={getDayDataFallback}>
+          <FocusModeProvider>
+            <AppWithFAB />
+          </FocusModeProvider>
+        </DayCycleProvider>
       </HistoryProvider>
     </TooltipProvider>
   </QueryClientProvider>

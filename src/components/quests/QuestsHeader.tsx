@@ -1,17 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Clock } from 'lucide-react';
-
-function getTimeUntilMidnight(): { hours: number; minutes: number } {
-  const now = new Date();
-  const midnight = new Date(now);
-  midnight.setHours(24, 0, 0, 0);
-  
-  const diff = midnight.getTime() - now.getTime();
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  
-  return { hours, minutes };
-}
+import { getTimeUntilMidnightPST } from '@/utils/dayCycleEngine';
 
 interface QuestsHeaderProps {
   completedCount: number;
@@ -19,12 +8,12 @@ interface QuestsHeaderProps {
 }
 
 export const QuestsHeader = ({ completedCount, totalCount }: QuestsHeaderProps) => {
-  const [timeUntilReset, setTimeUntilReset] = useState(getTimeUntilMidnight);
+  const [timeUntilReset, setTimeUntilReset] = useState(getTimeUntilMidnightPST);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setTimeUntilReset(getTimeUntilMidnight());
-    }, 60000); // Update every minute
+      setTimeUntilReset(getTimeUntilMidnightPST());
+    }, 60000);
 
     return () => clearInterval(interval);
   }, []);

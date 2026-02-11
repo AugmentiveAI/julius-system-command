@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ProtocolQuest, QuestTimeBlock } from '@/types/quests';
 import { DAILY_PROTOCOL } from '@/data/dailyProtocol';
+import { getSystemDate } from '@/utils/dayCycleEngine';
 
 interface ProtocolQuestState {
   quests: ProtocolQuest[];
@@ -9,12 +10,8 @@ interface ProtocolQuestState {
 
 const PROTOCOL_QUESTS_STORAGE_KEY = 'the-system-protocol-quests';
 
-function getTodayDateString(): string {
-  return new Date().toISOString().split('T')[0];
-}
-
 function loadProtocolQuests(): ProtocolQuestState {
-  const today = getTodayDateString();
+  const today = getSystemDate();
 
   try {
     const stored = localStorage.getItem(PROTOCOL_QUESTS_STORAGE_KEY);
@@ -50,7 +47,7 @@ export function useProtocolQuests() {
   // Check for daily reset (including when app resumes from background)
   useEffect(() => {
     const checkReset = () => {
-      const today = getTodayDateString();
+      const today = getSystemDate();
       setState(prev => {
         if (prev.lastResetDate !== today) {
           return {

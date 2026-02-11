@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getGeneticState, GeneticState } from '@/utils/geneticEngine';
+import { getSystemDate } from '@/utils/dayCycleEngine';
 
 const GENETIC_HUD_KEY = 'systemGeneticHUD';
 
@@ -16,8 +17,7 @@ function loadHUDData(): GeneticHUDData {
     const stored = localStorage.getItem(GENETIC_HUD_KEY);
     if (stored) {
       const data: GeneticHUDData = JSON.parse(stored);
-      const today = new Date().toISOString().split('T')[0];
-      // Reset sprints if it's a new day
+      const today = getSystemDate();
       if (data.sprintDate !== today) {
         data.sprintsToday = 0;
         data.sprintDate = today;
@@ -30,7 +30,7 @@ function loadHUDData(): GeneticHUDData {
     lastMagnesium: null,
     sprintsToday: 0,
     stressLevel: 2,
-    sprintDate: new Date().toISOString().split('T')[0],
+    sprintDate: getSystemDate(),
   };
 }
 

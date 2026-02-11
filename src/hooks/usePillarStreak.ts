@@ -5,15 +5,17 @@ import {
   rollPillarMasteryBonus,
   getISOWeek,
 } from '@/types/pillarQuests';
+import { getSystemDate } from '@/utils/dayCycleEngine';
 
 const STREAK_KEY = 'the-system-pillar-streak';
 
 function getTodayStr(): string {
-  return new Date().toISOString().split('T')[0];
+  return getSystemDate();
 }
 
 function getYesterdayStr(): string {
-  const d = new Date();
+  const today = getSystemDate();
+  const d = new Date(today + 'T12:00:00');
   d.setDate(d.getDate() - 1);
   return d.toISOString().split('T')[0];
 }

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { getSystemDate } from '@/utils/dayCycleEngine';
 
 interface CaffeineState {
   logs: string[]; // ISO timestamps
@@ -10,7 +11,7 @@ const STORAGE_KEY = 'the-system-caffeine';
 
 export function useCaffeine() {
   const [state, setState] = useState<CaffeineState>(() => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getSystemDate();
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
@@ -27,7 +28,7 @@ export function useCaffeine() {
 
   // Daily reset check
   useEffect(() => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getSystemDate();
     if (state.lastResetDate !== today) {
       setState({ logs: [], lastResetDate: today, warningDismissed: false });
     }
