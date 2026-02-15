@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Check, Zap, Lock, Shield, Coffee as BreakIcon, HelpCircle } from 'lucide-react';
+import { hapticTap } from '@/utils/haptics';
 import { CalibratedQuest } from '@/utils/questCalibration';
 import { STAT_LABELS } from '@/types/quest';
 import { DIFFICULTY_BADGE_CONFIG, QuestDifficulty } from '@/types/questDifficulty';
@@ -129,6 +130,7 @@ export const CalibratedQuestCard = ({
       <div className="flex items-start gap-3">
         {/* Checkbox */}
         <button
+          onTouchStart={hapticTap}
           onClick={handleToggle}
           className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-all ${
             completed

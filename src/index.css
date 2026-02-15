@@ -78,8 +78,10 @@
 }
 
 @layer base {
-  * {
+  *, *::before, *::after {
     @apply border-border;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
