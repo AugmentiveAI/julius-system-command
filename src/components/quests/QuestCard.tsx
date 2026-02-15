@@ -1,6 +1,7 @@
 import { Check } from 'lucide-react';
 import { Quest } from '@/types/quest';
 import { STAT_LABELS } from '@/types/quest';
+import { hapticTap } from '@/utils/haptics';
 
 interface QuestCardProps {
   quest: Quest;
@@ -26,6 +27,7 @@ export const QuestCard = ({ quest, onToggle }: QuestCardProps) => {
       <div className="flex items-start gap-4">
         {/* Checkbox */}
         <button
+          onTouchStart={hapticTap}
           onClick={() => onToggle(id)}
           className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2 transition-all ${
             completed

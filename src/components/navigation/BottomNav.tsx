@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Home, Swords, Dumbbell, TrendingUp, MoreHorizontal } from 'lucide-react';
+import { hapticTap } from '@/utils/haptics';
 import { useCurrentMode } from '@/components/dashboard/CurrentStateCard';
 
 const navItems = [
@@ -30,6 +31,7 @@ export const BottomNav = () => {
             <Link
               key={path}
               to={path}
+              onTouchStart={hapticTap}
               className={`relative flex flex-col items-center gap-0.5 px-3 py-2 transition-colors ${
                 isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
               }`}

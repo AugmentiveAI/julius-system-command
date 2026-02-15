@@ -1,4 +1,5 @@
 import { Check, Zap } from 'lucide-react';
+import { hapticTap } from '@/utils/haptics';
 import { ProtocolQuest } from '@/types/quests';
 import { STAT_LABELS } from '@/types/quest';
 import {
@@ -28,6 +29,7 @@ export const ProtocolQuestCard = ({ quest, onToggle }: ProtocolQuestCardProps) =
       <div className="flex items-start gap-3">
         {/* Checkbox */}
         <button
+          onTouchStart={hapticTap}
           onClick={() => onToggle(id)}
           className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-all ${
             completed

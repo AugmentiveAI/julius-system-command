@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { X, Play, Check, Minus, SkipForward } from 'lucide-react';
+import { hapticTap } from '@/utils/haptics';
 import { Button } from '@/components/ui/button';
 import { SprintState, SprintQuest } from '@/hooks/useSprintTimer';
 import { CalibratedQuest } from '@/utils/questCalibration';
@@ -129,6 +130,7 @@ function QuestSelection({
       {/* Start button */}
       <div className="px-5 py-5">
         <Button
+          onTouchStart={hapticTap}
           onClick={handleStart}
           disabled={selected.size === 0}
           className="w-full font-mono tracking-wider"
@@ -229,12 +231,14 @@ function CompletionPrompt({
 
       <div className="flex gap-4 w-full max-w-xs">
         <Button
+          onTouchStart={hapticTap}
           onClick={() => handleResult('yes')}
           className="flex-1 font-mono tracking-wider text-xs"
         >
           <Check className="h-4 w-4 mr-1" /> YES
         </Button>
         <Button
+          onTouchStart={hapticTap}
           onClick={() => handleResult('partial')}
           variant="outline"
           className="flex-1 font-mono tracking-wider text-xs"
@@ -242,6 +246,7 @@ function CompletionPrompt({
           <Minus className="h-4 w-4 mr-1" /> PARTIAL
         </Button>
         <Button
+          onTouchStart={hapticTap}
           onClick={() => handleResult('no')}
           variant="ghost"
           className="flex-1 font-mono tracking-wider text-xs text-muted-foreground"
