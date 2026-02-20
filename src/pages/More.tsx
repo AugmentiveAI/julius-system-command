@@ -79,8 +79,32 @@ const More = () => {
     return acc;
   }, {});
 
+  const handleReplayComplete = () => {
+    // Soft reset: reset day/quests/XP/streaks but keep history, inventory, settings
+    const keysToReset = [
+      'the-system-protocol-quests',
+      'the-system-quests',
+      'systemStateHistory',
+      'systemCompletionHistory',
+      'systemSprintTimer',
+      'systemDayCycle',
+      'systemGeneticHUD',
+      'the-system-daily-xp',
+      'the-system-pillar-quests',
+      'the-system-pillar-streaks',
+      'systemWorkoutData',
+    ];
+    keysToReset.forEach(k => localStorage.removeItem(k));
+    // Reset start date to today
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });
+    localStorage.setItem('systemStartDate', today);
+    setStartDate(today);
+    setShowReplay(false);
+    window.location.reload();
+  };
+
   if (showReplay) {
-    return <AwakeningSequence onComplete={() => setShowReplay(false)} isReplay />;
+    return <AwakeningSequence onComplete={handleReplayComplete} isReplay />;
   }
 
   const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
