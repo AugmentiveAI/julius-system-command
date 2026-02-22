@@ -5,6 +5,7 @@ import { getSystemDate, getSystemDayOfWeek } from '@/utils/dayCycleEngine';
 import { logWorkoutRecovery } from '@/utils/muscleRecovery';
 import { prescribeTraining, TrainingPrescription, scaleExercises } from '@/utils/trainingPrescription';
 import { getGeneticState } from '@/utils/geneticEngine';
+import { evaluateWorkoutSwap, SwapDecision } from '@/utils/workoutSwap';
 
 interface WorkoutState {
   workout: Workout;
@@ -47,7 +48,10 @@ function loadGeneticHUD() {
 
 function loadWorkoutState(): WorkoutState {
   const today = getTodayDateString();
-  const todayType = getTodayWorkoutType();
+
+  // Evaluate swap before deciding workout type
+  const swap = evaluateWorkoutSwap();
+  const effectiveType = swap.finalType;
 
   try {
     const stored = localStorage.getItem(WORKOUT_STORAGE_KEY);
@@ -56,7 +60,7 @@ function loadWorkoutState(): WorkoutState {
       // Reset if it's a new day
       if (state.lastResetDate !== today) {
         return {
-          workout: getWorkoutForType(todayType),
+          workout: getWorkoutForType(effectiveType),
           lastResetDate: today,
           workoutCompleted: false,
         };
@@ -68,7 +72,7 @@ function loadWorkoutState(): WorkoutState {
   }
 
   return {
-    workout: getWorkoutForType(todayType),
+    workout: getWorkoutForType(effectiveType),
     lastResetDate: today,
     workoutCompleted: false,
   };
@@ -77,8 +81,9 @@ function loadWorkoutState(): WorkoutState {
 export function useWorkout() {
   const [state, setState] = useState<WorkoutState>(loadWorkoutState);
   const [prescription, setPrescription] = useState<TrainingPrescription | null>(null);
+  const [swapDecision, setSwapDecision] = useState<SwapDecision | null>(null);
 
-  // Compute prescription on mount
+  // Compute prescription and swap on mount
   useEffect(() => {
     const now = new Date();
     const hudData = loadGeneticHUD();
@@ -90,7 +95,11 @@ export function useWorkout() {
       hudData.stressLevel,
     );
     const latestState = loadLatestStateCheck();
-    const workoutType = getTodayWorkoutType();
+
+    // Evaluate swap
+    const swap = evaluateWorkoutSwap(now);
+    setSwapDecision(swap);
+    const workoutType = swap.finalType;
 
     const result = prescribeTraining(workoutType, geneticState, latestState, now);
     setPrescription(result);
@@ -127,9 +136,9 @@ export function useWorkout() {
   useEffect(() => {
     const today = getTodayDateString();
     if (state.lastResetDate !== today) {
-      const todayType = getTodayWorkoutType();
+      const swap = evaluateWorkoutSwap();
       setState({
-        workout: getWorkoutForType(todayType),
+        workout: getWorkoutForType(swap.finalType),
         lastResetDate: today,
         workoutCompleted: false,
       });
@@ -182,5 +191,6 @@ export function useWorkout() {
     allExercisesComplete,
     todayWorkoutType: getTodayWorkoutType(),
     prescription,
+    swapDecision,
   };
 }

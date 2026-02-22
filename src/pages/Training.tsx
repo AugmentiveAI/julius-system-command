@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Check, Dumbbell, Bike, Wind, Calendar, ArrowUp, ArrowDown, Minus, Activity } from 'lucide-react';
+import { Check, Dumbbell, Bike, Wind, Calendar, ArrowUp, ArrowDown, Minus, Activity, AlertTriangle, Repeat } from 'lucide-react';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { useWorkout } from '@/hooks/useWorkout';
 import { WEEKLY_SCHEDULE, WorkoutType } from '@/types/training';
@@ -49,6 +49,7 @@ const Training = () => {
     totalCount,
     allExercisesComplete,
     prescription,
+    swapDecision,
   } = useWorkout();
   const { toast } = useToast();
   const { geneticState, sprintsToday } = useGeneticState();
@@ -93,7 +94,28 @@ const Training = () => {
           </h2>
         </div>
 
-        {/* Prescription Card — System's adaptive recommendation */}
+        {/* System Override Banner — workout swap notification */}
+        {swapDecision?.swapped && (
+          <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 space-y-1">
+            <div className="flex items-center gap-2">
+              <Repeat className="h-4 w-4 text-amber-400 shrink-0" />
+              <span className="font-display text-xs font-bold uppercase tracking-wider text-amber-400">
+                System Override
+              </span>
+            </div>
+            <p className="font-tech text-sm text-foreground/80">
+              {swapDecision.reason}
+            </p>
+            <div className="flex items-center gap-3 mt-1">
+              <span className="font-mono text-[10px] text-muted-foreground">
+                Scheduled: {WORKOUT_CONFIGS[swapDecision.originalType]?.label} ({swapDecision.originalReadiness}% ready)
+              </span>
+              <span className="font-mono text-[10px] text-amber-400">
+                → {WORKOUT_CONFIGS[swapDecision.finalType]?.label} ({swapDecision.finalReadiness}% ready)
+              </span>
+            </div>
+          </div>
+        )}
         {prescription && (
           <div className={`rounded-lg border ${intensityStyle.border} ${intensityStyle.bg} p-4 space-y-3`}>
             <div className="flex items-center justify-between">
