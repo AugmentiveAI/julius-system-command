@@ -118,10 +118,10 @@ const AppWithFAB = () => {
   // Check training completion
   let trainingCompleted = false;
   try {
-    const raw = localStorage.getItem('systemWorkoutData');
+    const raw = localStorage.getItem('the-system-workout');
     if (raw) {
       const data = JSON.parse(raw);
-      trainingCompleted = data.completedToday === true;
+      trainingCompleted = data.workoutCompleted === true;
     }
   } catch { /* ignore */ }
 

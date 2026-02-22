@@ -82,17 +82,41 @@ const More = () => {
   const handleReplayComplete = () => {
     // Soft reset: reset day/quests/XP/streaks but keep history, inventory, settings
     const keysToReset = [
+      // Core daily state
       'the-system-protocol-quests',
       'the-system-quests',
-      'systemStateHistory',
-      'systemCompletionHistory',
-      'systemSprintTimer',
-      'systemDayCycle',
-      'systemGeneticHUD',
       'the-system-daily-xp',
       'the-system-pillar-quests',
       'the-system-pillar-streaks',
-      'systemWorkoutData',
+      // Training & workout
+      'the-system-workout',
+      'systemMuscleRecovery',
+      // State & scans
+      'systemStateHistory',
+      'systemLastScanDate',
+      'systemDayCycle',
+      'systemGeneticHUD',
+      // Sprint & focus
+      'systemSprintTimer',
+      'systemFocusMode',
+      'systemFocusModeActive',
+      // Persuasion & calibration
+      'systemPreCommitment',
+      'systemPreCommitTriggerDate',
+      'systemCalibratedCompletions',
+      'systemCompletionHistory',
+      'systemResistanceData',
+      'systemPersuasionProfile',
+      'systemPersuasionOutcomes',
+      'systemPersuasionOptimizer',
+      // Quests & comms
+      'systemShadowQuest',
+      'systemCommsState',
+      'the-system-caffeine',
+      // Weekly planning
+      'systemWeeklyPlan',
+      'systemWeeklyPlanDismissed',
+      'systemResistancePrevScore',
     ];
     keysToReset.forEach(k => localStorage.removeItem(k));
     // Reset start date to today
