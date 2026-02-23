@@ -6,6 +6,13 @@ import { logWorkoutRecovery } from '@/utils/muscleRecovery';
 import { prescribeTraining, TrainingPrescription, scaleExercises } from '@/utils/trainingPrescription';
 import { getGeneticState } from '@/utils/geneticEngine';
 import { evaluateWorkoutSwap, SwapDecision } from '@/utils/workoutSwap';
+import {
+  getOverloadState,
+  getWorkoutOverloadPlan,
+  logExerciseCompletion,
+  incrementSessionCount,
+} from '@/utils/overloadEngine';
+import { OverloadPrescription } from '@/types/overload';
 
 interface WorkoutState {
   workout: Workout;
@@ -82,6 +89,8 @@ export function useWorkout() {
   const [state, setState] = useState<WorkoutState>(loadWorkoutState);
   const [prescription, setPrescription] = useState<TrainingPrescription | null>(null);
   const [swapDecision, setSwapDecision] = useState<SwapDecision | null>(null);
+  const [overloadPlan, setOverloadPlan] = useState<OverloadPrescription[]>([]);
+  const overloadState = getOverloadState();
 
   // Compute prescription and swap on mount
   useEffect(() => {
@@ -125,6 +134,14 @@ export function useWorkout() {
         },
       }));
     }
+
+    // Compute overload plan
+    const plan = getWorkoutOverloadPlan(
+      getWorkoutForType(workoutType).exercises.map(e => ({
+        id: e.id, name: e.name, sets: e.sets, reps: e.reps,
+      })),
+    );
+    setOverloadPlan(plan);
   }, []);
 
   // Persist to localStorage
@@ -170,6 +187,14 @@ export function useWorkout() {
         })),
       );
 
+      // Log each exercise for progressive overload tracking
+      for (const ex of prev.workout.exercises) {
+        if (ex.completed) {
+          logExerciseCompletion(ex.id, ex.name, ex.sets, ex.reps);
+        }
+      }
+      incrementSessionCount();
+
       return {
         ...prev,
         workoutCompleted: true,
@@ -192,5 +217,8 @@ export function useWorkout() {
     todayWorkoutType: getTodayWorkoutType(),
     prescription,
     swapDecision,
+    overloadPlan,
+    trainingLevel: overloadState.detectedLevel,
+    sessionsLogged: overloadState.sessionsLogged,
   };
 }

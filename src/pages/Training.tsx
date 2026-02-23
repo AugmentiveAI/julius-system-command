@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Check, Dumbbell, Bike, Wind, Calendar, ArrowUp, ArrowDown, Minus, Activity, AlertTriangle, Repeat } from 'lucide-react';
+import { Check, Dumbbell, Bike, Wind, Calendar, ArrowUp, ArrowDown, Minus, Activity, AlertTriangle, Repeat, TrendingUp, Target } from 'lucide-react';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { useWorkout } from '@/hooks/useWorkout';
 import { WEEKLY_SCHEDULE, WorkoutType } from '@/types/training';
@@ -50,6 +50,9 @@ const Training = () => {
     allExercisesComplete,
     prescription,
     swapDecision,
+    overloadPlan,
+    trainingLevel,
+    sessionsLogged,
   } = useWorkout();
   const { toast } = useToast();
   const { geneticState, sprintsToday } = useGeneticState();
@@ -92,6 +95,12 @@ const Training = () => {
           <h2 className="mt-1 font-display text-xl font-bold text-foreground">
             Training Module
           </h2>
+          <div className="mt-1 flex items-center justify-center gap-2">
+            <Target className="h-3 w-3 text-muted-foreground" />
+            <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+              Level: {trainingLevel} · {sessionsLogged} session{sessionsLogged !== 1 ? 's' : ''} logged
+            </span>
+          </div>
         </div>
 
         {/* System Override Banner — workout swap notification */}
@@ -216,42 +225,68 @@ const Training = () => {
 
           {/* Exercises List */}
           <div className="mt-4 space-y-2">
-            {workout.exercises.map(exercise => (
-              <div
-                key={exercise.id}
-                className={`flex items-center gap-3 rounded-lg border p-3 transition-all ${
-                  exercise.completed
-                    ? 'border-green-500/30 bg-green-500/5'
-                    : 'border-border bg-card/50 hover:border-primary/50'
-                }`}
-              >
-                <button
-                  onClick={() => toggleExercise(exercise.id)}
-                  disabled={workoutCompleted}
-                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-all ${
+            {workout.exercises.map(exercise => {
+              const overload = overloadPlan.find(o => o.exerciseId === exercise.id);
+              const hasProgression = overload && overload.progression !== 'first-session' && overload.progression !== 'hold';
+
+              return (
+                <div
+                  key={exercise.id}
+                  className={`rounded-lg border p-3 transition-all ${
                     exercise.completed
-                      ? 'border-green-500 bg-green-500'
-                      : 'border-muted-foreground hover:border-primary'
-                  } ${workoutCompleted ? 'cursor-not-allowed opacity-50' : ''}`}
+                      ? 'border-green-500/30 bg-green-500/5'
+                      : 'border-border bg-card/50 hover:border-primary/50'
+                  }`}
                 >
-                  {exercise.completed && <Check className="h-3 w-3 text-white" />}
-                </button>
-                <div className="flex-1">
-                  <p
-                    className={`font-tech text-sm ${
-                      exercise.completed
-                        ? 'text-muted-foreground line-through'
-                        : 'text-foreground'
-                    }`}
-                  >
-                    {exercise.name}
-                  </p>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => toggleExercise(exercise.id)}
+                      disabled={workoutCompleted}
+                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-all ${
+                        exercise.completed
+                          ? 'border-green-500 bg-green-500'
+                          : 'border-muted-foreground hover:border-primary'
+                      } ${workoutCompleted ? 'cursor-not-allowed opacity-50' : ''}`}
+                    >
+                      {exercise.completed && <Check className="h-3 w-3 text-white" />}
+                    </button>
+                    <div className="flex-1">
+                      <p
+                        className={`font-tech text-sm ${
+                          exercise.completed
+                            ? 'text-muted-foreground line-through'
+                            : 'text-foreground'
+                        }`}
+                      >
+                        {exercise.name}
+                      </p>
+                      {/* Overload progression hint */}
+                      {hasProgression && !exercise.completed && (
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <TrendingUp className="h-3 w-3 text-primary" />
+                          <span className="font-mono text-[10px] text-primary">
+                            {overload.progressionNote}
+                          </span>
+                          {overload.suggestedWeight && (
+                            <span className="font-mono text-[10px] text-primary/70 ml-1">
+                              → {overload.suggestedWeight} lbs
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      {overload?.progression === 'first-session' && !exercise.completed && (
+                        <span className="font-mono text-[10px] text-muted-foreground mt-0.5 block">
+                          {overload.progressionNote}
+                        </span>
+                      )}
+                    </div>
+                    <span className="font-tech text-xs text-muted-foreground">
+                      {exercise.sets} × {exercise.reps}
+                    </span>
+                  </div>
                 </div>
-                <span className="font-tech text-xs text-muted-foreground">
-                  {exercise.sets} × {exercise.reps}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Complete Workout Button */}
