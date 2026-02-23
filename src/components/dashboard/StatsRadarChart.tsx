@@ -22,6 +22,7 @@ const STAT_LABELS: Record<keyof PlayerStats, string> = {
 };
 
 export const StatsRadarChart = ({ stats }: StatsRadarChartProps) => {
+  if (!stats) return null;
   const chartData = Object.entries(stats).map(([key, value]) => ({
     stat: STAT_LABELS[key as keyof PlayerStats],
     value,
