@@ -34,6 +34,7 @@ import { LootCinematicReveal } from '@/components/effects/LootCinematicReveal';
 import { usePillarQuests } from '@/hooks/usePillarQuests';
 import { usePillarStreak } from '@/hooks/usePillarStreak';
 import { getSystemDate } from '@/utils/dayCycleEngine';
+import { loadAIQuests, isAIEnabled } from '@/utils/aiQuestGenerator';
 const LAST_SCAN_DATE_KEY = 'systemLastScanDate';
 
 function needsDailyScan(): boolean {
@@ -410,7 +411,16 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
           )}
 
           {/* 2. System Message + CTA */}
-          <DashboardMessage message={pillarsMissedYesterday ? '…' : oneLiner} />
+          <DashboardMessage message={
+            pillarsMissedYesterday ? '…'
+              : (() => {
+                  const ai = loadAIQuests();
+                  if (ai && isAIEnabled() && ai.generatedAt?.startsWith(getSystemDate())) {
+                    return ai.systemMessage;
+                  }
+                  return oneLiner;
+                })()
+          } />
 
           {/* 3. Progress Ring */}
           <ProgressRing
