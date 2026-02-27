@@ -303,7 +303,7 @@ const More = () => {
         <MenuItem icon={Backpack} label="Inventory" onClick={() => setActiveSection('inventory')} />
         <MenuItem icon={Pill} label="Supplement Protocol" onClick={() => setActiveSection('supplements')} />
         <MenuItem icon={BarChart3} label="System Analytics" isLink to="/system-analytics" />
-        <MenuItem icon={Settings} label="Settings" onClick={() => setActiveSection('settings')} />
+        <MenuItem icon={Settings} label="Settings" isLink to="/settings" />
         <MenuItem icon={Info} label="About The System" onClick={() => setActiveSection('about')} />
       </div>
 

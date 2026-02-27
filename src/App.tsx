@@ -24,6 +24,7 @@ import Quests from "./pages/Quests";
 import Training from "./pages/Training";
 import Progress from "./pages/Progress";
 import More from "./pages/More";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import SystemAnalytics from "./pages/SystemAnalytics";
 
@@ -83,6 +84,7 @@ const AppContent = () => {
           <Route path="/training" element={<Training />} />
           <Route path="/progress" element={<Progress />} />
           <Route path="/more" element={<More />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="/system-analytics" element={<SystemAnalytics />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

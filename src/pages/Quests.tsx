@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Clock, ScanLine, Check, Sparkles, Play, Brain, Zap, Target, Shield, ShieldOff } from 'lucide-react';
+import { Clock, ScanLine, Check, Sparkles, Play, Brain, Zap, Target, Shield, ShieldOff, Bot } from 'lucide-react';
 import { getSystemDate, getTimeUntilMidnightPST } from '@/utils/dayCycleEngine';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import StateCheck from '@/components/StateCheck';
@@ -40,6 +40,8 @@ import { usePillarQuests } from '@/hooks/usePillarQuests';
 import { PILLAR_CONFIG, Pillar } from '@/types/pillarQuests';
 import { usePillarStreak } from '@/hooks/usePillarStreak';
 import { PillarConfirmation } from '@/components/quests/PillarConfirmation';
+import { useAIQuests } from '@/hooks/useAIQuests';
+import { loadAIQuests } from '@/utils/aiQuestGenerator';
 
 // ── Storage helpers ──────────────────────────────────────────────────
 
@@ -178,6 +180,7 @@ const Quests = () => {
   const pillar = usePillarQuests();
   const pillarStreak = usePillarStreak();
   const [pillarBonusToast, setPillarBonusToast] = useState<number | null>(null);
+  const { aiResult } = useAIQuests();
 
   // Morning confirmation — require if pillars were previewed last night but not yet confirmed today
   const [pillarsConfirmed, setPillarsConfirmed] = useState(() => {
@@ -524,13 +527,32 @@ const Quests = () => {
                 </button>
               )}
             </div>
-            <div className="flex items-center gap-1.5 text-muted-foreground">
-              <Clock className="h-3.5 w-3.5" />
-              <span className="font-mono text-xs">
-                {timeUntilReset.hours}h {timeUntilReset.minutes}m
-              </span>
+            <div className="flex items-center gap-3 text-muted-foreground">
+              {aiResult && (
+                <div className="flex items-center gap-1 rounded-md border border-primary/20 bg-primary/5 px-2 py-0.5">
+                  <Bot className="h-3 w-3 text-primary" />
+                  <span className="font-mono text-[9px] text-primary tracking-wider">AI</span>
+                </div>
+              )}
+              <div className="flex items-center gap-1.5">
+                <Clock className="h-3.5 w-3.5" />
+                <span className="font-mono text-xs">
+                  {timeUntilReset.hours}h {timeUntilReset.minutes}m
+                </span>
+              </div>
             </div>
           </div>
+
+          {/* AI Quest Generation timestamp */}
+          {aiResult && (
+            <div className="flex items-center justify-center gap-2 rounded-md border border-primary/10 bg-primary/5 px-3 py-1.5">
+              <Bot className="h-3 w-3 text-primary/60" />
+              <span className="font-mono text-[10px] text-primary/60">
+                Generated at {new Date(aiResult.generatedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                {' '}via {aiResult.provider}
+              </span>
+            </div>
+          )}
 
           {/* Gentle nudge when no scan today */}
           {!hasScan && fallbackCheck && (
