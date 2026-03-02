@@ -321,7 +321,7 @@ const Training = () => {
           <h3 className="mb-3 font-display text-sm font-semibold text-foreground">
             Weekly Schedule
           </h3>
-          <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-[3px]">
             {DAY_LABELS.map((day, index) => {
               const workoutType = WEEKLY_SCHEDULE[index];
               const config = WORKOUT_CONFIGS[workoutType];
@@ -330,20 +330,20 @@ const Training = () => {
               return (
                 <div
                   key={day}
-                  className={`rounded-md p-2 text-center transition-all ${
+                  className={`rounded-md px-1 py-2 text-center transition-all ${
                     isToday
                       ? 'border-2 border-primary bg-primary/10'
                       : 'border border-border bg-card/50'
                   }`}
                 >
                   <p
-                    className={`text-xs font-bold ${
+                    className={`text-[10px] font-bold ${
                       isToday ? 'text-primary' : 'text-muted-foreground'
                     }`}
                   >
                     {day}
                   </p>
-                  <p className={`mt-1 text-[10px] leading-tight ${config.color}`}>
+                  <p className={`mt-1 text-[9px] leading-tight truncate ${config.color}`}>
                     {config.label.split(' ')[0]}
                   </p>
                 </div>
