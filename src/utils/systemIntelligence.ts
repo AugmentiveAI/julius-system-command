@@ -3,6 +3,7 @@ import { GeneticState, COMTPhase } from '@/utils/geneticEngine';
 import { ResistanceAnalysis, ResistancePattern } from '@/utils/resistanceTracker';
 import { MainQuest } from '@/types/mainQuest';
 import { PlayerStats } from '@/types/player';
+import { getSystemDate } from '@/utils/dayCycleEngine';
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -50,8 +51,11 @@ export interface CompletionRecord {
 function dayNumber(): number {
   const START_DATE_KEY = 'systemStartDate';
   const stored = typeof window !== 'undefined' ? localStorage.getItem(START_DATE_KEY) : null;
-  const startDate = stored ? new Date(stored) : new Date();
-  return Math.max(1, Math.ceil((new Date().getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1);
+  if (!stored) return 1;
+  const todayStr = getSystemDate();
+  const startMs = new Date(stored + 'T12:00:00').getTime();
+  const todayMs = new Date(todayStr + 'T12:00:00').getTime();
+  return Math.max(1, Math.round((todayMs - startMs) / (1000 * 60 * 60 * 24)) + 1);
 }
 
 function dayOfWeek(d: Date): number {

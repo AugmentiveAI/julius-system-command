@@ -100,11 +100,15 @@ function loadGeneticHUD() {
 
 export function getDayNumber(): number {
   const stored = localStorage.getItem(START_DATE_KEY);
-  const startDate = stored ? new Date(stored) : new Date();
   if (!stored) {
     localStorage.setItem(START_DATE_KEY, getSystemDate());
+    return 1;
   }
-  return Math.max(1, Math.ceil((new Date().getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1);
+  // Use PST-aware today to avoid UTC off-by-one
+  const todayStr = getSystemDate(); // YYYY-MM-DD in PST
+  const startMs = new Date(stored + 'T12:00:00').getTime();
+  const todayMs = new Date(todayStr + 'T12:00:00').getTime();
+  return Math.max(1, Math.round((todayMs - startMs) / (1000 * 60 * 60 * 24)) + 1);
 }
 
 export function useSystemStrategy(): { strategy: SystemStrategy; dayNumber: number; playerTitle: string } {
