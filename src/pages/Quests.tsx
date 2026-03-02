@@ -505,7 +505,7 @@ const Quests = () => {
         isLimitReached={sprint.isLimitReached}
       />
 
-      <div className="min-h-screen bg-background pb-24 pt-4">
+      <div className="min-h-screen bg-background pb-24" style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}>
         <div className="mx-auto max-w-md space-y-4 px-4">
 
           {/* 1. TOP: Mode badge + sprint button + reset timer */}

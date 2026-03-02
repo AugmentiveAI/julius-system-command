@@ -123,7 +123,7 @@ const Settings = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24 pt-4">
+    <div className="min-h-screen bg-background pb-24" style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}>
       <div className="mx-auto max-w-md space-y-6 px-4">
         <h1 className="font-display text-sm uppercase tracking-[0.3em] text-muted-foreground text-center">
           Settings

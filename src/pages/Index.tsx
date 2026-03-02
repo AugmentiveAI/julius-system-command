@@ -353,7 +353,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
         }}
       />
 
-      <div className="min-h-screen bg-background pt-2" style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}>
+      <div className="min-h-screen bg-background" style={{ paddingTop: 'calc(0.5rem + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}>
         {/* 1. Top Bar */}
         <TopBar systemRecommendation={systemRec} onForceRefresh={handleForceRefresh} />
 

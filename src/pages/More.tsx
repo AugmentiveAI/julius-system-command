@@ -148,7 +148,7 @@ const More = () => {
     const buffs = JULIUS_GENETICS.traits.filter(t => t.type === 'buff');
     const debuffs = JULIUS_GENETICS.traits.filter(t => t.type === 'debuff');
     return (
-      <div className="min-h-screen bg-background pb-24 pt-4">
+       <div className="min-h-screen bg-background pb-24" style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}>
         <div className="mx-auto max-w-md px-4">
           <button onClick={() => setActiveSection(null)} className="font-mono text-xs text-primary mb-4">
             ← Back
@@ -178,7 +178,7 @@ const More = () => {
 
   if (activeSection === 'inventory') {
     return (
-      <div className="min-h-screen bg-background pb-24 pt-4">
+      <div className="min-h-screen bg-background pb-24" style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}>
         <div className="mx-auto max-w-md space-y-4 px-4">
           <button onClick={() => setActiveSection(null)} className="font-mono text-xs text-primary">
             ← Back
@@ -201,7 +201,7 @@ const More = () => {
 
   if (activeSection === 'supplements') {
     return (
-      <div className="min-h-screen bg-background pb-24 pt-4">
+      <div className="min-h-screen bg-background pb-24" style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}>
         <div className="mx-auto max-w-md px-4">
           <button onClick={() => setActiveSection(null)} className="font-mono text-xs text-primary mb-4">
             ← Back
@@ -218,7 +218,7 @@ const More = () => {
 
   if (activeSection === 'settings') {
     return (
-      <div className="min-h-screen bg-background pb-24 pt-4">
+      <div className="min-h-screen bg-background pb-24" style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}>
         <div className="mx-auto max-w-md px-4 space-y-4">
           <button onClick={() => setActiveSection(null)} className="font-mono text-xs text-primary">
             ← Back
@@ -263,7 +263,7 @@ const More = () => {
 
   if (activeSection === 'about') {
     return (
-      <div className="min-h-screen bg-background pb-24 pt-4">
+      <div className="min-h-screen bg-background pb-24" style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}>
         <div className="mx-auto max-w-md px-4">
           <button onClick={() => setActiveSection(null)} className="font-mono text-xs text-primary mb-4">
             ← Back
@@ -293,7 +293,7 @@ const More = () => {
 
   // Main menu
   return (
-    <div className="min-h-screen bg-background pb-24 pt-4">
+    <div className="min-h-screen bg-background pb-24" style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}>
       <div className="mx-auto max-w-md space-y-2 px-4">
         <h1 className="font-display text-sm uppercase tracking-[0.3em] text-muted-foreground text-center mb-4">
           More
