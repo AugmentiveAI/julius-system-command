@@ -206,7 +206,7 @@ const SystemAnalytics = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-12 pt-6">
+    <div className="min-h-screen bg-background pb-12" style={{ paddingTop: 'calc(1.5rem + env(safe-area-inset-top, 0px))' }}>
       <div className="mx-auto max-w-3xl px-4 space-y-6">
         {/* Header */}
         <button onClick={() => navigate('/more')} className="font-mono text-xs text-primary mb-4">
