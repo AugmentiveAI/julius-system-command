@@ -84,7 +84,7 @@ const Training = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-24 pt-6">
+    <div className="min-h-screen bg-background pb-24" style={{ paddingTop: 'calc(1.5rem + env(safe-area-inset-top, 0px))' }}>
       <GeneticHUD />
       <div className="mx-auto max-w-2xl space-y-4 px-4 mt-3">
         {/* System Header */}
