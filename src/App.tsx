@@ -3,10 +3,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { HistoryProvider } from "@/contexts/HistoryContext";
 import { FocusModeProvider } from "@/contexts/FocusModeContext";
 import { DayCycleProvider } from "@/contexts/DayCycleContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { getSystemDate } from "@/utils/dayCycleEngine";
 import { FocusFAB } from "@/components/focus/FocusFAB";
 import { useFocusModeContext } from "@/contexts/FocusModeContext";
@@ -27,8 +28,29 @@ import More from "./pages/More";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import SystemAnalytics from "./pages/SystemAnalytics";
+import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
+
+/** Renders children only if authenticated, otherwise redirects to /auth */
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { session, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-[100dvh] bg-background flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  return <>{children}</>;
+}
 
 const AppContent = () => {
   const [showAwakening, setShowAwakening] = useState(isFirstRun);
@@ -77,27 +99,34 @@ const AppContent = () => {
           onDismiss={handleDismiss}
         />
       )}
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index forceFirstScan={triggerScan} onScanTriggered={() => setTriggerScan(false)} />} />
-          <Route path="/quests" element={<Quests />} />
-          <Route path="/training" element={<Training />} />
-          <Route path="/progress" element={<Progress />} />
-          <Route path="/more" element={<More />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/system-analytics" element={<SystemAnalytics />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <Routes>
+        <Route path="/" element={<ProtectedRoute><Index forceFirstScan={triggerScan} onScanTriggered={() => setTriggerScan(false)} /></ProtectedRoute>} />
+        <Route path="/quests" element={<ProtectedRoute><Quests /></ProtectedRoute>} />
+        <Route path="/training" element={<ProtectedRoute><Training /></ProtectedRoute>} />
+        <Route path="/progress" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
+        <Route path="/more" element={<ProtectedRoute><More /></ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+        <Route path="/system-analytics" element={<ProtectedRoute><SystemAnalytics /></ProtectedRoute>} />
+        <Route path="/auth" element={<AuthRoute />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
     </>
   );
 };
+
+/** Redirect authenticated users away from /auth */
+function AuthRoute() {
+  const { session, loading } = useAuth();
+  if (loading) return null;
+  if (session) return <Navigate to="/" replace />;
+  return <Auth />;
+}
 
 const AppWithFAB = () => {
   const { active: focusActive, activate } = useFocusModeContext();
   const { geneticState, sprintsToday } = useGeneticState();
 
-  // Determine system rec and sprint active from localStorage
   let systemRec: string | null = null;
   try {
     const raw = localStorage.getItem('systemStateHistory');
@@ -107,7 +136,6 @@ const AppWithFAB = () => {
     }
   } catch { /* ignore */ }
 
-  // Check if sprint timer is active
   let isSprintActive = false;
   try {
     const raw = localStorage.getItem('systemSprintTimer');
@@ -117,7 +145,6 @@ const AppWithFAB = () => {
     }
   } catch { /* ignore */ }
 
-  // Check training completion
   let trainingCompleted = false;
   try {
     const raw = localStorage.getItem('the-system-workout');
@@ -148,7 +175,6 @@ const AppWithFAB = () => {
 };
 
 const getDayDataFallback = () => {
-  // Read current day data from localStorage for archiving
   try {
     const protocolRaw = localStorage.getItem('the-system-protocol-quests');
     const protocol = protocolRaw ? JSON.parse(protocolRaw) : { quests: [] };
@@ -181,13 +207,17 @@ const getDayDataFallback = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <HistoryProvider>
-        <DayCycleProvider getCurrentDayData={getDayDataFallback}>
-          <FocusModeProvider>
-            <AppWithFAB />
-          </FocusModeProvider>
-        </DayCycleProvider>
-      </HistoryProvider>
+      <AuthProvider>
+        <HistoryProvider>
+          <DayCycleProvider getCurrentDayData={getDayDataFallback}>
+            <BrowserRouter>
+              <FocusModeProvider>
+                <AppWithFAB />
+              </FocusModeProvider>
+            </BrowserRouter>
+          </DayCycleProvider>
+        </HistoryProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
