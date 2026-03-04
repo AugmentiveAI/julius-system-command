@@ -62,7 +62,7 @@ interface IndexProps {
 }
 
 const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
-  const { player, penaltyLevel, showFlashEffect, dismissPenaltyBanner, levelUpState, setGoal } = usePlayer();
+  const { player, penaltyLevel, showFlashEffect, dismissPenaltyBanner, levelUpState, setGoal, addXP } = usePlayer();
   const { logCaffeine, hasLoggedAfter10am, warningDismissed, dismissWarning, logs } = useCaffeine();
   const { toggleQuest, setQuestCompleted, quests } = useProtocolQuests();
   const { workout, workoutCompleted } = useWorkout();
@@ -166,6 +166,8 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
     // Toggle in protocol quests if it's a protocol quest
     const protocolQuest = quests.find(pq => pq.id === q.id);
     if (protocolQuest && !protocolQuest.completed) {
+      const xp = protocolQuest.xp + (protocolQuest.geneticBonus?.bonusXp || 0);
+      addXP(xp);
       toggleQuest(q.id);
     }
     focus.completeCurrentQuest();
@@ -173,7 +175,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
     // Roll for loot drop
     const stat = protocolQuest?.stat ?? 'discipline';
     rollForLoot(stat, player.streak);
-  }, [focus, quests, toggleQuest, rollForLoot, player.streak]);
+  }, [focus, quests, toggleQuest, addXP, rollForLoot, player.streak]);
 
   const handleFocusSkip = useCallback(() => {
     focus.skipCurrentQuest();
