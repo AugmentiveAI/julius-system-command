@@ -72,7 +72,10 @@ ${JSON.stringify(playerData.resistanceData || {}, null, 1)}
 
 SHADOW ARMY (Compounding Assets):
 ${JSON.stringify(playerData.shadowArmy || [], null, 1)}
-Note: Factor shadow army into trajectory forecasting. More shadows at higher power = faster compound growth and higher ceiling.
+
+ACTIVE DUNGEONS (Boss Fights, Instant Dungeons, S-Rank Gates):
+${JSON.stringify(playerData.activeDungeons || [], null, 1)}
+Note: Factor shadow army AND dungeon progress into trajectory forecasting. Reference genetic modifiers when recommending dungeon strategies.
 
 TODAY'S CONTEXT:
 - Day of Week: ${playerData.dayOfWeek}

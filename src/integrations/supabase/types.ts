@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      dungeons: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          difficulty: string
+          dungeon_type: string
+          expires_at: string | null
+          genetic_modifiers: Json | null
+          id: string
+          metadata: Json | null
+          objectives: Json
+          started_at: string | null
+          status: string
+          time_limit_minutes: number | null
+          title: string
+          unlocked_by: Json | null
+          user_id: string
+          xp_reward: number
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          difficulty?: string
+          dungeon_type: string
+          expires_at?: string | null
+          genetic_modifiers?: Json | null
+          id?: string
+          metadata?: Json | null
+          objectives?: Json
+          started_at?: string | null
+          status?: string
+          time_limit_minutes?: number | null
+          title: string
+          unlocked_by?: Json | null
+          user_id: string
+          xp_reward?: number
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          difficulty?: string
+          dungeon_type?: string
+          expires_at?: string | null
+          genetic_modifiers?: Json | null
+          id?: string
+          metadata?: Json | null
+          objectives?: Json
+          started_at?: string | null
+          status?: string
+          time_limit_minutes?: number | null
+          title?: string
+          unlocked_by?: Json | null
+          user_id?: string
+          xp_reward?: number
+        }
+        Relationships: []
+      }
       inventory: {
         Row: {
           data: Json
