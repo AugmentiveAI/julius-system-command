@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useHistorySync } from '@/hooks/useHistorySync';
 import { HistoryState, QuestCompletionEntry, DaySummary, WeeklySummary } from '@/types/history';
 
 const HISTORY_STORAGE_KEY = 'the-system-history';
@@ -35,6 +36,9 @@ function getWeekEnd(date: Date): Date {
 export function useHistory() {
   const [history, setHistory] = useState<HistoryState>(loadHistory);
 
+  // Sync with Supabase
+  const { syncCompletion } = useHistorySync(history, setHistory);
+
   useEffect(() => {
     localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
   }, [history]);
@@ -47,7 +51,9 @@ export function useHistory() {
     setHistory(prev => ({
       completions: [...prev.completions, newEntry],
     }));
-  }, []);
+    // Write to DB immediately
+    syncCompletion(newEntry);
+  }, [syncCompletion]);
 
   const daysSummary = useMemo((): DaySummary[] => {
     const grouped: Record<string, QuestCompletionEntry[]> = {};

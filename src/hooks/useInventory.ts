@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { InventoryState, InventoryItem, INITIAL_INVENTORY } from '@/types/inventory';
+import { useInventorySync } from '@/hooks/useInventorySync';
 
 const INVENTORY_STORAGE_KEY = 'the-system-inventory';
 
@@ -21,6 +22,9 @@ function loadInventory(): InventoryState {
 
 export function useInventory() {
   const [inventory, setInventory] = useState<InventoryState>(loadInventory);
+
+  // Sync with Supabase
+  useInventorySync(inventory, setInventory);
 
   useEffect(() => {
     localStorage.setItem(INVENTORY_STORAGE_KEY, JSON.stringify(inventory));
