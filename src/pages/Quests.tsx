@@ -38,6 +38,7 @@ import { LootDropToast } from '@/components/effects/LootDropToast';
 import { LootCinematicReveal } from '@/components/effects/LootCinematicReveal';
 import { usePillarQuests } from '@/hooks/usePillarQuests';
 import { PILLAR_CONFIG, Pillar } from '@/types/pillarQuests';
+import { usePlayer } from '@/hooks/usePlayer';
 import { usePillarStreak } from '@/hooks/usePillarStreak';
 import { PillarConfirmation } from '@/components/quests/PillarConfirmation';
 import { useAIQuests } from '@/hooks/useAIQuests';
@@ -157,6 +158,7 @@ const TIME_BLOCKS_ORDER: QuestTimeBlock[] = ['morning', 'midday', 'afternoon', '
 const Quests = () => {
   const { quests: protocolQuests, toggleQuest, getTimeBlockStats, getTotalStats, getQuestsByTimeBlock } =
     useProtocolQuests();
+  const { addXP, player } = usePlayer();
   const { addCompletion } = useHistoryContext();
   const { todayCommitment, resolveCommitment } = usePreCommitment();
   const [scanOpen, setScanOpen] = useState(false);
@@ -218,12 +220,7 @@ const Quests = () => {
   }, [toast]);
 
   // Read player streak for loot rolls
-  const playerStreak = useMemo(() => {
-    try {
-      const p = JSON.parse(localStorage.getItem('the-system-player') || '{}');
-      return p.streak ?? 0;
-    } catch { return 0; }
-  }, []);
+  const playerStreak = player.streak;
 
   // Training recommendation
   const trainingRec = useMemo(() =>
@@ -351,6 +348,7 @@ const Quests = () => {
         next.add(questId);
         saveCompletionRecord({ questId: quest.id, completedAt: new Date().toISOString(), stat: quest.stat });
         addCompletion({ questId: quest.id, questTitle: quest.title, xpEarned: quest.adjustedXP, completedAt: new Date().toISOString(), type: 'daily' });
+        addXP(quest.adjustedXP);
         recordCompletion(persuasionData?.technique ?? null);
         onCalibratedQuestCompleted();
         // Roll for loot drop
@@ -358,29 +356,27 @@ const Quests = () => {
       }
       return next;
     });
-  }, [calibration, addCompletion, persuasionMap, onCalibratedQuestCompleted, rollForLoot, playerStreak]);
+  }, [calibration, addCompletion, addXP, persuasionMap, onCalibratedQuestCompleted, rollForLoot, playerStreak]);
 
   const handleProtocolToggle = (questId: string) => {
     const quest = protocolQuests.find(q => q.id === questId);
     if (quest && !quest.completed) {
-      addCompletion({ questId: quest.id, questTitle: quest.title, xpEarned: quest.xp + (quest.geneticBonus?.bonusXp || 0), completedAt: new Date().toISOString(), type: 'daily' });
+      const xp = quest.xp + (quest.geneticBonus?.bonusXp || 0);
+      addCompletion({ questId: quest.id, questTitle: quest.title, xpEarned: xp, completedAt: new Date().toISOString(), type: 'daily' });
+      addXP(xp);
       rollForLoot(quest.stat, playerStreak);
     }
     toggleQuest(questId);
   };
 
   // Load player goal for identity-linked messages
-  const playerGoal = useMemo(() => {
-    try {
-      const p = JSON.parse(localStorage.getItem('the-system-player') || '{}');
-      return p.goal ?? 'becoming who you said you would be';
-    } catch { return 'becoming who you said you would be'; }
-  }, []);
+  const playerGoal = player.goal ?? 'becoming who you said you would be';
 
   const handlePillarToggle = useCallback((questId: string) => {
     const quest = pillar.quests.find(q => q.id === questId);
     if (quest && !pillar.isCompleted(questId)) {
       addCompletion({ questId: quest.id, questTitle: quest.title, xpEarned: quest.xp, completedAt: new Date().toISOString(), type: 'daily' });
+      addXP(quest.xp);
       rollForLoot(quest.stat, playerStreak);
     }
     pillar.toggleQuest(questId);
@@ -397,6 +393,7 @@ const Quests = () => {
         if (bonus > 0) {
           setPillarBonusToast(bonus);
           addCompletion({ questId: 'pillar-mastery-bonus', questTitle: 'Pillar Mastery Bonus', xpEarned: bonus, completedAt: new Date().toISOString(), type: 'daily' });
+          addXP(bonus);
           
           // Identity-linked mastery message
           toast(getSystemToast('pillarMastery', { goal: playerGoal }));
@@ -413,15 +410,16 @@ const Quests = () => {
         }
       }
     }
-  }, [pillar, addCompletion, rollForLoot, playerStreak, pillarStreak, toast, playerGoal]);
+  }, [pillar, addCompletion, addXP, rollForLoot, playerStreak, pillarStreak, toast, playerGoal]);
 
   // Auto-honor pre-commitment
   useEffect(() => {
     if (todayCommitment && todayCommitment.completed === undefined && completedCalibrated.has(todayCommitment.questId)) {
       resolveCommitment(true);
       addCompletion({ questId: 'precommit-bonus', questTitle: 'Pre-Commitment Bonus', xpEarned: 25, completedAt: new Date().toISOString(), type: 'daily' });
+      addXP(25);
     }
-  }, [todayCommitment, completedCalibrated, resolveCommitment, addCompletion]);
+  }, [todayCommitment, completedCalibrated, resolveCommitment, addCompletion, addXP]);
 
   const hasScan = !!todayCheck;
 
