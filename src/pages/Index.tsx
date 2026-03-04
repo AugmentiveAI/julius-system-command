@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { TopBar } from '@/components/dashboard/TopBar';
+import { SystemIntelligencePanel, SystemIntelligenceLoading } from '@/components/dashboard/SystemIntelligencePanel';
+import { useSystemIntelligenceAI } from '@/hooks/useSystemIntelligenceAI';
 import { DashboardMessage } from '@/components/dashboard/DashboardMessage';
 import { ProgressRing } from '@/components/dashboard/ProgressRing';
 import { TodaySnapshot } from '@/components/dashboard/TodaySnapshot';
@@ -68,6 +70,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
   const { workout, workoutCompleted } = useWorkout();
   const { toast } = useToast();
   const { strategy, dayNumber, playerTitle } = useSystemStrategy();
+  const { intelligence, loading: aiLoading, error: aiError, generate: generateIntelligence } = useSystemIntelligenceAI();
   const { logColdExposure } = useGeneticState();
   const weekly = useWeeklyPlanning();
   const focusMode = useFocusModeContext();
@@ -412,9 +415,11 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
             </div>
           )}
 
-          {/* 2. System Message + CTA */}
+          {/* 2. System Message — uses AI brief when available */}
           <DashboardMessage message={
             pillarsMissedYesterday ? '…'
+              : intelligence?.dailyBrief
+              ? intelligence.dailyBrief
               : (() => {
                   const ai = loadAIQuests();
                   if (ai && isAIEnabled() && ai.generatedAt?.startsWith(getSystemDate())) {
@@ -423,6 +428,21 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
                   return oneLiner;
                 })()
           } />
+
+          {/* 2b. System Intelligence Panel */}
+          {aiLoading && !intelligence && <SystemIntelligenceLoading />}
+          {intelligence && (
+            <SystemIntelligencePanel
+              intelligence={intelligence}
+              loading={aiLoading}
+              error={aiError}
+              onGenerate={generateIntelligence}
+              onCompleteChallenge={(id) => {
+                const challenge = intelligence.dynamicChallenges.find(c => c.id === id);
+                if (challenge) addXP(challenge.xpReward);
+              }}
+            />
+          )}
 
           {/* 3. Progress Ring */}
           <ProgressRing

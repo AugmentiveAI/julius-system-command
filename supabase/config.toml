@@ -1,1 +1,4 @@
 project_id = "mmunogsddbjozlmwslgn"
+
+[functions.system-intelligence]
+verify_jwt = false
