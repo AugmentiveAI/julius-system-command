@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Brain, TrendingUp, Target, Zap, ChevronDown, AlertTriangle, RefreshCw } from 'lucide-react';
 import { SystemIntelligence, DynamicChallenge } from '@/types/systemIntelligence';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { TrajectoryForecaster } from './TrajectoryForecaster';
 
 const DIFFICULTY_COLORS: Record<string, string> = {
   'B-Rank': 'text-blue-400 border-blue-400/30 bg-blue-400/10',
@@ -147,34 +148,8 @@ export function SystemIntelligencePanel({
           </button>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <div className="mt-2 rounded-lg border border-border bg-card/60 p-4 space-y-4">
-            <div className="space-y-1">
-              <p className="font-mono text-[9px] tracking-wider text-muted-foreground/60">CURRENT PACE</p>
-              <p className="font-mono text-xs text-foreground/70 leading-relaxed">
-                {intelligence.trajectoryForecast.currentPace}
-              </p>
-            </div>
-            <div className="space-y-1">
-              <p className="font-mono text-[9px] tracking-wider text-primary/60">OPTIMIZED PACE</p>
-              <p className="font-mono text-xs text-foreground/80 leading-relaxed">
-                {intelligence.trajectoryForecast.optimizedPace}
-              </p>
-            </div>
-            <div className="space-y-1 border-t border-border/50 pt-3">
-              <p className="font-mono text-[9px] tracking-wider text-amber-400/60">TRUE CEILING</p>
-              <p className="font-mono text-xs text-foreground/90 leading-relaxed">
-                {intelligence.trajectoryForecast.ceiling}
-              </p>
-            </div>
-            <div className="flex items-start gap-2 rounded-md border border-primary/20 bg-primary/5 p-3">
-              <Target className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
-              <div>
-                <p className="font-mono text-[9px] tracking-wider text-primary/60 mb-1">CRITICAL LEVERAGE POINT</p>
-                <p className="font-mono text-xs text-foreground leading-relaxed">
-                  {intelligence.trajectoryForecast.criticalLeverage}
-                </p>
-              </div>
-            </div>
+          <div className="mt-2">
+            <TrajectoryForecaster intelligence={intelligence} />
           </div>
         </CollapsibleContent>
       </Collapsible>
