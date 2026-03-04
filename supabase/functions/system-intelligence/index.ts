@@ -70,6 +70,10 @@ ${JSON.stringify(playerData.recentCompletions || [], null, 1)}
 RESISTANCE DATA:
 ${JSON.stringify(playerData.resistanceData || {}, null, 1)}
 
+SHADOW ARMY (Compounding Assets):
+${JSON.stringify(playerData.shadowArmy || [], null, 1)}
+Note: Factor shadow army into trajectory forecasting. More shadows at higher power = faster compound growth and higher ceiling.
+
 TODAY'S CONTEXT:
 - Day of Week: ${playerData.dayOfWeek}
 - Day Type: ${playerData.dayType}

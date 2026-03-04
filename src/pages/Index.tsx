@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { TopBar } from '@/components/dashboard/TopBar';
 import { SystemIntelligencePanel, SystemIntelligenceLoading } from '@/components/dashboard/SystemIntelligencePanel';
+import { ShadowArmyPanel } from '@/components/shadows/ShadowArmyPanel';
 import { useSystemIntelligenceAI } from '@/hooks/useSystemIntelligenceAI';
 import { DashboardMessage } from '@/components/dashboard/DashboardMessage';
 import { ProgressRing } from '@/components/dashboard/ProgressRing';
@@ -443,6 +444,9 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
               }}
             />
           )}
+
+          {/* 2c. Shadow Army */}
+          <ShadowArmyPanel />
 
           {/* 3. Progress Ring */}
           <ProgressRing

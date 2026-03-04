@@ -96,7 +96,8 @@ function gatherPlayerData(player: any) {
     dayNumber,
     systemMode,
     stateHistory,
-    recentCompletions: [], // Will be filled from DB
+    recentCompletions: [] as any[], // Will be filled from DB
+    shadowArmy: [] as any[], // Will be filled from DB
     resistanceData,
     dayOfWeek: dayOfWeek[dayNum],
     dayType,
@@ -129,19 +130,33 @@ export function useSystemIntelligenceAI() {
       // Gather local data
       const playerData = gatherPlayerData(player);
 
-      // Fetch recent completions from DB
-      const { data: completions } = await supabase
-        .from('quest_history')
-        .select('quest_title, xp_earned, type, completed_at')
-        .eq('user_id', user.id)
-        .order('completed_at', { ascending: false })
-        .limit(50);
+      // Fetch recent completions and shadow army from DB in parallel
+      const [completionsRes, shadowsRes] = await Promise.all([
+        supabase
+          .from('quest_history')
+          .select('quest_title, xp_earned, type, completed_at')
+          .eq('user_id', user.id)
+          .order('completed_at', { ascending: false })
+          .limit(50),
+        supabase
+          .from('shadow_army')
+          .select('name, category, power_level, contribution_score, status')
+          .eq('user_id', user.id),
+      ]);
 
-      playerData.recentCompletions = (completions || []).map(c => ({
+      playerData.recentCompletions = (completionsRes.data || []).map((c: any) => ({
         title: c.quest_title,
         xp: c.xp_earned,
         type: c.type,
         date: c.completed_at,
+      }));
+
+      playerData.shadowArmy = (shadowsRes.data || []).map((s: any) => ({
+        name: s.name,
+        category: s.category,
+        powerLevel: s.power_level,
+        contributionScore: s.contribution_score,
+        status: s.status,
       }));
 
       // Call edge function

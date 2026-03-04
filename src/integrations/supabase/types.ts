@@ -143,6 +143,48 @@ export type Database = {
         }
         Relationships: []
       }
+      shadow_army: {
+        Row: {
+          category: string
+          contribution_score: number
+          created_at: string
+          description: string | null
+          id: string
+          metadata: Json | null
+          name: string
+          power_level: number
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          contribution_score?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          name: string
+          power_level?: number
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          contribution_score?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          name?: string
+          power_level?: number
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
