@@ -2,6 +2,56 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
+// All localStorage keys used by the system
+const SYSTEM_STORAGE_KEYS = [
+  'the-system-player',
+  'the-system-quests',
+  'the-system-protocol-quests',
+  'the-system-main-quests',
+  'the-system-history',
+  'the-system-daily-xp',
+  'the-system-pillar-quests',
+  'the-system-pillar-streaks',
+  'the-system-workout',
+  'the-system-caffeine',
+  'the-system-inventory',
+  'systemActivated',
+  'systemStartDate',
+  'systemStateHistory',
+  'systemLastScanDate',
+  'systemDayCycle',
+  'systemGeneticHUD',
+  'systemSprintTimer',
+  'systemFocusMode',
+  'systemFocusModeActive',
+  'systemPreCommitment',
+  'systemPreCommitTriggerDate',
+  'systemCalibratedCompletions',
+  'systemCompletionHistory',
+  'systemResistanceData',
+  'systemPersuasionProfile',
+  'systemPersuasionOutcomes',
+  'systemPersuasionOptimizer',
+  'systemShadowQuest',
+  'systemCommsState',
+  'systemWeeklyPlan',
+  'systemWeeklyPlanDismissed',
+  'systemResistancePrevScore',
+  'systemMuscleRecovery',
+  'systemAISettings',
+  'systemAIQuests',
+];
+
+function clearSystemStorage() {
+  SYSTEM_STORAGE_KEYS.forEach(key => localStorage.removeItem(key));
+  // Also clear any per-user migration flags
+  Object.keys(localStorage).forEach(key => {
+    if (key.startsWith('the-system-migrated-')) {
+      localStorage.removeItem(key);
+    }
+  });
+}
+
 interface AuthContextType {
   session: Session | null;
   user: User | null;
@@ -23,15 +73,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
         setSession(session);
         setLoading(false);
+
+        // Clear local state on sign-out to prevent stale data leaking
+        if (event === 'SIGNED_OUT') {
+          clearSystemStorage();
+        }
       }
     );
 
-    // THEN check current session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoading(false);

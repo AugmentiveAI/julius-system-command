@@ -10,7 +10,6 @@ import { WeeklySummaryCard } from '@/components/history/WeeklySummaryCard';
 import { DayGroup } from '@/components/history/DayGroup';
 import { usePlayer } from '@/hooks/usePlayer';
 import { useHistoryContext } from '@/contexts/HistoryContext';
-import { useHistory } from '@/hooks/useHistory';
 import { useSystemStrategy } from '@/hooks/useSystemStrategy';
 import {
   Collapsible,
@@ -42,8 +41,7 @@ const SectionHeader = ({
 
 const Progress = () => {
   const { player, mainQuests, completeMainQuest } = usePlayer();
-  const { addCompletion } = useHistoryContext();
-  const { daysSummary, weeklySummary } = useHistory();
+  const { addCompletion, daysSummary, weeklySummary } = useHistoryContext();
   const { strategy } = useSystemStrategy();
 
   const [milestonesOpen, setMilestonesOpen] = useState(true);

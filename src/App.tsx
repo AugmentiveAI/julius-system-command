@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,7 +14,7 @@ import { useFocusModeContext } from "@/contexts/FocusModeContext";
 import { SystemCommsBanner } from "@/components/comms/SystemCommsBanner";
 import { useSystemComms } from "@/hooks/useSystemComms";
 import { useGeneticState } from "@/hooks/useGeneticState";
-import { AwakeningSequence, isFirstRun } from "@/components/onboarding/AwakeningSequence";
+import { AwakeningSequence } from "@/components/onboarding/AwakeningSequence";
 import { GoalCapture } from "@/components/onboarding/GoalCapture";
 import { SystemBriefing } from "@/components/onboarding/SystemBriefing";
 import { PreCommitmentModal } from "@/components/quests/PreCommitmentModal";
@@ -22,6 +22,7 @@ import { usePreCommitment } from "@/hooks/usePreCommitment";
 import { SystemCommsContext } from "@/contexts/SystemCommsContext";
 import { useLocalDataMigration } from "@/hooks/useLocalDataMigration";
 import { DataMigrationDialog } from "@/components/onboarding/DataMigrationDialog";
+import { supabase } from "@/integrations/supabase/client";
 import Index from "./pages/Index";
 import Quests from "./pages/Quests";
 import Training from "./pages/Training";
@@ -55,7 +56,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 const AppContent = () => {
-  const [showAwakening, setShowAwakening] = useState(isFirstRun);
+  const { user } = useAuth();
+  // null = still checking, true = show, false = skip
+  const [showAwakening, setShowAwakening] = useState<boolean | null>(null);
   const [showGoalCapture, setShowGoalCapture] = useState(false);
   const [showBriefing, setShowBriefing] = useState(false);
   const [triggerScan, setTriggerScan] = useState(false);
@@ -64,6 +67,44 @@ const AppContent = () => {
     handleAccept, handleRequestAlternative, handleDismiss,
   } = usePreCommitment();
   const { showMigration, migrating, summary, acceptMigration, skipMigration } = useLocalDataMigration();
+
+  // Check DB for existing player data to decide whether to show onboarding
+  useEffect(() => {
+    if (!user) {
+      setShowAwakening(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const checkOnboarding = async () => {
+      try {
+        const { data } = await supabase
+          .from('player_state')
+          .select('total_xp')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (cancelled) return;
+
+        if (data && data.total_xp > 0) {
+          // Existing player with progress — skip onboarding
+          setShowAwakening(false);
+        } else {
+          // New player or zero XP — check if they've already seen awakening locally
+          const activated = localStorage.getItem('systemActivated') === 'true';
+          setShowAwakening(!activated);
+        }
+      } catch {
+        // Fallback to localStorage check on error
+        const activated = localStorage.getItem('systemActivated') === 'true';
+        setShowAwakening(!activated);
+      }
+    };
+
+    checkOnboarding();
+    return () => { cancelled = true; };
+  }, [user]);
 
   const handleAwakeningComplete = () => {
     setShowAwakening(false);
@@ -97,7 +138,7 @@ const AppContent = () => {
         onAccept={acceptMigration}
         onSkip={skipMigration}
       />
-      {showAwakening && <AwakeningSequence onComplete={handleAwakeningComplete} />}
+      {showAwakening === true && <AwakeningSequence onComplete={handleAwakeningComplete} />}
       {showGoalCapture && <GoalCapture onSubmit={handleGoalSubmit} />}
       {showBriefing && <SystemBriefing onComplete={handleBriefingComplete} />}
       {showModal && commitment && (

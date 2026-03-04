@@ -1,18 +1,20 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useHistory } from '@/hooks/useHistory';
-import { QuestCompletionEntry } from '@/types/history';
+import { QuestCompletionEntry, DaySummary, WeeklySummary } from '@/types/history';
 
 interface HistoryContextType {
   addCompletion: (entry: Omit<QuestCompletionEntry, 'id'>) => void;
+  daysSummary: DaySummary[];
+  weeklySummary: WeeklySummary;
 }
 
 const HistoryContext = createContext<HistoryContextType | null>(null);
 
 export const HistoryProvider = ({ children }: { children: ReactNode }) => {
-  const { addCompletion } = useHistory();
+  const { addCompletion, daysSummary, weeklySummary } = useHistory();
 
   return (
-    <HistoryContext.Provider value={{ addCompletion }}>
+    <HistoryContext.Provider value={{ addCompletion, daysSummary, weeklySummary }}>
       {children}
     </HistoryContext.Provider>
   );
