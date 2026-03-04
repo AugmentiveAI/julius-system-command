@@ -5,6 +5,7 @@ import { MainQuest, MainQuestState, DEFAULT_MAIN_QUESTS, getHighestRank } from '
 import { getLevelFromTotalXP } from '@/types/xp';
 import { useToast } from '@/hooks/use-toast';
 import { getSystemToast } from '@/utils/systemVoice';
+import { usePlayerSync } from '@/hooks/usePlayerSync';
 import { getSystemDate } from '@/utils/dayCycleEngine';
 
 interface LevelUpState {
@@ -97,6 +98,9 @@ export function usePlayer() {
   const penaltyProcessedRef = useRef(false);
   const questStateRef = useRef(questState);
   useEffect(() => { questStateRef.current = questState; }, [questState]);
+
+  // ── Sync player state with Supabase ──────────────────────────
+  usePlayerSync(player, setPlayer);
 
   // Persist player to localStorage
   useEffect(() => {
