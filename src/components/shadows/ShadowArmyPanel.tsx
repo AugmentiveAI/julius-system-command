@@ -109,7 +109,11 @@ function AddShadowForm({ onAdd, onCancel }: {
   );
 }
 
-export function ShadowArmyPanel() {
+interface ShadowArmyPanelProps {
+  onShadowAdded?: (name: string) => void;
+}
+
+export function ShadowArmyPanel({ onShadowAdded }: ShadowArmyPanelProps = {}) {
   const { shadows, loading, addShadow, removeShadow, levelUp } = useShadowArmy();
   const [expanded, setExpanded] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -121,6 +125,7 @@ export function ShadowArmyPanel() {
   const handleAdd = async (name: string, category: ShadowCategory, description?: string) => {
     await addShadow(name, category, description);
     setAdding(false);
+    onShadowAdded?.(name);
   };
 
   const handleRemove = async (id: string) => {

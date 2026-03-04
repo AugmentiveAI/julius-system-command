@@ -9,6 +9,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { SystemNotificationPanel } from '@/components/notifications/SystemNotificationPanel';
+import { SystemNotification } from '@/hooks/useSystemNotifications';
 
 const MODE_CONFIG: Record<string, { dot: string; label: string }> = {
   push: { dot: 'bg-green-400 shadow-[0_0_8px_hsl(142_76%_36%/0.6)]', label: 'PUSH' },
@@ -26,9 +28,13 @@ const COMT_LABELS: Record<COMTPhase, string> = {
 interface TopBarProps {
   systemRecommendation: 'push' | 'steady' | 'recover';
   onForceRefresh?: () => void;
+  notifications?: SystemNotification[];
+  unreadCount?: number;
+  onNotificationsOpen?: () => void;
+  onNotificationsClear?: () => void;
 }
 
-export const TopBar = ({ systemRecommendation, onForceRefresh }: TopBarProps) => {
+export const TopBar = ({ systemRecommendation, onForceRefresh, notifications = [], unreadCount = 0, onNotificationsOpen, onNotificationsClear }: TopBarProps) => {
   const { geneticState, sprintsToday } = useGeneticState();
   const { active: focusActive, toggle: toggleFocus } = useFocusModeContext();
   const dayNumber = getDayNumber();
@@ -84,6 +90,12 @@ export const TopBar = ({ systemRecommendation, onForceRefresh }: TopBarProps) =>
 
       {/* Right: Focus toggle + Sprint counter + Day */}
       <div className="flex items-center gap-2">
+        <SystemNotificationPanel
+          notifications={notifications}
+          unreadCount={unreadCount}
+          onOpen={onNotificationsOpen || (() => {})}
+          onClear={onNotificationsClear || (() => {})}
+        />
         <button
           onClick={handleRefresh}
           className="flex items-center justify-center rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
