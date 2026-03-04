@@ -12,6 +12,8 @@ import { PenaltyBanner } from '@/components/dashboard/PenaltyBanner';
 import StateCheck from '@/components/StateCheck';
 import { FlashOverlay } from '@/components/effects/FlashOverlay';
 import { LevelUpOverlay } from '@/components/effects/LevelUpOverlay';
+import { AriseOverlay } from '@/components/effects/AriseOverlay';
+import { StatusWindow } from '@/components/dashboard/StatusWindow';
 import { GeneticWarning } from '@/components/warnings/GeneticWarning';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { WeeklyPlanningModal } from '@/components/planning/WeeklyPlanningModal';
@@ -37,6 +39,9 @@ import { LootDropToast } from '@/components/effects/LootDropToast';
 import { LootCinematicReveal } from '@/components/effects/LootCinematicReveal';
 import { usePillarQuests } from '@/hooks/usePillarQuests';
 import { usePillarStreak } from '@/hooks/usePillarStreak';
+import { useSystemNotifications } from '@/hooks/useSystemNotifications';
+import { useShadowArmy } from '@/hooks/useShadowArmy';
+import { useDungeons } from '@/hooks/useDungeons';
 import { getSystemDate } from '@/utils/dayCycleEngine';
 import { loadAIQuests, isAIEnabled } from '@/utils/aiQuestGenerator';
 const LAST_SCAN_DATE_KEY = 'systemLastScanDate';
@@ -78,7 +83,14 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
   const focusMode = useFocusModeContext();
   const pillar = usePillarQuests();
   const pillarStreak = usePillarStreak();
+  const { notifications, unreadCount, addNotification, markAllRead, clearAll: clearNotifications } = useSystemNotifications();
+  const { shadows, addShadow: _addShadow } = useShadowArmy();
+  const { completedDungeons } = useDungeons();
 
+  // ARISE overlay state
+  const [ariseState, setAriseState] = useState<{ show: boolean; name: string }>({ show: false, name: '' });
+  // Status Window state
+  const [statusWindowOpen, setStatusWindowOpen] = useState(false);
   // Detect if pillars were missed yesterday (for dimming + silent brief)
   const pillarsMissedYesterday = useMemo(() => {
     if (pillarStreak.streak > 0) return false; // streak is alive
@@ -299,6 +311,24 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
   const completedQuests = quests.filter(q => q.completed).length;
   const oneLiner = buildDailyOneLiner(strategy.dailyBrief);
 
+  // Log level-ups to system notifications
+  const prevLevelRef = useRef(player.level);
+  useEffect(() => {
+    if (player.level > prevLevelRef.current) {
+      addNotification('level_up', `Level ${player.level} Reached`, `You have ascended to Level ${player.level}. The System acknowledges your growth.`, { level: player.level });
+    }
+    prevLevelRef.current = player.level;
+  }, [player.level, addNotification]);
+
+  // Log streak milestones
+  const prevStreakRef = useRef(player.streak);
+  useEffect(() => {
+    if (player.streak > prevStreakRef.current && [3, 7, 14, 30].includes(player.streak)) {
+      addNotification('streak_milestone', `${player.streak}-Day Streak`, `Consecutive completion streak: ${player.streak} days. Discipline compounds.`, { streak: player.streak });
+    }
+    prevStreakRef.current = player.streak;
+  }, [player.streak, addNotification]);
+
   const currentPersuasion = focus.currentQuest
     ? persuasionMap.get(focus.currentQuest.id) ?? null
     : null;
@@ -307,6 +337,14 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
     <>
       <FlashOverlay show={showFlashEffect} />
       <LevelUpOverlay show={levelUpState.show} newLevel={levelUpState.newLevel} />
+      <AriseOverlay show={ariseState.show} shadowName={ariseState.name} onDone={() => setAriseState({ show: false, name: '' })} />
+      <StatusWindow
+        open={statusWindowOpen}
+        onOpenChange={setStatusWindowOpen}
+        player={player}
+        shadows={shadows}
+        dungeonClears={completedDungeons.length}
+      />
       <StateCheck open={scanOpen} onOpenChange={handleScanClose} />
 
       {/* Loot Drop Overlays */}
@@ -362,7 +400,14 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
 
       <div className="min-h-screen bg-background" style={{ paddingTop: 'calc(0.5rem + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}>
         {/* 1. Top Bar */}
-        <TopBar systemRecommendation={systemRec} onForceRefresh={handleForceRefresh} />
+        <TopBar
+          systemRecommendation={systemRec}
+          onForceRefresh={handleForceRefresh}
+          notifications={notifications}
+          unreadCount={unreadCount}
+          onNotificationsOpen={markAllRead}
+          onNotificationsClear={clearNotifications}
+        />
 
         <div className="mx-auto max-w-md space-y-5 px-4 mt-2">
           {/* Caffeine Warning */}
@@ -447,21 +492,29 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
           )}
 
           {/* 2c. Shadow Army */}
-          <ShadowArmyPanel />
+          <ShadowArmyPanel onShadowAdded={(name) => {
+            setAriseState({ show: true, name });
+            addNotification('shadow_extracted', 'Shadow Extracted', `"${name}" has been extracted and joined your Shadow Army.`, { shadowName: name });
+          }} />
 
           {/* 2d. Dungeons */}
-          <DungeonPanel onXPGained={addXP} />
+          <DungeonPanel onXPGained={(xp) => {
+            addXP(xp);
+            addNotification('dungeon_cleared', 'Dungeon Cleared', `Dungeon completed. ${xp} XP claimed.`, { xp });
+          }} />
 
           {/* 3. Progress Ring */}
-          <ProgressRing
-            progress={strategy.shadowMonarchProgress}
-            title={playerTitle}
-            currentXP={player.currentXP}
-            xpToNextLevel={player.xpToNextLevel}
-            level={player.level}
-            pillarArcs={pillarArcs}
-            dimmed={pillarsMissedYesterday && !pillar.completedCount}
-          />
+          <button onClick={() => setStatusWindowOpen(true)} className="w-full">
+            <ProgressRing
+              progress={strategy.shadowMonarchProgress}
+              title={playerTitle}
+              currentXP={player.currentXP}
+              xpToNextLevel={player.xpToNextLevel}
+              level={player.level}
+              pillarArcs={pillarArcs}
+              dimmed={pillarsMissedYesterday && !pillar.completedCount}
+            />
+          </button>
 
           {/* 4. Today's Snapshot */}
           <TodaySnapshot
