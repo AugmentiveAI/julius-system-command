@@ -20,6 +20,8 @@ import { SystemBriefing } from "@/components/onboarding/SystemBriefing";
 import { PreCommitmentModal } from "@/components/quests/PreCommitmentModal";
 import { usePreCommitment } from "@/hooks/usePreCommitment";
 import { SystemCommsContext } from "@/contexts/SystemCommsContext";
+import { useLocalDataMigration } from "@/hooks/useLocalDataMigration";
+import { DataMigrationDialog } from "@/components/onboarding/DataMigrationDialog";
 import Index from "./pages/Index";
 import Quests from "./pages/Quests";
 import Training from "./pages/Training";
@@ -61,6 +63,7 @@ const AppContent = () => {
     showModal, commitment, isRecovery,
     handleAccept, handleRequestAlternative, handleDismiss,
   } = usePreCommitment();
+  const { showMigration, migrating, summary, acceptMigration, skipMigration } = useLocalDataMigration();
 
   const handleAwakeningComplete = () => {
     setShowAwakening(false);
@@ -87,6 +90,13 @@ const AppContent = () => {
     <>
       <Toaster />
       <Sonner />
+      <DataMigrationDialog
+        open={showMigration}
+        migrating={migrating}
+        summary={summary}
+        onAccept={acceptMigration}
+        onSkip={skipMigration}
+      />
       {showAwakening && <AwakeningSequence onComplete={handleAwakeningComplete} />}
       {showGoalCapture && <GoalCapture onSubmit={handleGoalSubmit} />}
       {showBriefing && <SystemBriefing onComplete={handleBriefingComplete} />}
