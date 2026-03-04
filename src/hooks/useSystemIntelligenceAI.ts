@@ -98,6 +98,7 @@ function gatherPlayerData(player: any) {
     stateHistory,
     recentCompletions: [] as any[], // Will be filled from DB
     shadowArmy: [] as any[], // Will be filled from DB
+    activeDungeons: [] as any[], // Will be filled from DB
     resistanceData,
     dayOfWeek: dayOfWeek[dayNum],
     dayType,
@@ -130,8 +131,8 @@ export function useSystemIntelligenceAI() {
       // Gather local data
       const playerData = gatherPlayerData(player);
 
-      // Fetch recent completions and shadow army from DB in parallel
-      const [completionsRes, shadowsRes] = await Promise.all([
+      // Fetch recent completions, shadow army, and dungeons from DB in parallel
+      const [completionsRes, shadowsRes, dungeonsRes] = await Promise.all([
         supabase
           .from('quest_history')
           .select('quest_title, xp_earned, type, completed_at')
@@ -142,6 +143,12 @@ export function useSystemIntelligenceAI() {
           .from('shadow_army')
           .select('name, category, power_level, contribution_score, status')
           .eq('user_id', user.id),
+        supabase
+          .from('dungeons')
+          .select('title, dungeon_type, difficulty, status, xp_reward, objectives')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(10),
       ]);
 
       playerData.recentCompletions = (completionsRes.data || []).map((c: any) => ({
@@ -159,6 +166,13 @@ export function useSystemIntelligenceAI() {
         status: s.status,
       }));
 
+      playerData.activeDungeons = (dungeonsRes.data || []).map((d: any) => ({
+        title: d.title,
+        type: d.dungeon_type,
+        difficulty: d.difficulty,
+        status: d.status,
+        xpReward: d.xp_reward,
+      }));
       // Call edge function
       const { data, error: fnError } = await supabase.functions.invoke('system-intelligence', {
         body: { playerData },
