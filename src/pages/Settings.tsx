@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Eye, EyeOff, Zap, Key, Bot, Sparkles, RotateCcw, Calendar, Trash2 } from 'lucide-react';
+import { Eye, EyeOff, Zap, Key, Bot, Sparkles, RotateCcw, Calendar, Trash2, LogOut } from 'lucide-react';
 import { BottomNav } from '@/components/navigation/BottomNav';
+import { useAuth } from '@/contexts/AuthContext';
 import { Switch } from '@/components/ui/switch';
 import { useAIQuests } from '@/hooks/useAIQuests';
 import { hasAnyApiKey } from '@/utils/aiModelRouter';
@@ -61,6 +62,7 @@ const MaskedInput = ({
 };
 
 const Settings = () => {
+  const { signOut } = useAuth();
   const [settings, setSettings] = useState(loadSettings);
   const { isGenerating, generate } = useAIQuests();
   const [showReplay, setShowReplay] = useState(false);
@@ -232,6 +234,14 @@ const Settings = () => {
           >
             <Trash2 className="h-4 w-4" />
             Clear All Data
+          </button>
+
+          <button
+            onClick={() => signOut()}
+            className="flex w-full items-center gap-2 rounded-lg border border-muted-foreground/20 bg-muted/10 px-4 py-3 font-mono text-xs text-muted-foreground transition-all hover:border-foreground/30 hover:text-foreground"
+          >
+            <LogOut className="h-4 w-4" />
+            Sign Out
           </button>
         </div>
       </div>
