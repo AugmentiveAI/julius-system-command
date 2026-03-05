@@ -13,6 +13,8 @@ import StateCheck from '@/components/StateCheck';
 import { FlashOverlay } from '@/components/effects/FlashOverlay';
 import { LevelUpOverlay } from '@/components/effects/LevelUpOverlay';
 import { AriseOverlay } from '@/components/effects/AriseOverlay';
+import { RankUpOverlay } from '@/components/effects/RankUpOverlay';
+import { SkillUnlockOverlay } from '@/components/effects/SkillUnlockOverlay';
 import { StatusWindow } from '@/components/dashboard/StatusWindow';
 import { GeneticWarning } from '@/components/warnings/GeneticWarning';
 import { BottomNav } from '@/components/navigation/BottomNav';
@@ -42,6 +44,8 @@ import { usePillarStreak } from '@/hooks/usePillarStreak';
 import { useSystemNotifications } from '@/hooks/useSystemNotifications';
 import { useShadowArmy } from '@/hooks/useShadowArmy';
 import { useDungeons } from '@/hooks/useDungeons';
+import { useSkills } from '@/hooks/useSkills';
+import { getRankForLevel } from '@/types/skills';
 import { getSystemDate } from '@/utils/dayCycleEngine';
 import { loadAIQuests, isAIEnabled } from '@/utils/aiQuestGenerator';
 const LAST_SCAN_DATE_KEY = 'systemLastScanDate';
@@ -87,10 +91,22 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
   const { shadows, addShadow: _addShadow } = useShadowArmy();
   const { completedDungeons } = useDungeons();
 
+  // Skills system
+  const skillCtx = useMemo(() => ({
+    player,
+    shadowCount: shadows.length,
+    dungeonClears: completedDungeons.length,
+    pillarStreak: pillarStreak.streak,
+  }), [player, shadows.length, completedDungeons.length, pillarStreak.streak]);
+  const { unlockedSkills, newlyUnlocked, dismissNewSkill } = useSkills(skillCtx);
+
   // ARISE overlay state
   const [ariseState, setAriseState] = useState<{ show: boolean; name: string }>({ show: false, name: '' });
   // Status Window state
   const [statusWindowOpen, setStatusWindowOpen] = useState(false);
+  // Rank system
+  const [rankUpState, setRankUpState] = useState<{ show: boolean; rank: string }>({ show: false, rank: '' });
+  const prevRankRef = useRef(player.title);
   // Detect if pillars were missed yesterday (for dimming + silent brief)
   const pillarsMissedYesterday = useMemo(() => {
     if (pillarStreak.streak > 0) return false; // streak is alive
@@ -329,6 +345,23 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
     prevStreakRef.current = player.streak;
   }, [player.streak, addNotification]);
 
+  // Rank-up detection
+  useEffect(() => {
+    const expectedRank = getRankForLevel(player.level);
+    if (expectedRank !== prevRankRef.current) {
+      setRankUpState({ show: true, rank: expectedRank });
+      addNotification('rank_up', `Rank: ${expectedRank}`, `You have been promoted to ${expectedRank}. Your authority grows.`, { rank: expectedRank });
+      prevRankRef.current = expectedRank;
+    }
+  }, [player.level, addNotification]);
+
+  // Log skill unlocks
+  useEffect(() => {
+    if (newlyUnlocked) {
+      addNotification('pattern_detected', `Skill Acquired: ${newlyUnlocked.name}`, `${newlyUnlocked.icon} ${newlyUnlocked.effect}`, { skillId: newlyUnlocked.id });
+    }
+  }, [newlyUnlocked, addNotification]);
+
   const currentPersuasion = focus.currentQuest
     ? persuasionMap.get(focus.currentQuest.id) ?? null
     : null;
@@ -337,6 +370,8 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
     <>
       <FlashOverlay show={showFlashEffect} />
       <LevelUpOverlay show={levelUpState.show} newLevel={levelUpState.newLevel} />
+      <RankUpOverlay show={rankUpState.show} newRank={rankUpState.rank} onDone={() => setRankUpState({ show: false, rank: '' })} />
+      <SkillUnlockOverlay skill={newlyUnlocked} onDone={dismissNewSkill} />
       <AriseOverlay show={ariseState.show} shadowName={ariseState.name} onDone={() => setAriseState({ show: false, name: '' })} />
       <StatusWindow
         open={statusWindowOpen}
@@ -344,6 +379,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
         player={player}
         shadows={shadows}
         dungeonClears={completedDungeons.length}
+        skills={unlockedSkills}
       />
       <StateCheck open={scanOpen} onOpenChange={handleScanClose} />
 

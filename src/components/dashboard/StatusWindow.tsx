@@ -1,6 +1,7 @@
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Player, PlayerStats } from '@/types/player';
 import { Shadow } from '@/types/shadowArmy';
+import { Skill } from '@/types/skills';
 import { useGeneticState } from '@/hooks/useGeneticState';
 
 const STAT_LABELS: Record<keyof PlayerStats, { label: string; icon: string }> = {
@@ -18,16 +19,17 @@ interface StatusWindowProps {
   player: Player;
   shadows: Shadow[];
   dungeonClears: number;
+  skills?: Skill[];
 }
 
-export function StatusWindow({ open, onOpenChange, player, shadows, dungeonClears }: StatusWindowProps) {
+export function StatusWindow({ open, onOpenChange, player, shadows, dungeonClears, skills = [] }: StatusWindowProps) {
   const { geneticState } = useGeneticState();
   const totalStatPoints = Object.values(player.stats).reduce((a, b) => a + b, 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-sm border-primary/30 bg-background/95 backdrop-blur-xl p-0 overflow-hidden"
+        className="max-w-sm border-primary/30 bg-background/95 backdrop-blur-xl p-0 overflow-hidden max-h-[85vh] overflow-y-auto"
         style={{
           boxShadow: '0 0 60px hsl(187 100% 50% / 0.1), inset 0 1px 0 hsl(187 100% 50% / 0.1)',
         }}
@@ -112,6 +114,24 @@ export function StatusWindow({ open, onOpenChange, player, shadows, dungeonClear
               );
             })}
           </div>
+
+          {/* Skills */}
+          {skills.length > 0 && (
+            <div className="space-y-2">
+              <p className="font-mono text-[9px] tracking-[0.3em] uppercase text-muted-foreground">Skills</p>
+              <div className="grid grid-cols-2 gap-2">
+                {skills.map(skill => (
+                  <div key={skill.id} className="rounded-md border border-primary/20 bg-primary/5 px-2.5 py-2 space-y-0.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm">{skill.icon}</span>
+                      <span className="font-display text-[10px] font-bold text-foreground">{skill.name}</span>
+                    </div>
+                    <p className="font-mono text-[9px] text-primary/70">Lv.{skill.level} · {skill.effect}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Buffs / Debuffs */}
           {(geneticState.activeBuffs.length > 0 || geneticState.activeDebuffs.length > 0) && (
