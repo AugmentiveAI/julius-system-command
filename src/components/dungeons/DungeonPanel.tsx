@@ -7,6 +7,7 @@ const TYPE_CONFIG: Record<DungeonType, { icon: typeof Skull; label: string; colo
   boss_fight: { icon: Skull, label: 'BOSS FIGHT', color: 'text-red-400', borderColor: 'border-red-400/30' },
   instant_dungeon: { icon: Timer, label: 'INSTANT DUNGEON', color: 'text-amber-400', borderColor: 'border-amber-400/30' },
   s_rank_gate: { icon: Crown, label: 'S-RANK GATE', color: 'text-secondary', borderColor: 'border-secondary/30' },
+  penalty: { icon: Skull, label: 'PENALTY QUEST', color: 'text-destructive', borderColor: 'border-destructive/30' },
 };
 
 const DIFFICULTY_BADGE: Record<string, string> = {

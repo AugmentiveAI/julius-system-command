@@ -373,6 +373,22 @@ export function usePlayer() {
     setPlayer(prev => ({ ...prev, goal }));
   }, []);
 
+  const reduceStat = useCallback((stat: string, amount: number) => {
+    setPlayer(prev => {
+      const newStats = { ...prev.stats };
+      const key = stat as keyof PlayerStats;
+      newStats[key] = Math.max(1, newStats[key] - amount);
+      return { ...prev, stats: newStats };
+    });
+  }, []);
+
+  const resetPenaltyDays = useCallback(() => {
+    setPlayer(prev => ({
+      ...prev,
+      penalty: { ...prev.penalty, consecutiveZeroDays: 0, penaltyAppliedForCurrentLevel: false },
+    }));
+  }, []);
+
   const completedCount = questState.quests.filter(q => q.completed).length;
   const totalCount = questState.quests.length;
   const penaltyLevel = getPenaltyLevel(player.penalty.consecutiveZeroDays);
@@ -394,5 +410,7 @@ export function usePlayer() {
     applyTrainingStats,
     applyColdStreakMilestone,
     setGoal,
+    reduceStat,
+    resetPenaltyDays,
   };
 }

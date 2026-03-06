@@ -15,6 +15,7 @@ import { LevelUpOverlay } from '@/components/effects/LevelUpOverlay';
 import { AriseOverlay } from '@/components/effects/AriseOverlay';
 import { RankUpOverlay } from '@/components/effects/RankUpOverlay';
 import { SkillUnlockOverlay } from '@/components/effects/SkillUnlockOverlay';
+import { PenaltyDungeonOverlay } from '@/components/effects/PenaltyDungeonOverlay';
 import { StatusWindow } from '@/components/dashboard/StatusWindow';
 import { GeneticWarning } from '@/components/warnings/GeneticWarning';
 import { BottomNav } from '@/components/navigation/BottomNav';
@@ -45,6 +46,7 @@ import { useSystemNotifications } from '@/hooks/useSystemNotifications';
 import { useShadowArmy } from '@/hooks/useShadowArmy';
 import { useDungeons } from '@/hooks/useDungeons';
 import { useSkills } from '@/hooks/useSkills';
+import { usePenaltyDungeon } from '@/hooks/usePenaltyDungeon';
 import { getRankForLevel } from '@/types/skills';
 import { getSystemDate } from '@/utils/dayCycleEngine';
 import { loadAIQuests, isAIEnabled } from '@/utils/aiQuestGenerator';
@@ -75,7 +77,7 @@ interface IndexProps {
 }
 
 const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
-  const { player, penaltyLevel, showFlashEffect, dismissPenaltyBanner, levelUpState, setGoal, addXP } = usePlayer();
+  const { player, penaltyLevel, showFlashEffect, dismissPenaltyBanner, levelUpState, setGoal, addXP, reduceStat, resetPenaltyDays } = usePlayer();
   const { logCaffeine, hasLoggedAfter10am, warningDismissed, dismissWarning, logs } = useCaffeine();
   const { toggleQuest, setQuestCompleted, quests } = useProtocolQuests();
   const { workout, workoutCompleted } = useWorkout();
@@ -99,6 +101,15 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
     pillarStreak: pillarStreak.streak,
   }), [player, shadows.length, completedDungeons.length, pillarStreak.streak]);
   const { unlockedSkills, newlyUnlocked, dismissNewSkill } = useSkills(skillCtx);
+
+  // Penalty dungeon system
+  const penaltyDungeon = usePenaltyDungeon({
+    player,
+    onStatReduction: reduceStat,
+    onXPGained: addXP,
+    onPenaltyCleared: resetPenaltyDays,
+    addNotification,
+  });
 
   // ARISE overlay state
   const [ariseState, setAriseState] = useState<{ show: boolean; name: string }>({ show: false, name: '' });
@@ -373,6 +384,16 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
       <RankUpOverlay show={rankUpState.show} newRank={rankUpState.rank} onDone={() => setRankUpState({ show: false, rank: '' })} />
       <SkillUnlockOverlay skill={newlyUnlocked} onDone={dismissNewSkill} />
       <AriseOverlay show={ariseState.show} shadowName={ariseState.name} onDone={() => setAriseState({ show: false, name: '' })} />
+      {penaltyDungeon.isPenaltyActive && penaltyDungeon.activePenalty && (
+        <PenaltyDungeonOverlay
+          dungeon={penaltyDungeon.activePenalty}
+          timeRemaining={penaltyDungeon.timeRemaining}
+          lowestStat={penaltyDungeon.lowestStat}
+          penaltyReduction={penaltyDungeon.penaltyReduction}
+          showFailure={penaltyDungeon.showFailure}
+          onCompleteObjective={penaltyDungeon.completeObjective}
+        />
+      )}
       <StatusWindow
         open={statusWindowOpen}
         onOpenChange={setStatusWindowOpen}
