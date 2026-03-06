@@ -1,4 +1,4 @@
-export type DungeonType = 'boss_fight' | 'instant_dungeon' | 's_rank_gate';
+export type DungeonType = 'boss_fight' | 'instant_dungeon' | 's_rank_gate' | 'penalty';
 export type DungeonDifficulty = 'B-Rank' | 'A-Rank' | 'S-Rank' | 'SS-Rank';
 export type DungeonStatus = 'available' | 'active' | 'completed' | 'failed' | 'expired';
 
