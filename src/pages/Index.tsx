@@ -105,6 +105,75 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
   const { shadows, addShadow: _addShadow } = useShadowArmy();
   const { completedDungeons, createDungeon: _createDungeon } = useDungeons();
 
+  // Auto-deploy: track which suggestions have been auto-deployed this session
+  const autoDeployedRef = useRef<Set<string>>(new Set());
+
+  // Auto-deploy shadows & dungeons when intelligence loads and toggle is on
+  useEffect(() => {
+    if (!intelligence || !isAutoDeployEnabled()) return;
+
+    const deployShadows = async () => {
+      for (const shadow of intelligence.suggestedShadows || []) {
+        const key = `shadow:${shadow.name}`;
+        if (autoDeployedRef.current.has(key)) continue;
+        autoDeployedRef.current.add(key);
+
+        const result = await _addShadow(shadow.name, shadow.category as ShadowCategory, shadow.description);
+        if (result?.data) {
+          setAriseState({ show: true, name: shadow.name });
+          addNotification('shadow_extracted', 'Shadow Auto-Deployed', `"${shadow.name}" extracted by System Intelligence: ${shadow.reasoning}`, { shadowName: shadow.name, autoDeploy: true });
+        }
+      }
+    };
+
+    const deployDungeons = async () => {
+      for (const dungeon of intelligence.suggestedDungeons || []) {
+        const key = `dungeon:${dungeon.title}`;
+        if (autoDeployedRef.current.has(key)) continue;
+        autoDeployedRef.current.add(key);
+
+        const objectives: DungeonObjective[] = dungeon.objectives.map((title, i) => ({
+          id: `obj-${i}`,
+          title,
+          completed: false,
+        }));
+        const timeLimitMinutes = dungeon.type === 'instant_dungeon' ? 45 : null;
+        const expiresAt = dungeon.type === 'boss_fight'
+          ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+          : timeLimitMinutes
+            ? new Date(Date.now() + timeLimitMinutes * 60 * 1000).toISOString()
+            : null;
+
+        const { data: userData } = await supabase.auth.getUser();
+        if (!userData.user) return;
+
+        const { data } = await supabase
+          .from('dungeons')
+          .insert({
+            user_id: userData.user.id,
+            dungeon_type: dungeon.type,
+            title: dungeon.title,
+            description: dungeon.description,
+            difficulty: dungeon.difficulty,
+            xp_reward: dungeon.xpReward,
+            time_limit_minutes: timeLimitMinutes,
+            objectives: objectives as any,
+            status: 'available',
+            expires_at: expiresAt,
+          })
+          .select()
+          .single();
+
+        if (data) {
+          addNotification('dungeon_cleared', 'Dungeon Auto-Deployed', `"${dungeon.title}" materialized by System Intelligence.`, { dungeonTitle: dungeon.title, autoDeploy: true });
+        }
+      }
+    };
+
+    deployShadows();
+    deployDungeons();
+  }, [intelligence]);
+
   // Skills system
   const skillCtx = useMemo(() => ({
     player,
