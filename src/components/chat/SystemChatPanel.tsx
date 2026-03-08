@@ -43,7 +43,7 @@ export function SystemChatPanel({ buildContext }: SystemChatPanelProps) {
   const [input, setInput] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { messages, isStreaming, sendMessage, clearChat, stopStreaming } = useSystemChat(buildContext);
+  const { messages, isStreaming, isLoading, sendMessage, clearChat, stopStreaming } = useSystemChat(buildContext);
 
   // Auto-scroll
   useEffect(() => {
