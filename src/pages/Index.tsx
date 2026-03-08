@@ -683,6 +683,19 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
         />
 
         <div className="mx-auto max-w-md space-y-5 px-4 mt-2">
+          {/* 0. System Interventions (JARVIS) */}
+          {highestPriority && (
+            <SystemInterventionBanner
+              intervention={highestPriority}
+              totalCount={activeInterventions.length}
+              onDismiss={dismissIntervention}
+              onCallback={(cb) => {
+                if (cb === 'openWeeklyPlanning') weekly.setShowModal(true);
+                if (cb === 'dismissCaffeineWarning') dismissWarning();
+              }}
+            />
+          )}
+
           {/* Caffeine Warning */}
           {hasLoggedAfter10am && !warningDismissed && (
             <GeneticWarning
