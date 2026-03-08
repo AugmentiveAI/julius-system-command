@@ -1,10 +1,20 @@
 import { useState, useCallback } from 'react';
+import { toast } from 'sonner';
 import { Plus, Swords, TrendingUp, ChevronDown, ChevronUp, Trash2, ArrowUp, Zap, X, Download, Loader2 } from 'lucide-react';
 import { Shadow, SHADOW_CATEGORIES, ShadowCategory, getCategoryIcon, getTotalArmyPower, getForceMultiplier } from '@/types/shadowArmy';
 import { useShadowArmy } from '@/hooks/useShadowArmy';
 import { supabase } from '@/integrations/supabase/client';
 import { usePlayer } from '@/hooks/usePlayer';
 import { getSystemDate } from '@/utils/dayCycleEngine';
+
+interface ShadowEvolution {
+  previousPower: number;
+  newPower: number;
+  evolved: boolean;
+  contributionScore: number;
+  activationCount: number;
+  fractionalPower: number;
+}
 
 interface ShadowActivation {
   title: string;
@@ -16,6 +26,7 @@ interface ShadowActivation {
   isScoutReport?: boolean;
   keyFindings?: string[];
   topTools?: { name: string; description: string; leveragePotential: string }[];
+  evolution?: ShadowEvolution;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -279,7 +290,7 @@ interface ShadowArmyPanelProps {
 }
 
 export function ShadowArmyPanel({ onShadowAdded }: ShadowArmyPanelProps = {}) {
-  const { shadows, loading, addShadow, removeShadow, levelUp } = useShadowArmy();
+  const { shadows, loading, addShadow, removeShadow, levelUp, refetchShadow } = useShadowArmy();
   const { player } = usePlayer();
   const [expanded, setExpanded] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -318,7 +329,8 @@ export function ShadowArmyPanel({ onShadowAdded }: ShadowArmyPanelProps = {}) {
             category: shadow.category,
             description: shadow.description,
             power_level: shadow.power_level,
-            activationCount: shadow.metadata?.activationCount || 0,
+            metadata: shadow.metadata || {},
+            activationCount: (shadow.metadata as any)?.activation_count || 0,
           },
           playerContext: {
             goal: player.goal,
@@ -331,7 +343,24 @@ export function ShadowArmyPanel({ onShadowAdded }: ShadowArmyPanelProps = {}) {
       });
 
       if (error) throw error;
-      setActivation(data as ShadowActivation);
+      const result = data as ShadowActivation;
+      setActivation(result);
+
+      // Show evolution toast if shadow leveled up
+      if (result.evolution?.evolved) {
+        toast(`⚡ ${shadow.name} evolved to LV ${result.evolution.newPower}`, {
+          description: 'Future activations will produce deeper intel.',
+          duration: 4000,
+        });
+      } else if (result.evolution) {
+        const progress = ((result.evolution.fractionalPower % 1) * 100).toFixed(0);
+        toast(`${shadow.name} gaining power... ${progress}% to next level`, {
+          duration: 2500,
+        });
+      }
+
+      // Refresh shadow to reflect updated power/contribution
+      await refetchShadow(shadow.id);
     } catch (e: any) {
       console.error('Shadow activation failed:', e);
       setActivation({

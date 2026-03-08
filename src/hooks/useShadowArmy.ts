@@ -70,5 +70,14 @@ export function useShadowArmy() {
     return updateShadow(id, { power_level: shadow.power_level + 1 });
   }, [shadows, updateShadow]);
 
-  return { shadows, loading, addShadow, updateShadow, removeShadow, levelUp };
+  const refetchShadow = useCallback(async (id: string) => {
+    const { data } = await supabase
+      .from('shadow_army')
+      .select('*')
+      .eq('id', id)
+      .single();
+    if (data) setShadows(prev => prev.map(s => s.id === id ? (data as Shadow) : s));
+  }, []);
+
+  return { shadows, loading, addShadow, updateShadow, removeShadow, levelUp, refetchShadow };
 }
