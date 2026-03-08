@@ -96,9 +96,10 @@ function gatherPlayerData(player: any) {
     dayNumber,
     systemMode,
     stateHistory,
-    recentCompletions: [] as any[], // Will be filled from DB
-    shadowArmy: [] as any[], // Will be filled from DB
-    activeDungeons: [] as any[], // Will be filled from DB
+    recentCompletions: [] as any[],
+    shadowArmy: [] as any[],
+    activeDungeons: [] as any[],
+    training: null as any, // Will be filled from DB
     resistanceData,
     dayOfWeek: dayOfWeek[dayNum],
     dayType,
