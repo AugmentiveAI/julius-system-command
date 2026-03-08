@@ -20,6 +20,7 @@ YOUR ANALYSIS CAPABILITIES:
 2. TRAJECTORY MODELING: Project multiple futures based on current pace vs. optimized pace. Always model the ceiling BEYOND the stated goal.
 3. DYNAMIC CHALLENGE SCALING: Generate challenges calibrated to the player's proven capability edge — hard enough to force growth, achievable enough to maintain momentum
 4. STRATEGIC INTELLIGENCE: Identify the highest-leverage actions that compound fastest
+5. ANTICIPATORY INTELLIGENCE: Predict what the player will need before they know they need it. Surface time-sensitive opportunities and risks proactively.
 
 SHADOW ARMY & DUNGEON GENERATION:
 You MUST also recommend shadows (compounding assets) and dungeons (challenges) for the player. Shadows are NOT restricted to any fixed categories — they can be ANYTHING that would accelerate the player's growth:
@@ -41,10 +42,7 @@ You MUST also recommend shadows (compounding assets) and dungeons (challenges) f
 
 5. **Gap Analysis**: Compare the player's current shadow army against what top performers have. Identify the MISSING pieces.
 
-6. **Actionability**: Each shadow MUST be immediately usable upon creation. Include a "firstAction" field — the very first thing the player should do to activate this shadow. This could be a prompt to follow, a template to use, a protocol to execute, or a system to set up.
-
-Each shadow suggestion must include WHY top performers have this asset and how it specifically connects to the player's goal.
-Each dungeon suggestion must include what capability gap it addresses and why conquering it matters for the trajectory.
+6. **Actionability**: Each shadow MUST be immediately usable upon creation. Include a "firstAction" field — the very first thing the player should do to activate this shadow.
 
 Each shadow suggestion must include WHY top performers have this asset and how it specifically connects to the player's goal.
 Each dungeon suggestion must include what capability gap it addresses and why conquering it matters for the trajectory.
@@ -203,6 +201,12 @@ CRITICAL INSTRUCTIONS FOR SHADOW & DUNGEON SUGGESTIONS:
 - For shadows: reference specific 2026 tools, frameworks, or systems by name.
 - For dungeons: calibrate difficulty and time limits to the player's genetic profile (warrior-sprinter: 45min bursts, peak 8-12am).
 
+CRITICAL INSTRUCTIONS FOR ANTICIPATION:
+- Generate an "anticipation" object with today's windows, this week's projection, and strategic trajectory analysis.
+- Reference genetic peak/crash windows with specific times.
+- Identify time-sensitive opportunities and risks.
+- Project weekly XP and quest completion targets.
+
 Generate a complete System Intelligence analysis using the generate_intelligence tool.`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -222,7 +226,7 @@ Generate a complete System Intelligence analysis using the generate_intelligence
             type: 'function',
             function: {
               name: 'generate_intelligence',
-              description: 'Generate the System Intelligence analysis output with strategic brief, trajectory forecast, dynamic challenges, and AI-recommended shadows and dungeons.',
+              description: 'Generate the System Intelligence analysis output with strategic brief, trajectory forecast, dynamic challenges, AI-recommended shadows, dungeons, and anticipatory intelligence.',
               parameters: {
                 type: 'object',
                 properties: {
@@ -237,90 +241,112 @@ Generate a complete System Intelligence analysis using the generate_intelligence
                   trajectoryForecast: {
                     type: 'object',
                     properties: {
-                      currentPace: {
-                        type: 'string',
-                        description: 'What happens if player continues at current trajectory. Be specific with timeframes.',
-                      },
-                      optimizedPace: {
-                        type: 'string',
-                        description: 'What happens if player optimizes the leverage points identified. Project BEYOND stated goals.',
-                      },
-                      ceiling: {
-                        type: 'string',
-                        description: 'The player\'s true potential ceiling based on their unique combination of traits, skills, and patterns. Think bigger than they think.',
-                      },
-                      criticalLeverage: {
-                        type: 'string',
-                        description: 'The single highest-leverage action that would most accelerate the trajectory right now.',
-                      },
+                      currentPace: { type: 'string' },
+                      optimizedPace: { type: 'string' },
+                      ceiling: { type: 'string' },
+                      criticalLeverage: { type: 'string' },
                     },
                     required: ['currentPace', 'optimizedPace', 'ceiling', 'criticalLeverage'],
                   },
                   dynamicChallenges: {
                     type: 'array',
-                    description: 'Exactly 3 dynamically scaled challenges for today. Each should push the player to their capability edge.',
+                    description: 'Exactly 3 dynamically scaled challenges for today.',
                     items: {
                       type: 'object',
                       properties: {
-                        id: { type: 'string', description: 'Unique ID like "ai-challenge-1"' },
-                        title: { type: 'string', description: 'Challenge title. Action-oriented, specific.' },
-                        description: { type: 'string', description: 'Why this matters and how it connects to trajectory.' },
-                        difficulty: { type: 'string', enum: ['B-Rank', 'A-Rank', 'S-Rank'], description: 'Scaled to player capability.' },
-                        xpReward: { type: 'number', description: 'XP reward scaled to difficulty. B:50-75, A:100-150, S:200-300.' },
-                        timeEstimate: { type: 'string', description: 'Estimated time (e.g., "45 min", "2 hours")' },
-                        leverageType: { type: 'string', enum: ['revenue', 'skill', 'network', 'systems', 'compound'], description: 'What kind of growth this drives.' },
+                        id: { type: 'string' },
+                        title: { type: 'string' },
+                        description: { type: 'string' },
+                        difficulty: { type: 'string', enum: ['B-Rank', 'A-Rank', 'S-Rank'] },
+                        xpReward: { type: 'number' },
+                        timeEstimate: { type: 'string' },
+                        leverageType: { type: 'string', enum: ['revenue', 'skill', 'network', 'systems', 'compound'] },
                       },
                       required: ['id', 'title', 'description', 'difficulty', 'xpReward', 'timeEstimate', 'leverageType'],
                     },
                   },
                   suggestedShadows: {
                     type: 'array',
-                    description: '1-3 shadow (compounding asset) recommendations. These can be ANYTHING — not just tools or automations. Consider cognitive frameworks, physical protocols, psychological techniques, neurological hacks, relationship strategies, creative processes, decision systems, communication templates, or any other force multiplier.',
+                    description: '1-3 shadow recommendations.',
                     items: {
                       type: 'object',
                       properties: {
-                        name: { type: 'string', description: 'Shadow name. Use a SINGLE WORD mystique codename — evocative, powerful, and memorable (e.g., "Sentinel", "Talon", "Phantom", "Oracle", "Vanguard", "Cipher", "Aegis", "Wraith", "Crucible", "Bastion", "Harbinger", "Prism"). The name should hint at the shadow\'s function with dark fantasy energy. Never use generic words like "Tool" or "System".' },
-                        category: { type: 'string', enum: ['automation', 'client', 'content', 'sop', 'skill', 'tool'], description: 'Best-fit category for organization.' },
-                        description: { type: 'string', description: 'What this shadow does and how it compounds over time.' },
-                        reasoning: { type: 'string', description: 'Why the player needs this NOW. Reference their specific data, behavioral patterns, and what top performers have.' },
-                        firstAction: { type: 'string', description: 'The FIRST concrete action to activate this shadow. A specific instruction the player can execute immediately (e.g., "Open a new doc and write 3 cold outreach templates using the AIDA framework targeting AI-curious CEOs").' },
-                        activationType: { type: 'string', enum: ['template', 'protocol', 'system', 'framework', 'exercise', 'tool_setup', 'creative'], description: 'What kind of activation this shadow needs. template=generates documents, protocol=step-by-step process, system=ongoing automated process, framework=decision/thinking model, exercise=physical/mental practice, tool_setup=configure a tool, creative=generate creative output.' },
+                        name: { type: 'string', description: 'SINGLE WORD mystique codename.' },
+                        category: { type: 'string', enum: ['automation', 'client', 'content', 'sop', 'skill', 'tool'] },
+                        description: { type: 'string' },
+                        reasoning: { type: 'string' },
+                        firstAction: { type: 'string' },
+                        activationType: { type: 'string', enum: ['template', 'protocol', 'system', 'framework', 'exercise', 'tool_setup', 'creative'] },
                       },
                       required: ['name', 'category', 'description', 'reasoning', 'firstAction', 'activationType'],
                     },
                   },
                   suggestedDungeons: {
                     type: 'array',
-                    description: '1-2 custom dungeon challenges calibrated to the player\'s weakest areas and avoided patterns.',
+                    description: '1-2 custom dungeon challenges.',
                     items: {
                       type: 'object',
                       properties: {
-                        title: { type: 'string', description: 'Dungeon title. Epic, specific to the challenge.' },
-                        description: { type: 'string', description: 'What this dungeon represents and why it matters for the trajectory.' },
-                        type: { type: 'string', enum: ['boss_fight', 'instant_dungeon', 's_rank_gate'], description: 'Dungeon type. boss_fight=week-long stretch goal, instant_dungeon=timed sprint, s_rank_gate=elite challenge.' },
-                        difficulty: { type: 'string', enum: ['B-Rank', 'A-Rank', 'S-Rank'], description: 'Scaled to player capability edge.' },
-                        objectives: {
-                          type: 'array',
-                          items: { type: 'string' },
-                          description: '3-5 specific, measurable objectives to complete the dungeon.',
-                        },
-                        xpReward: { type: 'number', description: 'XP reward. B:100-200, A:200-400, S:400-800.' },
-                        timeEstimate: { type: 'string', description: 'Estimated total time (e.g., "2 hours", "1 week")' },
-                        reasoning: { type: 'string', description: 'Why this challenge matters NOW. Reference player stats, avoidance patterns, and what top performers conquered at this stage.' },
+                        title: { type: 'string' },
+                        description: { type: 'string' },
+                        type: { type: 'string', enum: ['boss_fight', 'instant_dungeon', 's_rank_gate'] },
+                        difficulty: { type: 'string', enum: ['B-Rank', 'A-Rank', 'S-Rank'] },
+                        objectives: { type: 'array', items: { type: 'string' } },
+                        xpReward: { type: 'number' },
+                        timeEstimate: { type: 'string' },
+                        reasoning: { type: 'string' },
                       },
                       required: ['title', 'description', 'type', 'difficulty', 'objectives', 'xpReward', 'timeEstimate', 'reasoning'],
                     },
                   },
+                  anticipation: {
+                    type: 'object',
+                    description: 'Anticipatory intelligence — proactive analysis of upcoming windows, risks, and opportunities.',
+                    properties: {
+                      today: {
+                        type: 'object',
+                        properties: {
+                          peakWindow: { type: 'string', description: 'Peak cognitive window status (e.g., "08:00-12:00 — 2h remaining")' },
+                          crashWindow: { type: 'string', description: 'Crash window status (e.g., "14:00-17:00 — 3h away")' },
+                          streakRisk: { type: 'boolean', description: 'Whether the streak is at risk today' },
+                          optimalQuestOrder: { type: 'array', items: { type: 'string' }, description: '3-5 quest types in optimal execution order for today' },
+                          warnings: { type: 'array', items: { type: 'string' }, description: '1-3 time-sensitive warnings for today' },
+                        },
+                        required: ['peakWindow', 'crashWindow', 'streakRisk', 'optimalQuestOrder', 'warnings'],
+                      },
+                      thisWeek: {
+                        type: 'object',
+                        properties: {
+                          sprintDays: { type: 'array', items: { type: 'string' }, description: 'Remaining sprint days this week' },
+                          projectedXP: { type: 'number', description: 'Projected weekly XP at current pace' },
+                          riskFactors: { type: 'array', items: { type: 'string' }, description: '1-2 risk factors for this week' },
+                          opportunities: { type: 'array', items: { type: 'string' }, description: '1-2 opportunities this week' },
+                        },
+                        required: ['sprintDays', 'projectedXP', 'riskFactors', 'opportunities'],
+                      },
+                      strategic: {
+                        type: 'object',
+                        properties: {
+                          currentTrajectory: { type: 'string', description: 'One-line trajectory assessment' },
+                          requiredAcceleration: { type: 'string', description: 'What needs to increase to hit target' },
+                          biggestLeverage: { type: 'string', description: 'Single highest-leverage activity right now' },
+                          bottleneck: { type: 'string', description: 'Current biggest bottleneck' },
+                        },
+                        required: ['currentTrajectory', 'requiredAcceleration', 'biggestLeverage', 'bottleneck'],
+                      },
+                    },
+                    required: ['today', 'thisWeek', 'strategic'],
+                  },
                   patternAlert: {
                     type: 'string',
-                    description: 'Optional. A behavioral pattern the System has detected that the player should be aware of. Only include if there\'s a genuine pattern to flag. Null if nothing notable.',
+                    description: 'Optional behavioral pattern alert.',
                   },
                   systemConfidence: {
                     type: 'number',
-                    description: 'How confident the System is in today\'s analysis, 0-100. Based on data quality and consistency.',
+                    description: 'Confidence in analysis, 0-100.',
                   },
                 },
-                required: ['dailyBrief', 'strategicAnalysis', 'trajectoryForecast', 'dynamicChallenges', 'suggestedShadows', 'suggestedDungeons', 'systemConfidence'],
+                required: ['dailyBrief', 'strategicAnalysis', 'trajectoryForecast', 'dynamicChallenges', 'suggestedShadows', 'suggestedDungeons', 'anticipation', 'systemConfidence'],
                 additionalProperties: false,
               },
             },
