@@ -218,7 +218,7 @@ Generate a complete System Intelligence analysis using the generate_intelligence
                     items: {
                       type: 'object',
                       properties: {
-                        name: { type: 'string', description: 'Shadow name. Specific and evocative (e.g., "The 5-4-3-2-1 Fear Inoculator", "Warrior Sprint Protocol", "n8n Lead Nurture Flow").' },
+                        name: { type: 'string', description: 'Shadow name. Use a SINGLE WORD mystique codename — evocative, powerful, and memorable (e.g., "Sentinel", "Talon", "Phantom", "Oracle", "Vanguard", "Cipher", "Aegis", "Wraith", "Crucible", "Bastion", "Harbinger", "Prism"). The name should hint at the shadow\'s function with dark fantasy energy. Never use generic words like "Tool" or "System".' },
                         category: { type: 'string', enum: ['automation', 'client', 'content', 'sop', 'skill', 'tool'], description: 'Best-fit category for organization.' },
                         description: { type: 'string', description: 'What this shadow does and how it compounds over time.' },
                         reasoning: { type: 'string', description: 'Why the player needs this NOW. Reference their specific data, behavioral patterns, and what top performers have.' },
