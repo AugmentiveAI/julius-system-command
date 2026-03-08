@@ -181,6 +181,7 @@ TODAY'S CONTEXT:
 - Time: ${playerData.currentTime}
 - Quests Completed Today: ${playerData.questsCompletedToday} / ${playerData.questsTotalToday}
 - Pillars Status: ${JSON.stringify(playerData.pillarStatus || {})}
+${marketIntelBlock}
 
 CRITICAL INSTRUCTIONS FOR SHADOW & DUNGEON SUGGESTIONS:
 - Suggest 1-3 shadows the player NEEDS but doesn't have yet, based on what top 10% performers pursuing "${playerData.goal || 'building an AI consultancy'}" have in their arsenal in 2026.

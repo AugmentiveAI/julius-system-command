@@ -132,8 +132,9 @@ PLAYER CONTEXT:
     const scoutUserPrompt = `RECONNAISSANCE MISSION: "${shadow.name}"
 Target Domain: ${shadow.description || shadow.name}
 Power Level: ${shadow.power_level || 1} (higher = deeper, more advanced intel)
+${liveIntelBlock}
 
-Execute full reconnaissance. Use the scout_report tool to deliver your findings.
+Execute full reconnaissance. Integrate the live intelligence feed above into your report. Use the scout_report tool to deliver your findings.
 
 ${shadow.power_level >= 3 ? 'ENHANCED RECON: Include competitor analysis, market sizing estimates, and emerging 2026 disruptors.' : ''}
 ${shadow.power_level >= 5 ? 'DEEP RECON: Include contrarian insights that go AGAINST conventional wisdom, plus second-order effects most people miss.' : ''}

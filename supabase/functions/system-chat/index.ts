@@ -24,17 +24,75 @@ YOUR CAPABILITIES:
 3. PATTERN CONFRONTATION — Surface uncomfortable truths from the player's data
 4. TRAJECTORY MODELING — Project outcomes based on current vs. optimized behavior
 5. CONTEXTUAL INTELLIGENCE — Factor in time of day, energy state, recent performance
+6. REAL-TIME INTELLIGENCE — You have access to current 2026 market intelligence that is injected into your context. Use it to ground your advice in market reality.
 
 VOICE RULES:
 - Max 2-3 sentences per thought unless asked for detail
 - Use data to confront, not comfort
 - Never say "I think" or "maybe" — you KNOW
 - Reference the player's stats, streaks, and patterns when relevant
+- When discussing market/business topics, reference current 2026 trends and tools from your intelligence feed
 - End responses with a directive when appropriate
 - Use markdown for structure when helpful (bold, bullets, headers)
 
 CONTEXT INJECTION:
-The user's current player state will be provided as system context. Use it to ground every response in their reality.`;
+The user's current player state and real-time market intelligence will be provided as system context. Use both to ground every response in their reality.`;
+
+async function fetchMarketIntel(authHeader: string, playerContext: any): Promise<string> {
+  try {
+    const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
+    if (!GROQ_API_KEY) return '';
+
+    const goal = playerContext?.goal || 'building an AI consultancy';
+    
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${GROQ_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a fast market intelligence scanner. Return ONLY a JSON object with current 2026 market context. Be specific about real tools, trends, and companies.',
+          },
+          {
+            role: 'user',
+            content: `Quick 2026 market pulse for someone ${goal}. Return JSON: { "marketPulse": "one-line direction", "topTrends": ["3 key trends"], "hotTools": ["3 relevant tools with one-line desc"], "competitorMoves": ["2 notable competitor/market shifts"] }`,
+          },
+        ],
+        response_format: { type: 'json_object' },
+        temperature: 0.7,
+        max_tokens: 512,
+      }),
+    });
+
+    if (!res.ok) {
+      console.warn('Groq intel scan failed:', res.status);
+      return '';
+    }
+
+    const data = await res.json();
+    const intel = data.choices?.[0]?.message?.content || '';
+    
+    try {
+      const parsed = JSON.parse(intel);
+      return `
+REAL-TIME MARKET INTELLIGENCE (2026):
+- Market Pulse: ${parsed.marketPulse || 'N/A'}
+- Top Trends: ${(parsed.topTrends || []).join(' | ')}
+- Hot Tools: ${(parsed.hotTools || []).join(' | ')}
+- Competitor Moves: ${(parsed.competitorMoves || []).join(' | ')}`;
+    } catch {
+      return '';
+    }
+  } catch (e) {
+    console.warn('Market intel fetch failed (non-critical):', e);
+    return '';
+  }
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -78,6 +136,9 @@ serve(async (req) => {
       });
     }
 
+    // Fetch real-time market intelligence via Groq (fast, non-blocking)
+    const marketIntel = await fetchMarketIntel(authHeader, playerContext);
+
     // Build context injection
     const contextBlock = playerContext ? `
 CURRENT PLAYER STATE:
@@ -92,7 +153,7 @@ CURRENT PLAYER STATE:
 - Quests Today: ${playerContext.questsCompletedToday}/${playerContext.questsTotalToday}
 - Shadow Army: ${playerContext.shadowCount} shadows (Force Multiplier: ${playerContext.forceMultiplier}x)
 - Dungeons Cleared: ${playerContext.dungeonsCleared}
-` : '';
+${marketIntel}` : marketIntel;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
