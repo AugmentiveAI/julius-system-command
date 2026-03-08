@@ -1,0 +1,587 @@
+{
+  "appName": "The System",
+  "description": "A genetically-calibrated, AI-powered life-optimization engine inspired by Solo Leveling. Gamifies daily productivity through quests, XP, leveling, shadow armies, dungeons, and real-time market intelligence.",
+  "theme": "Solo Leveling × Jarvis — dark cyberpunk UI with holographic cyan/purple accents",
+  "techStack": {
+    "frontend": "React 18 + Vite + TypeScript",
+    "styling": "Tailwind CSS + shadcn/ui + custom design tokens",
+    "routing": "react-router-dom v6",
+    "stateManagement": "React Context + localStorage + Supabase (via Lovable Cloud)",
+    "ai": {
+      "primary": "Lovable AI Gateway (Gemini 3 Flash Preview)",
+      "tactical": "Groq (Llama 3.3 70B Versatile)",
+      "pattern": "Dual-model pipeline — Groq for fast tactical scans, Gemini for deep strategic synthesis"
+    },
+    "database": "Supabase (PostgreSQL with RLS)",
+    "auth": "Supabase Auth (email/password)",
+    "pwa": "vite-plugin-pwa"
+  },
+
+  "authentication": {
+    "provider": "Supabase Auth",
+    "method": "Email + Password (with email verification)",
+    "flows": ["signup", "login", "password-reset", "sign-out"],
+    "sessionManagement": "AuthContext with onAuthStateChange listener, auto-refresh tokens, clearSystemStorage on sign-out",
+    "protectedRoutes": "All routes except /auth and /reset-password",
+    "files": {
+      "context": "src/contexts/AuthContext.tsx",
+      "loginPage": "src/pages/Auth.tsx",
+      "resetPage": "src/pages/ResetPassword.tsx"
+    }
+  },
+
+  "database": {
+    "tables": {
+      "player_state": {
+        "purpose": "Core player progression — level, XP, stats, streak, penalty state",
+        "columns": ["user_id", "level", "total_xp", "current_xp", "xp_to_next_level", "stats (jsonb)", "streak", "cold_streak", "penalty (jsonb)"],
+        "rls": "Users can only CRUD their own row",
+        "autoCreated": "Yes — via handle_new_user() trigger on auth.users insert"
+      },
+      "profiles": {
+        "purpose": "User display info — name, title, goal",
+        "columns": ["user_id", "display_name", "title", "goal"],
+        "rls": "Users can only CRUD their own row",
+        "autoCreated": "Yes — via handle_new_user() trigger"
+      },
+      "quest_history": {
+        "purpose": "Append-only log of all completed quests (daily + main)",
+        "columns": ["user_id", "quest_id", "quest_title", "xp_earned", "completed_at", "type", "category"],
+        "rls": "Users can INSERT and SELECT only their own rows (no UPDATE/DELETE)"
+      },
+      "shadow_army": {
+        "purpose": "Compounding assets — automations, skills, tools, frameworks, protocols",
+        "columns": ["user_id", "name", "category", "description", "power_level", "contribution_score", "status", "metadata (jsonb)"],
+        "rls": "Full CRUD for own rows",
+        "categories": ["automation", "client", "content", "sop", "skill", "tool"]
+      },
+      "dungeons": {
+        "purpose": "Time-limited challenges — boss fights, instant dungeons, S-rank gates",
+        "columns": ["user_id", "dungeon_type", "title", "description", "difficulty", "xp_reward", "time_limit_minutes", "objectives (jsonb)", "status", "started_at", "completed_at", "expires_at", "genetic_modifiers (jsonb)", "metadata (jsonb)"],
+        "rls": "Full CRUD for own rows",
+        "types": ["boss_fight", "instant_dungeon", "s_rank_gate"]
+      },
+      "inventory": {
+        "purpose": "Player inventory — automations count, cash reserves, clients, skills, templates",
+        "columns": ["user_id", "data (jsonb)"],
+        "rls": "INSERT, SELECT, UPDATE for own row"
+      },
+      "system_notifications": {
+        "purpose": "In-app notification log — level ups, streak milestones, shadow extractions, dungeon clears",
+        "columns": ["user_id", "title", "message", "type", "read", "metadata (jsonb)"],
+        "rls": "Full CRUD for own rows",
+        "types": ["level_up", "streak_milestone", "shadow_extracted", "dungeon_cleared", "rank_up", "pattern_detected", "info"]
+      },
+      "chat_messages": {
+        "purpose": "Persistent System Chat conversation history",
+        "columns": ["user_id", "role", "content", "conversation_id", "created_at"],
+        "rls": "SELECT, INSERT, DELETE for own rows"
+      },
+      "user_roles": {
+        "purpose": "Role-based access control",
+        "columns": ["user_id", "role (enum: admin, moderator, user)"],
+        "rls": "SELECT only for own roles"
+      }
+    },
+    "functions": {
+      "handle_new_user()": "Trigger on auth.users INSERT — auto-creates profile, player_state, and inventory rows",
+      "has_role()": "Security definer function to check user roles without recursive RLS",
+      "update_updated_at_column()": "Trigger to auto-update updated_at timestamps"
+    }
+  },
+
+  "edgeFunctions": {
+    "system-chat": {
+      "purpose": "Conversational AI interface — streaming chat with full player context injection",
+      "model": "Gemini 3 Flash Preview (via Lovable AI Gateway)",
+      "features": [
+        "Streaming SSE responses",
+        "Player state injection (level, stats, streak, goal, shadows, dungeons)",
+        "Real-time market intelligence injection via Groq pre-fetch",
+        "Solo Leveling + Jarvis voice personality",
+        "2026 market-aware responses"
+      ],
+      "file": "supabase/functions/system-chat/index.ts"
+    },
+    "system-intelligence": {
+      "purpose": "Daily AI-generated strategic analysis — briefs, trajectory forecasts, challenges, shadow/dungeon recommendations",
+      "model": "Gemini 3 Flash Preview (structured tool calling)",
+      "features": [
+        "Daily strategic brief generation",
+        "Trajectory forecasting (current vs optimized vs ceiling)",
+        "Dynamic challenge generation (B/A/S rank, calibrated to player edge)",
+        "Shadow army recommendations (unrestricted categories — cognitive, physical, neurological, etc.)",
+        "Dungeon recommendations (calibrated to weakest stats)",
+        "Real-time 2026 market intelligence via Groq pre-fetch",
+        "Genetic profile awareness (COMT Val/Val, ACTN3 CC)"
+      ],
+      "file": "supabase/functions/system-intelligence/index.ts"
+    },
+    "shadow-activate": {
+      "purpose": "AI-powered shadow activation — generates actionable content when a shadow is activated",
+      "model": "Gemini 3 Flash Preview (structured tool calling)",
+      "modes": {
+        "scout": "Deep reconnaissance — intelligence gathering with Groq tactical pre-scan + Gemini synthesis. Returns structured recon reports with key findings, tool stacks, and threat assessments.",
+        "standard": "Content generation — templates, protocols, frameworks, exercises. Scaled by shadow power level (1-10)."
+      },
+      "features": [
+        "Auto-evolution: shadows gain power and contribution score on each activation",
+        "Scout shadows get Groq live intel feed injected into Gemini prompt",
+        "Power level scaling (1-10) affects content depth and sophistication",
+        "Activation count tracking via metadata"
+      ],
+      "file": "supabase/functions/shadow-activate/index.ts"
+    },
+    "web-intel": {
+      "purpose": "Dual-model intelligence gathering engine for market research",
+      "modes": {
+        "brief": "Fast Groq market pulse for daily briefs",
+        "scan": "Groq tactical scan of specific topics",
+        "deep": "Gemini deep strategic research",
+        "scout": "Dual-model recon — Gemini deep + Groq cross-validation"
+      },
+      "file": "supabase/functions/web-intel/index.ts"
+    }
+  },
+
+  "pages": {
+    "/": {
+      "name": "Dashboard (Index)",
+      "file": "src/pages/Index.tsx",
+      "description": "Main dashboard — System Intelligence panel, Shadow Army, Dungeons, Progress Ring, Today's Snapshot, Quick Actions, System Chat",
+      "components": [
+        "TopBar (system mode indicator, notifications, force refresh)",
+        "DashboardMessage (AI-generated daily brief)",
+        "SystemIntelligencePanel (strategic analysis, trajectory, challenges, shadow/dungeon suggestions)",
+        "ShadowArmyPanel (view/add/activate shadows)",
+        "DungeonPanel (view/start/complete dungeons)",
+        "ProgressRing (XP, level, pillar arcs)",
+        "TodaySnapshot (quests completed, XP, streak)",
+        "DashboardActions (scan, cold exposure, caffeine, supplements)",
+        "SystemChatPanel (floating AI chat interface)",
+        "StatusWindow (detailed player stats sheet)",
+        "BottomNav"
+      ],
+      "overlays": [
+        "FlashOverlay (XP gain flash)",
+        "LevelUpOverlay (level up cinematic)",
+        "RankUpOverlay (rank promotion cinematic)",
+        "SkillUnlockOverlay (new skill acquired)",
+        "AriseOverlay (shadow extraction cinematic)",
+        "PenaltyDungeonOverlay (mandatory penalty quest)",
+        "LootDropToast / LootCinematicReveal (item drops)",
+        "FocusModeOverlay (quest-by-quest focused execution)",
+        "WeeklyPlanningModal (sprint planning for Thu-Sat)"
+      ],
+      "hooks": [
+        "usePlayer", "useProtocolQuests", "useWorkout", "useDailyXP",
+        "useGeneticState", "useSystemStrategy", "useSystemIntelligenceAI",
+        "useWeeklyPlanning", "usePillarQuests", "usePillarStreak",
+        "useSystemNotifications", "useShadowArmy", "useDungeons",
+        "useSkills", "usePenaltyDungeon", "useLootDrops",
+        "useFocusMode", "usePersuasion", "useCaffeine"
+      ]
+    },
+    "/quests": {
+      "name": "Quests",
+      "file": "src/pages/Quests.tsx",
+      "description": "Quest execution — calibrated quests organized by time block, protocol quests, pillar quests, shadow quests, sprint timer",
+      "features": [
+        "AI-calibrated quests based on state scan (energy, sleep, stress, mood)",
+        "Time block organization (morning, midday, afternoon, evening)",
+        "Difficulty badges (E/D/C/B/A/S rank)",
+        "Persuasion engine — dynamic motivational framing per quest",
+        "Sprint timer (45-min sprints with breaks, genetic-calibrated)",
+        "Shadow quests (hidden bonus quests that appear based on completions)",
+        "Pillar quests (Mind, Body, Skill — daily non-negotiables)",
+        "Pre-commitment system (evening commitment for next day)",
+        "Loot drops on quest completion",
+        "Weekly planning for sprint days (Thu-Sat)"
+      ]
+    },
+    "/training": {
+      "name": "Training",
+      "file": "src/pages/Training.tsx",
+      "description": "Workout module — genetically-calibrated exercise tracking with progressive overload",
+      "features": [
+        "Weekly workout schedule (push/pull/legs/power/peloton/animal-flow/rest)",
+        "Exercise checklist with progressive overload hints",
+        "Genetic HUD (COMT phase, energy state, sprint count)",
+        "Training prescription (intensity level based on readiness score)",
+        "Workout swap system (auto-adjusts based on muscle recovery)",
+        "Post-workout buff system (stat bonuses after training)"
+      ]
+    },
+    "/progress": {
+      "name": "Progress",
+      "file": "src/pages/Progress.tsx",
+      "description": "Progress tracking — milestones, stats radar, quest history, resistance analysis, predictions, weekly summary",
+      "sections": [
+        "Milestones (main quests — long-term goals with XP rewards)",
+        "Core Stats (radar chart of 6 stats)",
+        "Quest Log (history of completed quests by day)",
+        "Resistance Analysis (behavioral resistance tracking)",
+        "System Predictions (AI-generated trajectory predictions)",
+        "Weekly Summary (XP, quests, active days this week)"
+      ]
+    },
+    "/more": {
+      "name": "More",
+      "file": "src/pages/More.tsx",
+      "description": "Menu hub — genetic profile, inventory, supplements, settings, about",
+      "subViews": [
+        "Genetic Profile (COMT/ACTN3/CYP1A2 traits — buffs and debuffs)",
+        "Inventory (automations, cash reserves, clients, skills, templates)",
+        "Supplement Protocol (morning/midday/evening supplement checklists)",
+        "Settings link",
+        "About The System"
+      ]
+    },
+    "/settings": {
+      "name": "Settings",
+      "file": "src/pages/Settings.tsx",
+      "description": "Configuration — AI quest engine API keys, auto-deploy toggle, start date, replay awakening, clear data, sign out",
+      "features": [
+        "Groq + Gemini API key management (for AI quest generation)",
+        "AI quest generation toggle + manual trigger",
+        "Auto-deploy toggle (System Intelligence auto-creates shadows/dungeons)",
+        "Start date configuration",
+        "Replay Awakening Sequence",
+        "Clear All Data",
+        "Sign Out"
+      ]
+    },
+    "/system-analytics": {
+      "name": "System Analytics",
+      "file": "src/pages/SystemAnalytics.tsx",
+      "description": "Persuasion engine performance dashboard",
+      "features": [
+        "Technique effectiveness chart (12 persuasion techniques with completion rates)",
+        "Psychological profile radar (loss aversion, competitive, identity, commitment, novelty, streak)",
+        "Technique rotation log (last 20 events)",
+        "Habituation monitor (technique fatigue tracking)",
+        "Pre-commitment stats (accept rate, follow-through, broken commitments)",
+        "Shadow quest stats (spawned, completed, completion rate, difficulty modifier)",
+        "Weekly insight (AI-generated weekly performance analysis)"
+      ]
+    },
+    "/auth": {
+      "name": "Authentication",
+      "file": "src/pages/Auth.tsx",
+      "description": "Login/signup page with email verification"
+    },
+    "/reset-password": {
+      "name": "Reset Password",
+      "file": "src/pages/ResetPassword.tsx",
+      "description": "Password reset flow after email link"
+    }
+  },
+
+  "contexts": {
+    "AuthContext": {
+      "purpose": "Authentication state — user, session, loading, signOut (with storage cleanup)",
+      "file": "src/contexts/AuthContext.tsx"
+    },
+    "HistoryContext": {
+      "purpose": "Quest completion history — addCompletion, daysSummary, weeklySummary (synced to Supabase)",
+      "file": "src/contexts/HistoryContext.tsx"
+    },
+    "FocusModeContext": {
+      "purpose": "Focus mode state — active/inactive toggle",
+      "file": "src/contexts/FocusModeContext.tsx"
+    },
+    "DayCycleContext": {
+      "purpose": "Day transition detection — triggers daily resets at midnight PST",
+      "file": "src/contexts/DayCycleContext.tsx"
+    },
+    "SystemCommsContext": {
+      "purpose": "System communication banners — queued messages with priority levels",
+      "file": "src/contexts/SystemCommsContext.tsx"
+    }
+  },
+
+  "hooks": {
+    "core": {
+      "usePlayer": "Player state management — level, XP, stats, streak, penalty, goal. Persisted to localStorage + synced to Supabase via usePlayerSync",
+      "usePlayerSync": "Bidirectional sync of player_state between localStorage and Supabase",
+      "useProtocolQuests": "Daily protocol quests — time-blocked, genetic-calibrated, auto-resetting at midnight",
+      "useHistory": "Quest completion history with Supabase sync via useHistorySync",
+      "useHistorySync": "Loads quest_history from DB on login, writes completions immediately",
+      "useInventory": "Inventory management (automations, cash, clients, skills, templates)",
+      "useInventorySync": "Bidirectional sync of inventory data with Supabase",
+      "useDailyXP": "Calculates total XP earned today from all sources"
+    },
+    "ai": {
+      "useSystemChat": "Conversational AI — streaming chat with Gemini, player context injection, chat persistence to DB",
+      "useSystemIntelligenceAI": "Daily System Intelligence generation — calls system-intelligence edge function",
+      "useAIQuests": "AI-generated quest content from Groq/Gemini",
+      "useSystemStrategy": "Derived strategy state — daily brief, predictions, shadow monarch progress"
+    },
+    "gamification": {
+      "useShadowArmy": "Shadow army CRUD — add, remove, activate shadows (backed by Supabase)",
+      "useShadowQuest": "Hidden shadow quest system — quests that appear after consecutive completions",
+      "useDungeons": "Dungeon CRUD — create, start, complete dungeons (backed by Supabase)",
+      "usePenaltyDungeon": "Penalty dungeon system — triggers after 2+ zero-completion days",
+      "useSkills": "Skill unlock system — 8 skills with various unlock conditions (streak, stats, quest count, etc.)",
+      "useLootDrops": "Random loot drop system — items drop on quest completion",
+      "usePillarQuests": "Daily pillar quests (Mind, Body, Skill) — non-negotiable daily minimums",
+      "usePillarStreak": "Pillar completion streak tracking with shield system",
+      "useSprintTimer": "45-min sprint timer with breaks (Pomodoro-style, genetic-calibrated)"
+    },
+    "behavioral": {
+      "usePersuasion": "Persuasion engine — selects optimal motivational technique per quest based on player psychological profile",
+      "usePreCommitment": "Evening pre-commitment system — commit to tomorrow's hardest quest",
+      "useFocusMode": "Focus mode — presents quests one at a time for deep focus execution",
+      "useSystemComms": "System communication banners — contextual messages based on state"
+    },
+    "biometric": {
+      "useGeneticState": "Genetic HUD state — COMT phase detection, energy tracking, sprint counting",
+      "useCaffeine": "Caffeine logging — tracks intake timing relative to CYP1A2 slow metabolism",
+      "useWorkout": "Workout tracking — exercises, completion, progressive overload, muscle recovery",
+      "useDayCycle": "Day/night cycle detection — PST timezone"
+    },
+    "utility": {
+      "useWeeklyPlanning": "Weekly sprint planning (Thu-Sat) with auto-priority and time allocation",
+      "useSystemNotifications": "In-app notification management (backed by Supabase)",
+      "useTrajectoryData": "Data aggregation for trajectory forecasting",
+      "useLocalDataMigration": "One-time migration of localStorage data to Supabase on first login"
+    }
+  },
+
+  "utils": {
+    "geneticEngine": "COMT Val/Val phase detection (warrior peak 8-12, crash 14-17), ACTN3 sprint optimization",
+    "questCalibration": "Dynamic quest difficulty calibration based on state scans, completion history, and resistance data",
+    "persuasionEngine": "12-technique persuasion system with effectiveness tracking, habituation monitoring, and technique rotation",
+    "persuasionOptimizer": "Meta-optimization layer for the persuasion engine",
+    "resistanceTracker": "Behavioral resistance detection — identifies avoided quests and hard avoidance patterns",
+    "systemIntelligence": "Client-side intelligence utilities",
+    "systemVoice": "System voice/toast message templates — Solo Leveling style clinical communication",
+    "lootEngine": "Random loot drop calculations with rarity tiers",
+    "shadowQuests": "Shadow quest generation and state management",
+    "overloadEngine": "Progressive overload calculations for training",
+    "muscleRecovery": "Muscle group recovery tracking (48-72hr windows)",
+    "trainingIntelligence": "Training recommendations based on genetic state, sprint count, and time of day",
+    "trainingPrescription": "Workout intensity prescription based on readiness score and genetic signals",
+    "workoutSwap": "Automatic workout swap when scheduled muscle group isn't recovered",
+    "dayCycleEngine": "PST timezone day detection and midnight countdown",
+    "weeklyRhythm": "Weekly rhythm detection (work days vs sprint days)",
+    "aiModelRouter": "Routes AI requests to appropriate model (Groq vs Gemini)",
+    "aiQuestGenerator": "AI-generated quest content management",
+    "revenueImpact": "Revenue impact calculations for business quests",
+    "haptics": "Haptic feedback utilities for mobile"
+  },
+
+  "types": {
+    "player": "Player, PlayerStats, Rank, PenaltyState — 6 stats (sales, systems, creative, discipline, network, wealth), 8 ranks (E→Shadow Monarch)",
+    "quest": "Quest, DailyQuestState — 5 default daily quests",
+    "quests": "QuestTimeBlock (morning/midday/afternoon/evening), time block configs",
+    "questDifficulty": "QuestDifficulty (E/D/C/B/A/S), badge configs with glow effects",
+    "skills": "Skill, SkillUnlockCondition — 8 skills (Morning Dominion, Iron Will, Shadow Extraction, Dungeon Sense, Ruler's Authority, Stealth, Pillar Mastery, Dash)",
+    "dungeon": "DungeonType, DungeonObjective, DungeonStatus",
+    "shadowArmy": "ShadowCategory, ShadowSoldier",
+    "genetics": "GeneticProfile, JULIUS_GENETICS — COMT Val/Val, ACTN3 CC, CYP1A2 slow metabolism traits",
+    "history": "QuestCompletionEntry, DaySummary, WeeklySummary, HistoryState",
+    "inventory": "InventoryState — automationsDeployed, cashReserves, activeClients, skillsCreated, templatesFrameworks",
+    "loot": "LootItem, LootRarity, LootDrop",
+    "training": "WorkoutType, Exercise, WeeklySchedule",
+    "playerState": "PlayerStateCheck — state scan data (energy, sleep, stress, mood, motivation)",
+    "systemIntelligence": "SystemIntelligence, SuggestedShadow, SuggestedDungeon, DynamicChallenge, TrajectoryForecast",
+    "persuasionEngine": "PersuasionTechnique (12 types), PersuasionProfile, TechniqueEffectiveness",
+    "pillarQuests": "Pillar (mind/body/skill), PillarQuest, PillarConfig",
+    "mainQuest": "MainQuest — long-term milestone quests",
+    "overload": "OverloadPlan, ProgressionType",
+    "penaltyDungeon": "PenaltyDungeon types",
+    "xp": "XP calculation types"
+  },
+
+  "data": {
+    "dailyProtocol": "Default daily protocol quest definitions with genetic bonus configs",
+    "pillarQuests": "Pillar quest definitions (Mind: journaling, Body: movement, Skill: deliberate practice)",
+    "workouts": "Workout configurations for each type (exercises, sets, reps, XP, color)",
+    "lootTable": "Loot table with rarity-weighted items and stat bonuses"
+  },
+
+  "onboarding": {
+    "flow": [
+      "1. AwakeningSequence — cinematic Solo Leveling-style intro animation",
+      "2. GoalCapture — player enters their primary objective in one sentence",
+      "3. SystemBriefing — explains the System's capabilities and rules",
+      "4. First state scan auto-triggers on dashboard"
+    ],
+    "files": [
+      "src/components/onboarding/AwakeningSequence.tsx",
+      "src/components/onboarding/GoalCapture.tsx",
+      "src/components/onboarding/SystemBriefing.tsx",
+      "src/components/onboarding/DataMigrationDialog.tsx"
+    ]
+  },
+
+  "gamificationSystems": {
+    "xpAndLeveling": {
+      "description": "XP earned from quest completion, training, loot bonuses. Level-up at thresholds (500 XP increments scaling up).",
+      "effects": ["FlashOverlay on XP gain", "LevelUpOverlay cinematic", "RankUpOverlay on rank promotion"]
+    },
+    "rankSystem": {
+      "ranks": ["E-Rank Hunter (L1)", "D-Rank Hunter (L2)", "C-Rank Hunter (L4)", "B-Rank Hunter (L6)", "A-Rank Hunter (L7)", "S-Rank Hunter (L8)", "Monarch Candidate (L9)", "Shadow Monarch (L10)"],
+      "description": "Rank promotions trigger cinematic overlays"
+    },
+    "shadowArmy": {
+      "description": "Compounding assets the player extracts and levels up. Each shadow has a power level (1-10) and contribution score. Activating shadows generates AI content (templates, protocols, recon reports). Scout shadows perform live market research.",
+      "evolution": "Shadows auto-evolve on activation — scouts evolve faster (0.5 power per activation vs 0.25)"
+    },
+    "dungeons": {
+      "types": {
+        "instant_dungeon": "Timed sprint challenge (45 min)",
+        "boss_fight": "Week-long stretch goal",
+        "s_rank_gate": "Elite challenge"
+      },
+      "description": "Challenges with objectives, time limits, and XP rewards. AI-recommended based on weakest stats."
+    },
+    "penaltySystem": {
+      "description": "2+ consecutive zero-completion days triggers mandatory Penalty Dungeon — 4hr timed quest with 3 objectives. Failure = -3 to lowest stat permanently.",
+      "ui": "Full-screen blocking red/black pulsing overlay"
+    },
+    "streaks": {
+      "completionStreak": "Consecutive days completing at least 1 quest",
+      "coldStreak": "Consecutive days of cold exposure",
+      "pillarStreak": "Consecutive days completing all 3 pillars (Mind/Body/Skill)",
+      "milestones": [3, 7, 14, 30]
+    },
+    "skills": {
+      "count": 8,
+      "skills": ["Morning Dominion", "Iron Will", "Shadow Extraction", "Dungeon Sense", "Ruler's Authority", "Stealth", "Pillar Mastery", "Dash"],
+      "unlockConditions": ["streak thresholds", "stat thresholds", "quest counts", "dungeon clears", "shadow counts", "cold streaks", "pillar streaks"]
+    },
+    "lootSystem": {
+      "description": "Random drops on quest completion with rarity tiers. Cinematic reveal for rare+ items."
+    },
+    "persuasionEngine": {
+      "techniques": ["loss_aversion", "variable_reward", "identity_framing", "commitment_escalation", "social_proof", "temporal_landmark", "endowed_progress", "scarcity_window", "contrast_principle", "sunk_cost_leverage", "implementation_intention", "fresh_start_effect"],
+      "description": "Dynamically selects the most effective motivational framing for each quest based on player psychological profile. Tracks effectiveness, detects habituation, auto-rotates techniques.",
+      "analytics": "Full analytics dashboard at /system-analytics"
+    },
+    "focusMode": {
+      "description": "Presents quests one at a time for deep focus execution. Tracks degradation level (fatigue) and skip count."
+    },
+    "sprintTimer": {
+      "description": "45-minute sprints with 10-minute breaks. Calibrated to ACTN3 CC sprinter genetics. Tracks sprints per day."
+    }
+  },
+
+  "geneticProfile": {
+    "archetype": "Warrior-Sprinter",
+    "traits": {
+      "COMT_ValVal": {
+        "type": "buff",
+        "effect": "High dopamine baseline — peak cognitive performance 8-12am, crash 14-17 (2-5pm)",
+        "systemIntegration": "Morning quests get bonus XP. System warns about caffeine after 10am. Afternoon recovery mode."
+      },
+      "ACTN3_CC": {
+        "type": "buff",
+        "effect": "Fast-twitch muscle fiber dominance — optimal in 45min explosive bursts",
+        "systemIntegration": "Sprint timer set to 45 minutes. Training prescriptions favor power/explosive work. Diminishing returns after 4 consecutive sprints."
+      },
+      "CYP1A2_SlowMetabolizer": {
+        "type": "debuff",
+        "effect": "Slow caffeine metabolism — caffeine after 10am disrupts sleep",
+        "systemIntegration": "Caffeine logging warns after 10am. Quest auto-fails if caffeine consumed late. System banners warn of debuff."
+      }
+    }
+  },
+
+  "aiFeatures": {
+    "systemChat": {
+      "description": "Jarvis-style conversational interface. Streaming responses. Full player context injection. 2026 market intelligence grounding via Groq pre-fetch. Chat history persisted to database.",
+      "personality": "Cold, clinical, certain. Data-driven confrontation. Solo Leveling voice. Never hedges.",
+      "contextInjected": ["level", "XP", "stats", "streak", "goal", "day number", "system mode", "time", "quests today", "shadow count", "force multiplier", "dungeons cleared", "real-time market intelligence"]
+    },
+    "systemIntelligence": {
+      "description": "Daily AI-generated strategic analysis. Runs on dashboard load (once per day).",
+      "outputs": ["Daily brief (80 char max)", "Strategic analysis (2-4 sentences)", "Trajectory forecast (current/optimized/ceiling/critical leverage)", "3 dynamic challenges (B/A/S rank)", "1-3 shadow recommendations", "1-2 dungeon recommendations"]
+    },
+    "shadowActivation": {
+      "description": "AI generates actionable content when shadows are activated. Scout shadows perform live market research with dual-model intelligence.",
+      "scoutMode": "Groq tactical scan → injected into Gemini deep research prompt → structured recon report with key findings, tool stacks, threat assessments"
+    },
+    "webIntel": {
+      "description": "Standalone dual-model intelligence engine with 4 modes (brief, scan, deep, scout). Used by other systems for market grounding."
+    }
+  },
+
+  "navigation": {
+    "type": "Bottom navigation bar (mobile-first)",
+    "tabs": [
+      { "label": "Home", "route": "/" },
+      { "label": "Quests", "route": "/quests" },
+      { "label": "Training", "route": "/training" },
+      { "label": "Progress", "route": "/progress" },
+      { "label": "More", "route": "/more" }
+    ],
+    "file": "src/components/navigation/BottomNav.tsx"
+  },
+
+  "componentGroups": {
+    "dashboard": ["TopBar", "DashboardMessage", "SystemIntelligencePanel", "ProgressRing", "TodaySnapshot", "DashboardActions", "QuickActions", "StatusWindow", "StreakCounter", "SystemMessage", "PlayerProfile", "ShadowMonarchBar", "StatsRadarChart", "ResistanceCard", "SystemPredictions", "SystemWarnings", "SystemBrief", "TrajectoryForecaster", "CurrentStateCard", "PenaltyBanner", "DailyXPBar"],
+    "quests": ["QuestCard", "CalibratedQuestCard", "ProtocolQuestCard", "ShadowQuestCard", "QuestsHeader", "TimeBlockSection", "SprintOverlay", "CalibrationBanner", "CalibrationDetails", "PillarConfirmation", "PreCommitmentBanner", "PreCommitmentModal", "ShadowQuestNotification"],
+    "effects": ["FlashOverlay", "LevelUpOverlay", "AriseOverlay", "RankUpOverlay", "SkillUnlockOverlay", "PenaltyDungeonOverlay", "LootDropToast", "LootCinematicReveal"],
+    "shadows": ["ShadowArmyPanel"],
+    "dungeons": ["DungeonPanel"],
+    "chat": ["SystemChatPanel"],
+    "focus": ["FocusFAB", "FocusModeOverlay"],
+    "genetic": ["GeneticHUD"],
+    "inventory": ["CounterCard", "CurrencyCard", "ListCard"],
+    "history": ["DayGroup", "WeeklySummaryCard"],
+    "milestones": ["MainQuestCard", "MilestonesHeader"],
+    "planning": ["WeeklyPlanningModal"],
+    "notifications": ["SystemNotificationPanel"],
+    "biometrics": ["SupplementChecklist"],
+    "onboarding": ["AwakeningSequence", "GoalCapture", "SystemBriefing", "DataMigrationDialog"],
+    "navigation": ["BottomNav"],
+    "comms": ["SystemCommsBanner"],
+    "warnings": ["GeneticWarning"]
+  },
+
+  "secrets": {
+    "configured": [
+      "SUPABASE_SERVICE_ROLE_KEY",
+      "SUPABASE_DB_URL",
+      "SUPABASE_PUBLISHABLE_KEY",
+      "LOVABLE_API_KEY (Lovable AI Gateway access)",
+      "GROQ_API_KEY (Groq fast inference — Llama 3.3 70B)",
+      "SUPABASE_URL",
+      "SUPABASE_ANON_KEY"
+    ]
+  },
+
+  "localStorage": {
+    "keys": [
+      "the-system-player (core player state — local cache)",
+      "the-system-protocol-quests (daily protocol quests)",
+      "the-system-pillar-quests (pillar quest completions)",
+      "the-system-pillar-streaks (pillar streak tracking)",
+      "the-system-workout (workout state and completion)",
+      "the-system-history (quest history local cache)",
+      "the-system-daily-xp (daily XP tracking)",
+      "the-system-caffeine (caffeine intake logs)",
+      "the-system-inventory (inventory local cache)",
+      "systemStateHistory (state scan history — energy, sleep, stress, mood)",
+      "systemLastScanDate (prevents duplicate daily scans)",
+      "systemStartDate (player's system start date)",
+      "systemActivated (onboarding completion flag)",
+      "systemGeneticHUD (genetic HUD state)",
+      "systemSprintTimer (sprint timer state)",
+      "systemFocusMode / systemFocusModeActive (focus mode state)",
+      "systemPreCommitment (pre-commitment state)",
+      "systemCalibratedCompletions (calibrated quest completion history)",
+      "systemResistanceData (resistance tracking data)",
+      "systemPersuasionProfile / systemPersuasionOutcomes / systemPersuasionOptimizer (persuasion engine state)",
+      "systemShadowQuest (shadow quest state)",
+      "systemCommsState (system communications state)",
+      "systemWeeklyPlan (weekly sprint plan)",
+      "systemMuscleRecovery (muscle recovery tracking)",
+      "systemDayCycle (day/night cycle state)",
+      "systemAISettings (AI engine configuration — API keys, toggles)",
+      "systemAIQuests (AI-generated quest cache)"
+    ]
+  }
+}
