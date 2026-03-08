@@ -21,6 +21,20 @@ YOUR ANALYSIS CAPABILITIES:
 3. DYNAMIC CHALLENGE SCALING: Generate challenges calibrated to the player's proven capability edge — hard enough to force growth, achievable enough to maintain momentum
 4. STRATEGIC INTELLIGENCE: Identify the highest-leverage actions that compound fastest
 
+SHADOW ARMY & DUNGEON GENERATION:
+You MUST also recommend shadows (compounding assets) and dungeons (challenges) for the player. Base these on:
+
+1. **2026 Best Practices**: What tools, automations, frameworks, and systems are top performers using RIGHT NOW in 2026? Reference specific tools (n8n, Make.com, Claude, Cursor, Lovable, etc.), frameworks, and strategies that are proven effective.
+
+2. **Top 10% Performer Benchmark**: For the player's specific goal, what do the top 10% of people pursuing the same objective have in their arsenal? What shadows (automations, SOPs, skills, tools) do they deploy? What challenges have they conquered to get there?
+
+3. **Gap Analysis**: Compare the player's current shadow army and completed dungeons against what top performers have. Identify the MISSING pieces — the shadows they haven't extracted and the challenges they haven't faced.
+
+4. **Behavioral Evidence**: Use the player's quest history, stat distribution, resistance patterns, and avoidance tendencies to recommend shadows that address weaknesses and dungeons that force growth in avoided areas.
+
+Each shadow suggestion must include WHY top performers have this asset and how it specifically connects to the player's goal.
+Each dungeon suggestion must include what capability gap it addresses and why conquering it matters for the trajectory.
+
 VOICE:
 - Direct, clinical, certain
 - Never hedge or soften
@@ -84,6 +98,13 @@ TODAY'S CONTEXT:
 - Quests Completed Today: ${playerData.questsCompletedToday} / ${playerData.questsTotalToday}
 - Pillars Status: ${JSON.stringify(playerData.pillarStatus || {})}
 
+CRITICAL INSTRUCTIONS FOR SHADOW & DUNGEON SUGGESTIONS:
+- Suggest 1-3 shadows the player NEEDS but doesn't have yet, based on what top 10% performers pursuing "${playerData.goal || 'building an AI consultancy'}" have in their arsenal in 2026.
+- Suggest 1-2 dungeons (challenges) calibrated to the player's weakest stats and most avoided areas, with objectives that force growth.
+- Each suggestion MUST include specific reasoning tied to the player's data and 2026 best practices.
+- For shadows: reference specific 2026 tools, frameworks, or systems by name.
+- For dungeons: calibrate difficulty and time limits to the player's genetic profile (warrior-sprinter: 45min bursts, peak 8-12am).
+
 Generate a complete System Intelligence analysis using the generate_intelligence tool.`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -103,7 +124,7 @@ Generate a complete System Intelligence analysis using the generate_intelligence
             type: 'function',
             function: {
               name: 'generate_intelligence',
-              description: 'Generate the System Intelligence analysis output with strategic brief, trajectory forecast, and dynamic challenges.',
+              description: 'Generate the System Intelligence analysis output with strategic brief, trajectory forecast, dynamic challenges, and AI-recommended shadows and dungeons.',
               parameters: {
                 type: 'object',
                 properties: {
@@ -154,6 +175,42 @@ Generate a complete System Intelligence analysis using the generate_intelligence
                       required: ['id', 'title', 'description', 'difficulty', 'xpReward', 'timeEstimate', 'leverageType'],
                     },
                   },
+                  suggestedShadows: {
+                    type: 'array',
+                    description: '1-3 shadow (compounding asset) recommendations based on what top 10% performers with the same goal use in 2026, and what gaps exist in the player\'s current army.',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        name: { type: 'string', description: 'Shadow name. Specific and actionable (e.g., "n8n Lead Nurture Flow", "Client Onboarding SOP").' },
+                        category: { type: 'string', enum: ['automation', 'client', 'content', 'sop', 'skill', 'tool'], description: 'Shadow category.' },
+                        description: { type: 'string', description: 'What this shadow does and how it compounds.' },
+                        reasoning: { type: 'string', description: 'Why the player needs this NOW. Reference their specific data, 2026 best practices, and what top 10% performers have.' },
+                      },
+                      required: ['name', 'category', 'description', 'reasoning'],
+                    },
+                  },
+                  suggestedDungeons: {
+                    type: 'array',
+                    description: '1-2 custom dungeon challenges calibrated to the player\'s weakest areas and avoided patterns.',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        title: { type: 'string', description: 'Dungeon title. Epic, specific to the challenge.' },
+                        description: { type: 'string', description: 'What this dungeon represents and why it matters for the trajectory.' },
+                        type: { type: 'string', enum: ['boss_fight', 'instant_dungeon', 's_rank_gate'], description: 'Dungeon type. boss_fight=week-long stretch goal, instant_dungeon=timed sprint, s_rank_gate=elite challenge.' },
+                        difficulty: { type: 'string', enum: ['B-Rank', 'A-Rank', 'S-Rank'], description: 'Scaled to player capability edge.' },
+                        objectives: {
+                          type: 'array',
+                          items: { type: 'string' },
+                          description: '3-5 specific, measurable objectives to complete the dungeon.',
+                        },
+                        xpReward: { type: 'number', description: 'XP reward. B:100-200, A:200-400, S:400-800.' },
+                        timeEstimate: { type: 'string', description: 'Estimated total time (e.g., "2 hours", "1 week")' },
+                        reasoning: { type: 'string', description: 'Why this challenge matters NOW. Reference player stats, avoidance patterns, and what top performers conquered at this stage.' },
+                      },
+                      required: ['title', 'description', 'type', 'difficulty', 'objectives', 'xpReward', 'timeEstimate', 'reasoning'],
+                    },
+                  },
                   patternAlert: {
                     type: 'string',
                     description: 'Optional. A behavioral pattern the System has detected that the player should be aware of. Only include if there\'s a genuine pattern to flag. Null if nothing notable.',
@@ -163,7 +220,7 @@ Generate a complete System Intelligence analysis using the generate_intelligence
                     description: 'How confident the System is in today\'s analysis, 0-100. Based on data quality and consistency.',
                   },
                 },
-                required: ['dailyBrief', 'strategicAnalysis', 'trajectoryForecast', 'dynamicChallenges', 'systemConfidence'],
+                required: ['dailyBrief', 'strategicAnalysis', 'trajectoryForecast', 'dynamicChallenges', 'suggestedShadows', 'suggestedDungeons', 'systemConfidence'],
                 additionalProperties: false,
               },
             },
