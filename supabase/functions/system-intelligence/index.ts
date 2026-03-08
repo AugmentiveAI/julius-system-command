@@ -214,16 +214,18 @@ Generate a complete System Intelligence analysis using the generate_intelligence
                   },
                   suggestedShadows: {
                     type: 'array',
-                    description: '1-3 shadow (compounding asset) recommendations based on what top 10% performers with the same goal use in 2026, and what gaps exist in the player\'s current army.',
+                    description: '1-3 shadow (compounding asset) recommendations. These can be ANYTHING — not just tools or automations. Consider cognitive frameworks, physical protocols, psychological techniques, neurological hacks, relationship strategies, creative processes, decision systems, communication templates, or any other force multiplier.',
                     items: {
                       type: 'object',
                       properties: {
-                        name: { type: 'string', description: 'Shadow name. Specific and actionable (e.g., "n8n Lead Nurture Flow", "Client Onboarding SOP").' },
-                        category: { type: 'string', enum: ['automation', 'client', 'content', 'sop', 'skill', 'tool'], description: 'Shadow category.' },
-                        description: { type: 'string', description: 'What this shadow does and how it compounds.' },
-                        reasoning: { type: 'string', description: 'Why the player needs this NOW. Reference their specific data, 2026 best practices, and what top 10% performers have.' },
+                        name: { type: 'string', description: 'Shadow name. Specific and evocative (e.g., "The 5-4-3-2-1 Fear Inoculator", "Warrior Sprint Protocol", "n8n Lead Nurture Flow").' },
+                        category: { type: 'string', enum: ['automation', 'client', 'content', 'sop', 'skill', 'tool'], description: 'Best-fit category for organization.' },
+                        description: { type: 'string', description: 'What this shadow does and how it compounds over time.' },
+                        reasoning: { type: 'string', description: 'Why the player needs this NOW. Reference their specific data, behavioral patterns, and what top performers have.' },
+                        firstAction: { type: 'string', description: 'The FIRST concrete action to activate this shadow. A specific instruction the player can execute immediately (e.g., "Open a new doc and write 3 cold outreach templates using the AIDA framework targeting AI-curious CEOs").' },
+                        activationType: { type: 'string', enum: ['template', 'protocol', 'system', 'framework', 'exercise', 'tool_setup', 'creative'], description: 'What kind of activation this shadow needs. template=generates documents, protocol=step-by-step process, system=ongoing automated process, framework=decision/thinking model, exercise=physical/mental practice, tool_setup=configure a tool, creative=generate creative output.' },
                       },
-                      required: ['name', 'category', 'description', 'reasoning'],
+                      required: ['name', 'category', 'description', 'reasoning', 'firstAction', 'activationType'],
                     },
                   },
                   suggestedDungeons: {
