@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { Check, Dumbbell, Bike, Wind, Calendar, ArrowUp, ArrowDown, Minus, Activity, AlertTriangle, Repeat, TrendingUp, Target } from 'lucide-react';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { useWorkout } from '@/hooks/useWorkout';
@@ -13,6 +13,18 @@ import {
   getTrainingRecommendation,
   activateTrainingBuff,
 } from '@/utils/trainingIntelligence';
+import { useTrainingLog } from '@/hooks/useTrainingLog';
+import {
+  getMesocycleState,
+  getWeeklyPrescription,
+  evaluateDeload,
+  calibrateToGeneticState,
+} from '@/utils/periodizationEngine';
+import { ReadinessCheckModal } from '@/components/training/ReadinessCheckModal';
+import { SessionSummaryModal } from '@/components/training/SessionSummaryModal';
+import { DeloadBanner } from '@/components/training/DeloadBanner';
+import { MesocycleProgress } from '@/components/training/MesocycleProgress';
+import { FatigueGauge } from '@/components/training/FatigueGauge';
 
 const WORKOUT_ICONS: Partial<Record<WorkoutType, React.ElementType>> = {
   'push-hypertrophy': Dumbbell,
@@ -56,6 +68,49 @@ const Training = () => {
   } = useWorkout();
   const { toast } = useToast();
   const { geneticState, sprintsToday } = useGeneticState();
+  const { fatigueAccumulation, recentLogs, logWorkout, getPR } = useTrainingLog();
+
+  // ── Periodization state ────────────────────────────────────────
+  const mesocycle = useMemo(() => getMesocycleState(), []);
+  const weeklyRx = useMemo(() => getWeeklyPrescription(mesocycle), [mesocycle]);
+
+  // Build recent RPE and readiness arrays for deload evaluation
+  const recentRPEs = useMemo(() =>
+    recentLogs.slice(0, 5).map(l => l.fatigue_score ?? 5).reverse(),
+    [recentLogs]
+  );
+  const recentReadiness = useMemo(() =>
+    recentLogs.slice(0, 5).map(l => l.readiness_pre ?? 5).reverse(),
+    [recentLogs]
+  );
+
+  const deloadDecision = useMemo(() =>
+    evaluateDeload(mesocycle, fatigueAccumulation, recentRPEs, recentReadiness, geneticState?.comtPhase ?? null),
+    [mesocycle, fatigueAccumulation, recentRPEs, recentReadiness, geneticState]
+  );
+
+  const calibrated = useMemo(() =>
+    calibrateToGeneticState(weeklyRx, geneticState?.comtPhase ?? null, sprintsToday),
+    [weeklyRx, geneticState, sprintsToday]
+  );
+
+  // ── Readiness & Session Summary modals ─────────────────────────
+  const [showReadiness, setShowReadiness] = useState(() => {
+    // Show readiness check if workout not completed and no readiness logged today
+    const todayLog = recentLogs.find(l => {
+      const d = new Date(l.completed_at);
+      const now = new Date();
+      return d.toDateString() === now.toDateString();
+    });
+    return !workoutCompleted && !todayLog;
+  });
+  const [readinessScore, setReadinessScore] = useState<number | null>(null);
+  const [showSummary, setShowSummary] = useState(false);
+
+  const handleReadinessComplete = useCallback((score: number) => {
+    setReadinessScore(score);
+    setShowReadiness(false);
+  }, []);
 
   const trainingRec = useMemo(
     () => getTrainingRecommendation(geneticState, sprintsToday, workoutCompleted),
@@ -81,11 +136,64 @@ const Training = () => {
         duration: 4000,
       });
     }
+
+    // Show session summary modal
+    setShowSummary(true);
   };
+
+  const handleSessionLogged = useCallback(async (fatigueScore: number, notes: string) => {
+    setShowSummary(false);
+
+    await logWorkout({
+      workout_type: workout.type,
+      exercises: workout.exercises.map(ex => ({
+        name: ex.name,
+        sets: ex.sets,
+        reps: parseInt(ex.reps) || 0,
+        weight: 0, // Will be enhanced in Phase 3 with per-exercise weight tracking
+        rpe: fatigueScore,
+        completed: ex.completed,
+      })),
+      fatigue_score: fatigueScore,
+      readiness_pre: readinessScore,
+      genetic_phase: geneticState?.comtPhase ?? null,
+      sprint_count: sprintsToday,
+      notes: notes || null,
+    });
+
+    toast({
+      title: 'Session logged',
+      description: 'Training data saved to The System.',
+      duration: 3000,
+    });
+  }, [workout, readinessScore, geneticState, sprintsToday, logWorkout, toast]);
+
+  // Calculate total volume for summary (basic — no weight tracking yet)
+  const totalVolume = workout.exercises
+    .filter(e => e.completed)
+    .reduce((sum, e) => sum + (e.sets * (parseInt(e.reps) || 0)), 0);
 
   return (
     <div className="min-h-screen bg-background pb-24" style={{ paddingTop: 'calc(1.5rem + env(safe-area-inset-top, 0px))' }}>
       <GeneticHUD />
+
+      {/* Pre-Workout Readiness Check */}
+      <ReadinessCheckModal
+        open={showReadiness}
+        onComplete={handleReadinessComplete}
+      />
+
+      {/* Post-Workout Session Summary */}
+      <SessionSummaryModal
+        open={showSummary}
+        onComplete={handleSessionLogged}
+        totalVolume={totalVolume}
+        exercisesCompleted={completedCount}
+        exercisesTotal={totalCount}
+        prsHit={[]}
+        xpEarned={workout.xp}
+      />
+
       <div className="mx-auto max-w-2xl space-y-4 px-4 mt-3">
         {/* System Header */}
         <div className="text-center">
@@ -102,6 +210,29 @@ const Training = () => {
             </span>
           </div>
         </div>
+
+        {/* Mesocycle + Fatigue Row */}
+        <div className="grid grid-cols-1 gap-3">
+          <MesocycleProgress mesocycle={mesocycle} />
+          <FatigueGauge accumulation={fatigueAccumulation} />
+        </div>
+
+        {/* Deload Banner */}
+        <DeloadBanner decision={deloadDecision} />
+
+        {/* Genetic Calibration Alert */}
+        {calibrated.geneticAlert && (
+          <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+            <p className="font-tech text-sm text-amber-400">
+              ⚠ {calibrated.geneticAlert}
+            </p>
+            {calibrated.xpBonus > 1 && (
+              <p className="mt-1 font-mono text-[10px] text-primary">
+                XP Bonus: ×{calibrated.xpBonus}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* System Override Banner — workout swap notification */}
         {swapDecision?.swapped && (
