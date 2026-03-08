@@ -1,6 +1,6 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { usePlayer } from '@/hooks/usePlayer';
+import { useAuth } from '@/contexts/AuthContext';
 
 export type ChatMessage = {
   role: 'user' | 'assistant';
@@ -30,13 +30,92 @@ interface PlayerContext {
 export function useSystemChat(buildContext: () => PlayerContext) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const abortRef = useRef<AbortController | null>(null);
+  const conversationIdRef = useRef<string | null>(null);
+  const { user } = useAuth();
+
+  // Load latest conversation from DB on mount
+  useEffect(() => {
+    if (!user) {
+      setMessages([]);
+      conversationIdRef.current = null;
+      setIsLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadConversation = async () => {
+      try {
+        // Get the most recent conversation_id
+        const { data: latest } = await supabase
+          .from('chat_messages')
+          .select('conversation_id')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (cancelled) return;
+
+        if (latest && latest.length > 0) {
+          const convId = latest[0].conversation_id;
+          conversationIdRef.current = convId;
+
+          // Load all messages in that conversation
+          const { data: rows } = await supabase
+            .from('chat_messages')
+            .select('role, content')
+            .eq('user_id', user.id)
+            .eq('conversation_id', convId)
+            .order('created_at', { ascending: true });
+
+          if (cancelled) return;
+
+          if (rows && rows.length > 0) {
+            setMessages(rows.map(r => ({ role: r.role as 'user' | 'assistant', content: r.content })));
+          }
+        }
+      } catch (e) {
+        console.error('[SystemChat] Failed to load conversation:', e);
+      }
+      setIsLoading(false);
+    };
+
+    loadConversation();
+    return () => { cancelled = true; };
+  }, [user]);
+
+  // Persist a message to DB (fire-and-forget)
+  const persistMessage = useCallback((msg: ChatMessage) => {
+    if (!user) return;
+
+    // Generate a new conversation_id if none exists
+    if (!conversationIdRef.current) {
+      conversationIdRef.current = crypto.randomUUID();
+    }
+
+    supabase
+      .from('chat_messages')
+      .insert({
+        user_id: user.id,
+        role: msg.role,
+        content: msg.content,
+        conversation_id: conversationIdRef.current,
+      })
+      .then(({ error }) => {
+        if (error) console.error('[SystemChat] Failed to persist message:', error);
+      });
+  }, [user]);
 
   const sendMessage = useCallback(async (input: string) => {
     const userMsg: ChatMessage = { role: 'user', content: input };
     const allMessages = [...messages, userMsg];
     setMessages(allMessages);
     setIsStreaming(true);
+
+    // Persist user message
+    persistMessage(userMsg);
 
     let assistantSoFar = '';
 
@@ -130,26 +209,49 @@ export function useSystemChat(buildContext: () => PlayerContext) {
           } catch { /* ignore */ }
         }
       }
+
+      // Persist the complete assistant message
+      if (assistantSoFar) {
+        persistMessage({ role: 'assistant', content: assistantSoFar });
+      }
     } catch (err: any) {
       if (err.name !== 'AbortError') {
-        upsertAssistant(`\n\n*System error: ${err.message}*`);
+        const errorContent = `\n\n*System error: ${err.message}*`;
+        upsertAssistant(errorContent);
       }
     } finally {
       setIsStreaming(false);
       abortRef.current = null;
     }
-  }, [messages, buildContext]);
+  }, [messages, buildContext, persistMessage]);
 
-  const clearChat = useCallback(() => {
+  const clearChat = useCallback(async () => {
     abortRef.current?.abort();
     setMessages([]);
     setIsStreaming(false);
-  }, []);
+
+    // Delete all messages in this conversation from DB
+    if (user && conversationIdRef.current) {
+      const convId = conversationIdRef.current;
+      conversationIdRef.current = null;
+      
+      supabase
+        .from('chat_messages')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('conversation_id', convId)
+        .then(({ error }) => {
+          if (error) console.error('[SystemChat] Failed to clear conversation:', error);
+        });
+    } else {
+      conversationIdRef.current = null;
+    }
+  }, [user]);
 
   const stopStreaming = useCallback(() => {
     abortRef.current?.abort();
     setIsStreaming(false);
   }, []);
 
-  return { messages, isStreaming, sendMessage, clearChat, stopStreaming };
+  return { messages, isStreaming, isLoading, sendMessage, clearChat, stopStreaming };
 }
