@@ -58,6 +58,9 @@ import { loadAIQuests, isAIEnabled } from '@/utils/aiQuestGenerator';
 import { useTrainingLog } from '@/hooks/useTrainingLog';
 import { buildTrainingContext } from '@/hooks/useTrainingIntelligence';
 import { getMesocycleState } from '@/utils/periodizationEngine';
+import { useSystemInterventions } from '@/hooks/useSystemInterventions';
+import { SystemInterventionBanner } from '@/components/dashboard/SystemInterventionBanner';
+import { InterventionContext } from '@/utils/interventionEngine';
 const LAST_SCAN_DATE_KEY = 'systemLastScanDate';
 const AI_SETTINGS_KEY = 'systemAISettings';
 const START_DATE_KEY = 'systemStartDate';
@@ -110,6 +113,81 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
   const { notifications, unreadCount, addNotification, markAllRead, clearAll: clearNotifications } = useSystemNotifications();
   const { shadows, addShadow: _addShadow } = useShadowArmy();
   const { completedDungeons, createDungeon: _createDungeon } = useDungeons();
+
+  // ── Intervention Engine (JARVIS) ─────────────────────────────
+  const buildInterventionContext = useCallback((): InterventionContext => {
+    const now = new Date();
+    const completedQ = quests.filter(q => q.completed).length;
+    const totalXPToday = quests
+      .filter(q => q.completed)
+      .reduce((sum, q) => sum + q.xp + (q.geneticBonus?.bonusXp || 0), 0);
+
+    let lastQuestMinAgo = 999;
+    try {
+      const raw = localStorage.getItem('systemCalibratedCompletions');
+      if (raw) {
+        const history = JSON.parse(raw);
+        const today = getSystemDate();
+        const todayCompletions = history.filter((c: any) => c.completedAt?.startsWith(today));
+        if (todayCompletions.length > 0) {
+          const lastTime = new Date(todayCompletions[todayCompletions.length - 1].completedAt);
+          lastQuestMinAgo = Math.round((now.getTime() - lastTime.getTime()) / 60_000);
+        }
+      }
+    } catch { /* ignore */ }
+
+    let daysSinceLastShadow = 30;
+    try {
+      if (shadows.length > 0) {
+        const latest = shadows.reduce((a, b) => 
+          new Date(a.updated_at) > new Date(b.updated_at) ? a : b
+        );
+        daysSinceLastShadow = Math.round(
+          (now.getTime() - new Date(latest.updated_at).getTime()) / (1000 * 60 * 60 * 24)
+        );
+      }
+    } catch { /* ignore */ }
+
+    let weeklyPlanDone = false;
+    try {
+      const raw = localStorage.getItem('systemWeeklyPlan');
+      if (raw) {
+        const plan = JSON.parse(raw);
+        weeklyPlanDone = plan?.locked === true;
+      }
+    } catch { /* ignore */ }
+
+    const hour = now.getHours();
+    let geneticPhase = 'stable';
+    if (hour >= 8 && hour < 12) geneticPhase = 'peak';
+    else if (hour >= 14 && hour < 17) geneticPhase = 'dip';
+    else if (hour >= 17) geneticPhase = 'recovery';
+
+    return {
+      currentHour: hour,
+      geneticPhase,
+      questsCompletedToday: completedQ,
+      questsTotalToday: quests.length,
+      xpEarnedToday: totalXPToday,
+      averageDailyXP: 150,
+      streak: player.streak,
+      lastCaffeineTime: logs.length > 0 ? logs[logs.length - 1] : null,
+      caffeineWarningShownToday: warningDismissed,
+      fatigueAccumulation,
+      workoutScheduledToday: !!todayWorkoutType,
+      dayOfWeek: now.getDay(),
+      weeklyPlanCompleted: weeklyPlanDone,
+      daysSinceLastShadowActivation: daysSinceLastShadow,
+      lastQuestCompletedMinutesAgo: lastQuestMinAgo,
+      trainingCompleted: workoutCompleted,
+      sprintsToday: 0,
+    };
+  }, [quests, player.streak, logs, warningDismissed, fatigueAccumulation, todayWorkoutType, shadows, workoutCompleted]);
+
+  const { interventions: activeInterventions, highestPriority, dismissIntervention } = useSystemInterventions({
+    buildContext: buildInterventionContext,
+    enabled: true,
+  });
 
   // Auto-deploy: track which suggestions have been auto-deployed this session
   const autoDeployedRef = useRef<Set<string>>(new Set());
@@ -495,6 +573,12 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
         ? +(1 + shadows.filter(s => s.status === 'active').reduce((s, sh) => s + sh.contribution_score, 0) / 100).toFixed(1)
         : 1,
       dungeonsCleared: completedDungeons.length,
+      activeInterventions: activeInterventions.map(i => ({
+        priority: i.priority,
+        title: i.title,
+        message: i.message,
+        type: i.type,
+      })),
       training: buildTrainingContext({
         recentLogs,
         personalRecords,
@@ -507,7 +591,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
         sessionsLogged: wSessionsLogged,
       }),
     };
-  }, [player, systemRec, completedQuests, quests.length, shadows, completedDungeons.length, recentLogs, personalRecords, fatigueAccumulation, todayWorkoutType, workoutPrescription, wTrainingLevel, wSessionsLogged]);
+  }, [player, systemRec, completedQuests, quests.length, shadows, completedDungeons.length, recentLogs, personalRecords, fatigueAccumulation, todayWorkoutType, workoutPrescription, wTrainingLevel, wSessionsLogged, activeInterventions]);
 
   return (
     <>
@@ -599,6 +683,19 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
         />
 
         <div className="mx-auto max-w-md space-y-5 px-4 mt-2">
+          {/* 0. System Interventions (JARVIS) */}
+          {highestPriority && (
+            <SystemInterventionBanner
+              intervention={highestPriority}
+              totalCount={activeInterventions.length}
+              onDismiss={dismissIntervention}
+              onCallback={(cb) => {
+                if (cb === 'openWeeklyPlanning') weekly.setShowModal(true);
+                if (cb === 'dismissCaffeineWarning') dismissWarning();
+              }}
+            />
+          )}
+
           {/* Caffeine Warning */}
           {hasLoggedAfter10am && !warningDismissed && (
             <GeneticWarning
