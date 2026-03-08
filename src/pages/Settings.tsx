@@ -203,6 +203,36 @@ const Settings = () => {
           </button>
         </div>
 
+        {/* System Autonomy */}
+        <div className="rounded-lg border border-purple-500/20 bg-card/80 p-5 space-y-4"
+          style={{ boxShadow: '0 0 20px hsl(270 60% 50% / 0.06)' }}>
+          <div className="flex items-center gap-2.5">
+            <Zap className="h-4 w-4 text-purple-400" />
+            <h2 className="font-display text-xs uppercase tracking-[0.2em] text-foreground">
+              System Autonomy
+            </h2>
+          </div>
+
+          <div className="flex items-center justify-between rounded-md border border-border bg-muted/20 px-4 py-3">
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <Shield className="h-3.5 w-3.5 text-purple-400" />
+                <span className="font-mono text-xs text-foreground">Auto-Deploy Shadows & Dungeons</span>
+              </div>
+              <p className="font-mono text-[10px] text-muted-foreground/60 mt-1 ml-5">
+                System Intelligence will automatically create recommended shadows and dungeons without manual approval.
+              </p>
+            </div>
+            <Switch
+              checked={autoDeploy}
+              onCheckedChange={(v) => {
+                updateField('autoDeploy', v);
+                setAutoDeploy(v);
+              }}
+            />
+          </div>
+        </div>
+
         {/* General Settings */}
         <div className="rounded-lg border border-border bg-card p-4 space-y-4">
           <h2 className="font-display text-xs uppercase tracking-[0.2em] text-muted-foreground">
