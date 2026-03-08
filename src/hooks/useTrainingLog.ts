@@ -166,21 +166,21 @@ export function useTrainingLog() {
       .filter(e => e.completed)
       .reduce((sum, e) => sum + (e.sets * e.reps * e.weight), 0);
 
-    const { data, error } = await supabase
-      .from('training_log')
+    const { data, error } = await (supabase
+      .from('training_log' as any)
       .insert({
         user_id: user.id,
         workout_type: input.workout_type,
-        exercises: input.exercises as unknown as Record<string, unknown>[],
+        exercises: input.exercises,
         total_volume: totalVolume,
         fatigue_score: input.fatigue_score,
         readiness_pre: input.readiness_pre,
         genetic_phase: input.genetic_phase,
         sprint_count: input.sprint_count,
         notes: input.notes,
-      })
+      } as any)
       .select()
-      .single();
+      .single()) as { data: any; error: any };
 
     if (error) {
       console.error('Failed to log workout:', error);
