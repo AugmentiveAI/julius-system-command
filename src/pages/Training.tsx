@@ -1,5 +1,6 @@
 import { useMemo, useState, useCallback } from 'react';
 import { Dumbbell, Bike, Wind, Calendar, ArrowUp, ArrowDown, Minus, Activity, Repeat, Target } from 'lucide-react';
+import { JarvisPageBanner } from '@/components/jarvis/JarvisPageBanner';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { useWorkout } from '@/hooks/useWorkout';
 import { WEEKLY_SCHEDULE, WorkoutType } from '@/types/training';
@@ -287,6 +288,9 @@ const Training = () => {
         </div>
 
         <DeloadBanner decision={deloadDecision} />
+
+        {/* JARVIS Brain Banner */}
+        <JarvisPageBanner page="training" />
 
         {calibrated.geneticAlert && (
           <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
