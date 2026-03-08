@@ -44,6 +44,8 @@ import { PillarConfirmation } from '@/components/quests/PillarConfirmation';
 import { useAIQuests } from '@/hooks/useAIQuests';
 import { loadAIQuests } from '@/utils/aiQuestGenerator';
 import { JarvisPageBanner } from '@/components/jarvis/JarvisPageBanner';
+import { useJarvisBrainOptional } from '@/contexts/JarvisBrainContext';
+import { reorderQuestsWithJarvis, getReorderReason } from '@/utils/jarvisQuestReorder';
 
 // ── Storage helpers ──────────────────────────────────────────────────
 
