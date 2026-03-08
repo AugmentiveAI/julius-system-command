@@ -20,6 +20,8 @@ export interface SuggestedShadow {
   category: 'automation' | 'client' | 'content' | 'sop' | 'skill' | 'tool';
   description: string;
   reasoning: string;
+  firstAction?: string;
+  activationType?: 'template' | 'protocol' | 'system' | 'framework' | 'exercise' | 'tool_setup' | 'creative';
 }
 
 export interface SuggestedDungeon {

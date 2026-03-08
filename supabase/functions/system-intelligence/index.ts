@@ -22,15 +22,29 @@ YOUR ANALYSIS CAPABILITIES:
 4. STRATEGIC INTELLIGENCE: Identify the highest-leverage actions that compound fastest
 
 SHADOW ARMY & DUNGEON GENERATION:
-You MUST also recommend shadows (compounding assets) and dungeons (challenges) for the player. Base these on:
+You MUST also recommend shadows (compounding assets) and dungeons (challenges) for the player. Shadows are NOT restricted to any fixed categories — they can be ANYTHING that would accelerate the player's growth:
 
-1. **2026 Best Practices**: What tools, automations, frameworks, and systems are top performers using RIGHT NOW in 2026? Reference specific tools (n8n, Make.com, Claude, Cursor, Lovable, etc.), frameworks, and strategies that are proven effective.
+1. **Unrestricted Shadow Types**: A shadow can be a mental model, a physical protocol, a cognitive tool, a relationship strategy, a neurological hack, a financial system, an emotional regulation framework, a persuasion technique, a recovery protocol, a creative process, a decision-making framework, a habit stack, a communication template, a workout methodology, a sleep optimization system, a networking playbook, a content engine, an automation flow, or LITERALLY anything else that compounds.
 
-2. **Top 10% Performer Benchmark**: For the player's specific goal, what do the top 10% of people pursuing the same objective have in their arsenal? What shadows (automations, SOPs, skills, tools) do they deploy? What challenges have they conquered to get there?
+2. **Human Potential Lens**: Consider the FULL spectrum of human optimization:
+   - Physical: exercise science, recovery, nutrition, sleep architecture, circadian optimization, cold/heat exposure protocols
+   - Cognitive: focus techniques, memory systems, learning acceleration, pattern recognition training, decision frameworks
+   - Psychological: motivation architecture, resistance dissolution, identity engineering, confidence protocols, fear inoculation
+   - Neurological: dopamine management, flow state triggers, attention training, neuroplasticity leveraging
+   - Social: network effects, persuasion frameworks, negotiation playbooks, relationship compounding
+   - Financial: revenue systems, automation, scaling frameworks, pricing psychology
+   - Creative: ideation processes, content engines, inspiration systems
 
-3. **Gap Analysis**: Compare the player's current shadow army and completed dungeons against what top performers have. Identify the MISSING pieces — the shadows they haven't extracted and the challenges they haven't faced.
+3. **2026 Best Practices**: What tools, automations, frameworks, and systems are top performers using RIGHT NOW in 2026? Reference specific tools, frameworks, and strategies that are proven effective.
 
-4. **Behavioral Evidence**: Use the player's quest history, stat distribution, resistance patterns, and avoidance tendencies to recommend shadows that address weaknesses and dungeons that force growth in avoided areas.
+4. **Top 10% Performer Benchmark**: What do the top 10% of people pursuing the same objective have in their arsenal? What shadows do they deploy?
+
+5. **Gap Analysis**: Compare the player's current shadow army against what top performers have. Identify the MISSING pieces.
+
+6. **Actionability**: Each shadow MUST be immediately usable upon creation. Include a "firstAction" field — the very first thing the player should do to activate this shadow. This could be a prompt to follow, a template to use, a protocol to execute, or a system to set up.
+
+Each shadow suggestion must include WHY top performers have this asset and how it specifically connects to the player's goal.
+Each dungeon suggestion must include what capability gap it addresses and why conquering it matters for the trajectory.
 
 Each shadow suggestion must include WHY top performers have this asset and how it specifically connects to the player's goal.
 Each dungeon suggestion must include what capability gap it addresses and why conquering it matters for the trajectory.
@@ -200,16 +214,18 @@ Generate a complete System Intelligence analysis using the generate_intelligence
                   },
                   suggestedShadows: {
                     type: 'array',
-                    description: '1-3 shadow (compounding asset) recommendations based on what top 10% performers with the same goal use in 2026, and what gaps exist in the player\'s current army.',
+                    description: '1-3 shadow (compounding asset) recommendations. These can be ANYTHING — not just tools or automations. Consider cognitive frameworks, physical protocols, psychological techniques, neurological hacks, relationship strategies, creative processes, decision systems, communication templates, or any other force multiplier.',
                     items: {
                       type: 'object',
                       properties: {
-                        name: { type: 'string', description: 'Shadow name. Specific and actionable (e.g., "n8n Lead Nurture Flow", "Client Onboarding SOP").' },
-                        category: { type: 'string', enum: ['automation', 'client', 'content', 'sop', 'skill', 'tool'], description: 'Shadow category.' },
-                        description: { type: 'string', description: 'What this shadow does and how it compounds.' },
-                        reasoning: { type: 'string', description: 'Why the player needs this NOW. Reference their specific data, 2026 best practices, and what top 10% performers have.' },
+                        name: { type: 'string', description: 'Shadow name. Specific and evocative (e.g., "The 5-4-3-2-1 Fear Inoculator", "Warrior Sprint Protocol", "n8n Lead Nurture Flow").' },
+                        category: { type: 'string', enum: ['automation', 'client', 'content', 'sop', 'skill', 'tool'], description: 'Best-fit category for organization.' },
+                        description: { type: 'string', description: 'What this shadow does and how it compounds over time.' },
+                        reasoning: { type: 'string', description: 'Why the player needs this NOW. Reference their specific data, behavioral patterns, and what top performers have.' },
+                        firstAction: { type: 'string', description: 'The FIRST concrete action to activate this shadow. A specific instruction the player can execute immediately (e.g., "Open a new doc and write 3 cold outreach templates using the AIDA framework targeting AI-curious CEOs").' },
+                        activationType: { type: 'string', enum: ['template', 'protocol', 'system', 'framework', 'exercise', 'tool_setup', 'creative'], description: 'What kind of activation this shadow needs. template=generates documents, protocol=step-by-step process, system=ongoing automated process, framework=decision/thinking model, exercise=physical/mental practice, tool_setup=configure a tool, creative=generate creative output.' },
                       },
-                      required: ['name', 'category', 'description', 'reasoning'],
+                      required: ['name', 'category', 'description', 'reasoning', 'firstAction', 'activationType'],
                     },
                   },
                   suggestedDungeons: {
