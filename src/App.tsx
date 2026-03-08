@@ -20,6 +20,7 @@ import { SystemBriefing } from "@/components/onboarding/SystemBriefing";
 import { PreCommitmentModal } from "@/components/quests/PreCommitmentModal";
 import { usePreCommitment } from "@/hooks/usePreCommitment";
 import { SystemCommsContext } from "@/contexts/SystemCommsContext";
+import { JarvisBrainProvider } from "@/contexts/JarvisBrainContext";
 import { useLocalDataMigration } from "@/hooks/useLocalDataMigration";
 import { DataMigrationDialog } from "@/components/onboarding/DataMigrationDialog";
 import { supabase } from "@/integrations/supabase/client";
