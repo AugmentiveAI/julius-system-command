@@ -35,6 +35,34 @@ export interface SuggestedDungeon {
   reasoning: string;
 }
 
+export interface AnticipationToday {
+  peakWindow: string;
+  crashWindow: string;
+  streakRisk: boolean;
+  optimalQuestOrder: string[];
+  warnings: string[];
+}
+
+export interface AnticipationWeek {
+  sprintDays: string[];
+  projectedXP: number;
+  riskFactors: string[];
+  opportunities: string[];
+}
+
+export interface AnticipationStrategic {
+  currentTrajectory: string;
+  requiredAcceleration: string;
+  biggestLeverage: string;
+  bottleneck: string;
+}
+
+export interface Anticipation {
+  today: AnticipationToday;
+  thisWeek: AnticipationWeek;
+  strategic: AnticipationStrategic;
+}
+
 export interface SystemIntelligence {
   dailyBrief: string;
   strategicAnalysis: string;
@@ -42,6 +70,7 @@ export interface SystemIntelligence {
   dynamicChallenges: DynamicChallenge[];
   suggestedShadows?: SuggestedShadow[];
   suggestedDungeons?: SuggestedDungeon[];
+  anticipation?: Anticipation | null;
   patternAlert?: string | null;
   systemConfidence: number;
   generatedAt: string;
