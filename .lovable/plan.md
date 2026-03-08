@@ -1,55 +1,60 @@
 
 
-# Penalty Dungeon System
+# AI-Driven Shadow Army & Dungeon Generation
 
-## Overview
-When a player has 2+ consecutive zero-completion days, a mandatory "Penalty Dungeon" automatically spawns. It's a timed quest with a threatening UI — complete it or suffer permanent stat reduction. This mirrors Jinwoo's brutal penalty quests that are unavoidable and terrifying.
+## Current State
+- **Shadow Army**: Fully manual — you type a name, pick a category, add it yourself
+- **Dungeons**: Template-based — you unlock predefined templates when you hit level/streak thresholds, then manually create them
+- **System Intelligence**: Already receives shadow army + dungeon data for analysis, but has no write-back capability
 
-## How It Works
+## What We'd Build
 
-1. **Trigger**: On day transition, if `player.penalty.consecutiveZeroDays >= 2`, a penalty dungeon auto-creates in the database with `dungeon_type: 'penalty'` and a 4-hour time limit.
-2. **Blocking UI**: A full-screen `PenaltyDungeonOverlay` appears that cannot be dismissed. It shows a countdown timer, the penalty quest objectives, and the stat that will be reduced on failure. The overlay pulses red/black with a "PENALTY QUEST" header.
-3. **Completion**: Player checks off 3 simple but mandatory objectives (e.g., "Complete 2 quests within 4 hours", "Log a cold exposure or training session", "Complete a 30-minute sprint"). Completing all objectives clears the penalty dungeon and resets `consecutiveZeroDays`.
-4. **Failure**: If the timer expires or the player doesn't complete all objectives, the lowest stat is permanently reduced by 3 points and a system notification is logged. The overlay shows a "PENALTY APPLIED" cinematic before closing.
+### 1. AI-Generated Shadow Recommendations
+The System Intelligence edge function already analyzes your quest history, stats, and goals. We extend its output to include **shadow recommendations** — tools, automations, skills, or SOPs the AI thinks you need based on:
+- Gaps in your quest completion patterns (e.g., "You keep failing systems quests → you need an n8n automation shadow")
+- Your stated goal and current stat distribution
+- What high-performers at your level typically have in their army
 
-## Technical Plan
+The AI returns suggested shadows with name, category, description, and reasoning. You approve or dismiss them from the dashboard.
 
-### 1. Extend Dungeon Types
-- Add `'penalty'` to `DungeonType` in `src/types/dungeon.ts`
-- Add a `PENALTY_DUNGEON_TEMPLATE` constant with 3 objectives and 240-minute time limit
+### 2. AI-Generated Dungeon Challenges
+Instead of only unlocking from a fixed template list, the System Intelligence generates **custom dungeons** calibrated to your current state:
+- Dynamic objectives based on your weakest stats and recent avoidance patterns
+- Difficulty scaled to your proven capability edge
+- Time limits matched to your COMT/ACTN3 genetic profile (warrior-sprinter windows)
+- Revenue-linked challenges when the AI detects you're avoiding sales/client work
 
-### 2. Create `usePenaltyDungeon` Hook (`src/hooks/usePenaltyDungeon.ts`)
-- Checks `player.penalty.consecutiveZeroDays >= 2` on mount and visibility changes
-- Queries dungeons table for any active/available penalty dungeon for today
-- If none exists and penalty threshold met, auto-creates one via Supabase insert
-- Exposes: `activePenalty`, `completeObjective`, `timeRemaining`, `isExpired`, `isPenaltyActive`
-- On expiry: calls a callback to apply stat reduction and log notification
+### 3. Implementation Approach
 
-### 3. Create `PenaltyDungeonOverlay` Component (`src/components/effects/PenaltyDungeonOverlay.tsx`)
-- Full-screen overlay with `z-[100]` (above everything)
-- Red/black pulsing background with "PENALTY QUEST" title
-- Countdown timer (hours:minutes:seconds)
-- 3 objective checkboxes
-- Shows which stat will be reduced on failure
-- Cannot be dismissed — only completing all objectives or timer expiry closes it
-- On failure: shows a brief "PENALTY APPLIED" screen with stat reduction amount before fading
+**Edge Function Changes** (`system-intelligence/index.ts`):
+- Add two new fields to the AI's tool-calling schema: `suggestedShadows[]` and `suggestedDungeons[]`
+- Each shadow suggestion: `{ name, category, description, reasoning }`
+- Each dungeon suggestion: `{ title, description, type, difficulty, objectives[], xpReward, timeLimit, reasoning }`
 
-### 4. Wire into `Index.tsx`
-- Import `usePenaltyDungeon` with player penalty state
-- Render `PenaltyDungeonOverlay` when `isPenaltyActive` is true
-- On completion: add XP, log notification ("Penalty Quest Survived"), reset penalty state
-- On failure: reduce lowest stat by 3, log notification ("Penalty Applied — stat reduced"), flash overlay
+**New Type Fields** (`src/types/systemIntelligence.ts`):
+- Add `SuggestedShadow` and `SuggestedDungeon` interfaces
+- Extend `SystemIntelligence` with `suggestedShadows` and `suggestedDungeons` arrays
 
-### 5. Connect to Existing Systems
-- When penalty objectives include "complete a quest", listen to `useProtocolQuests` completions
-- When objectives include "complete training", listen to `useWorkout` completion
-- Auto-mark penalty objectives as the player completes real quests during the penalty window
+**Hook Updates** (`useSystemIntelligenceAI.ts`):
+- Parse and expose the new suggestion arrays from the AI response
 
-## Files Changed
-- `src/types/dungeon.ts` — add `'penalty'` type + template
-- `src/hooks/usePenaltyDungeon.ts` — new hook
-- `src/components/effects/PenaltyDungeonOverlay.tsx` — new overlay component
-- `src/pages/Index.tsx` — wire penalty dungeon into dashboard
+**UI: Suggestion Cards on Dashboard**:
+- "Shadow Recruit" cards with one-tap accept → auto-creates in `shadow_army` table
+- "Dungeon Gate Detected" cards with one-tap enter → auto-creates in `dungeons` table
+- Both show the AI's reasoning for why it's recommending them
 
-No database migration needed — the existing `dungeons` table already supports custom types, objectives, and time limits.
+**Auto-Creation Option**:
+- A toggle in Settings: "Allow System to auto-deploy shadows and dungeons"
+- When enabled, the AI's suggestions are created automatically without approval
+- When disabled (default), suggestions appear as cards you approve
+
+### 4. Files Changed
+- `supabase/functions/system-intelligence/index.ts` — extend prompt + response schema
+- `src/types/systemIntelligence.ts` — add suggestion interfaces
+- `src/hooks/useSystemIntelligenceAI.ts` — parse new fields
+- `src/components/dashboard/SystemIntelligencePanel.tsx` — render suggestion cards
+- `src/hooks/useShadowArmy.ts` — add `acceptSuggestion()` method
+- `src/hooks/useDungeons.ts` — add `createFromSuggestion()` method
+
+No database changes needed — existing `shadow_army` and `dungeons` tables already support all required fields.
 
