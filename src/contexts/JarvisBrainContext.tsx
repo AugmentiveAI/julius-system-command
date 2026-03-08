@@ -11,6 +11,7 @@ import { useSystemIntelligenceAI } from '@/hooks/useSystemIntelligenceAI';
 import { InterventionContext, SystemIntervention, InterventionType } from '@/utils/interventionEngine';
 import { getSystemDate } from '@/utils/dayCycleEngine';
 import { GeneticState } from '@/utils/geneticEngine';
+import { Anticipation, SystemIntelligence } from '@/types/systemIntelligence';
 
 // ── Page-specific intervention filters ──────────────────────────────
 
