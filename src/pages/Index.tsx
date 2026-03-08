@@ -55,6 +55,9 @@ import { usePenaltyDungeon } from '@/hooks/usePenaltyDungeon';
 import { getRankForLevel } from '@/types/skills';
 import { getSystemDate } from '@/utils/dayCycleEngine';
 import { loadAIQuests, isAIEnabled } from '@/utils/aiQuestGenerator';
+import { useTrainingLog } from '@/hooks/useTrainingLog';
+import { buildTrainingContext } from '@/hooks/useTrainingIntelligence';
+import { getMesocycleState } from '@/utils/periodizationEngine';
 const LAST_SCAN_DATE_KEY = 'systemLastScanDate';
 const AI_SETTINGS_KEY = 'systemAISettings';
 const START_DATE_KEY = 'systemStartDate';
@@ -94,7 +97,8 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
   const { player, penaltyLevel, showFlashEffect, dismissPenaltyBanner, levelUpState, setGoal, addXP, reduceStat, resetPenaltyDays } = usePlayer();
   const { logCaffeine, hasLoggedAfter10am, warningDismissed, dismissWarning, logs } = useCaffeine();
   const { toggleQuest, setQuestCompleted, quests } = useProtocolQuests();
-  const { workout, workoutCompleted } = useWorkout();
+  const { workout, workoutCompleted, prescription: workoutPrescription, trainingLevel: wTrainingLevel, sessionsLogged: wSessionsLogged, todayWorkoutType } = useWorkout();
+  const { recentLogs, personalRecords, fatigueAccumulation } = useTrainingLog();
   const { toast } = useToast();
   const { strategy, dayNumber, playerTitle } = useSystemStrategy();
   const { intelligence, loading: aiLoading, error: aiError, generate: generateIntelligence } = useSystemIntelligenceAI();
@@ -491,8 +495,19 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
         ? +(1 + shadows.filter(s => s.status === 'active').reduce((s, sh) => s + sh.contribution_score, 0) / 100).toFixed(1)
         : 1,
       dungeonsCleared: completedDungeons.length,
+      training: buildTrainingContext({
+        recentLogs,
+        personalRecords,
+        fatigueAccumulation,
+        mesocycleWeek: getMesocycleState().currentWeek,
+        mesocycleLength: getMesocycleState().totalWeeks,
+        todayWorkoutType,
+        prescribedIntensity: workoutPrescription?.prescribedIntensity ?? null,
+        trainingLevel: wTrainingLevel,
+        sessionsLogged: wSessionsLogged,
+      }),
     };
-  }, [player, systemRec, completedQuests, quests.length, shadows, completedDungeons.length]);
+  }, [player, systemRec, completedQuests, quests.length, shadows, completedDungeons.length, recentLogs, personalRecords, fatigueAccumulation, todayWorkoutType, workoutPrescription, wTrainingLevel, wSessionsLogged]);
 
   return (
     <>

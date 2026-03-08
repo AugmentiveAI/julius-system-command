@@ -140,6 +140,19 @@ serve(async (req) => {
     const marketIntel = await fetchMarketIntel(authHeader, playerContext);
 
     // Build context injection
+    const trainingBlock = playerContext?.training ? `
+TRAINING MODULE:
+- Sessions Logged (30d): ${playerContext.training.totalSessions}
+- Total Volume (30d): ${playerContext.training.totalVolume} lbs
+- Avg Fatigue: ${playerContext.training.avgFatigue}/10
+- Avg Readiness: ${playerContext.training.avgReadiness}/10
+- Current Fatigue Accumulation: ${playerContext.training.fatigueAccumulation}
+- Mesocycle: Week ${playerContext.training.mesocycleWeek}/${playerContext.training.mesocycleLength}
+- Today's Workout: ${playerContext.training.todayWorkoutType}
+- Prescribed Intensity: ${playerContext.training.prescribedIntensity || 'N/A'}
+- Training Level: ${playerContext.training.trainingLevel}
+- Recent PRs: ${JSON.stringify(playerContext.training.recentPRs || [])}` : '';
+
     const contextBlock = playerContext ? `
 CURRENT PLAYER STATE:
 - Level: ${playerContext.level} | XP: ${playerContext.currentXP}/${playerContext.xpToNextLevel} | Total XP: ${playerContext.totalXP}
@@ -153,6 +166,7 @@ CURRENT PLAYER STATE:
 - Quests Today: ${playerContext.questsCompletedToday}/${playerContext.questsTotalToday}
 - Shadow Army: ${playerContext.shadowCount} shadows (Force Multiplier: ${playerContext.forceMultiplier}x)
 - Dungeons Cleared: ${playerContext.dungeonsCleared}
+${trainingBlock}
 ${marketIntel}` : marketIntel;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {

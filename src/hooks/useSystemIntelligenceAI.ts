@@ -96,9 +96,10 @@ function gatherPlayerData(player: any) {
     dayNumber,
     systemMode,
     stateHistory,
-    recentCompletions: [] as any[], // Will be filled from DB
-    shadowArmy: [] as any[], // Will be filled from DB
-    activeDungeons: [] as any[], // Will be filled from DB
+    recentCompletions: [] as any[],
+    shadowArmy: [] as any[],
+    activeDungeons: [] as any[],
+    training: null as any, // Will be filled from DB
     resistanceData,
     dayOfWeek: dayOfWeek[dayNum],
     dayType,
@@ -131,8 +132,10 @@ export function useSystemIntelligenceAI() {
       // Gather local data
       const playerData = gatherPlayerData(player);
 
-      // Fetch recent completions, shadow army, and dungeons from DB in parallel
-      const [completionsRes, shadowsRes, dungeonsRes] = await Promise.all([
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+      // Fetch recent completions, shadow army, dungeons, and training logs from DB in parallel
+      const [completionsRes, shadowsRes, dungeonsRes, trainingRes] = await Promise.all([
         supabase
           .from('quest_history')
           .select('quest_title, xp_earned, type, completed_at')
@@ -149,6 +152,12 @@ export function useSystemIntelligenceAI() {
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .limit(10),
+        (supabase
+          .from('training_log' as any)
+          .select('workout_type, total_volume, fatigue_score, readiness_pre, exercises, completed_at')
+          .eq('user_id', user.id)
+          .gte('completed_at', thirtyDaysAgo)
+          .order('completed_at', { ascending: false })) as any,
       ]);
 
       playerData.recentCompletions = (completionsRes.data || []).map((c: any) => ({
@@ -173,6 +182,53 @@ export function useSystemIntelligenceAI() {
         status: d.status,
         xpReward: d.xp_reward,
       }));
+
+      // Build training context from logs
+      const trainingLogs = (trainingRes.data || []) as any[];
+      if (trainingLogs.length > 0) {
+        const totalSessions = trainingLogs.length;
+        const totalVolume = trainingLogs.reduce((s: number, l: any) => s + (l.total_volume ?? 0), 0);
+        const avgFatigue = Math.round(trainingLogs.reduce((s: number, l: any) => s + (l.fatigue_score ?? 0), 0) / totalSessions);
+        const readinessLogs = trainingLogs.filter((l: any) => l.readiness_pre != null);
+        const avgReadiness = readinessLogs.length > 0
+          ? Math.round(readinessLogs.reduce((s: number, l: any) => s + (l.readiness_pre ?? 0), 0) / readinessLogs.length)
+          : 0;
+        const sevenDayAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+        const fatigueAccum = trainingLogs
+          .filter((l: any) => new Date(l.completed_at).getTime() > sevenDayAgo)
+          .reduce((s: number, l: any) => s + (l.fatigue_score ?? 0), 0);
+        const workoutDist: Record<string, number> = {};
+        for (const l of trainingLogs) {
+          workoutDist[l.workout_type] = (workoutDist[l.workout_type] || 0) + 1;
+        }
+
+        // Extract PRs
+        const prMap = new Map<string, { name: string; weight: number; reps: number }>();
+        for (const log of trainingLogs) {
+          for (const ex of ((log.exercises as any[]) || [])) {
+            if (!ex.completed || !ex.weight) continue;
+            const existing = prMap.get(ex.name);
+            if (!existing || ex.weight > existing.weight) {
+              prMap.set(ex.name, { name: ex.name, weight: ex.weight, reps: ex.reps });
+            }
+          }
+        }
+
+        playerData.training = {
+          totalSessions,
+          totalVolume,
+          avgFatigue,
+          avgReadiness,
+          fatigueAccumulation: fatigueAccum,
+          mesocycleWeek: 1,
+          mesocycleLength: 4,
+          trainingLevel: totalSessions >= 10 ? 'intermediate' : totalSessions >= 3 ? 'beginner' : 'novice',
+          todayWorkoutType: trainingLogs[0]?.workout_type || 'unknown',
+          recentPRs: Array.from(prMap.values()).slice(0, 5),
+          workoutDistribution: workoutDist,
+        };
+      }
+
       // Call edge function
       const { data, error: fnError } = await supabase.functions.invoke('system-intelligence', {
         body: { playerData },

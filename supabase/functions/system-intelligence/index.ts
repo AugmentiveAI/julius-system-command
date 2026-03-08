@@ -175,6 +175,19 @@ ACTIVE DUNGEONS (Boss Fights, Instant Dungeons, S-Rank Gates):
 ${JSON.stringify(playerData.activeDungeons || [], null, 1)}
 Note: Factor shadow army AND dungeon progress into trajectory forecasting. Reference genetic modifiers when recommending dungeon strategies.
 
+TRAINING MODULE DATA (Last 30 days):
+${playerData.training ? `- Sessions Logged: ${playerData.training.totalSessions}
+- Total Volume: ${playerData.training.totalVolume} lbs
+- Avg Fatigue Score: ${playerData.training.avgFatigue}/10
+- Avg Readiness: ${playerData.training.avgReadiness}/10
+- Current Fatigue Accumulation: ${playerData.training.fatigueAccumulation}
+- Mesocycle: Week ${playerData.training.mesocycleWeek}/${playerData.training.mesocycleLength}
+- Training Level: ${playerData.training.trainingLevel}
+- Today's Workout: ${playerData.training.todayWorkoutType}
+- Recent PRs: ${JSON.stringify(playerData.training.recentPRs || [])}
+- Workout Distribution: ${JSON.stringify(playerData.training.workoutDistribution || {})}` : 'No training data available yet.'}
+Note: Factor training performance, fatigue trends, and recovery status into trajectory forecasting and challenge calibration.
+
 TODAY'S CONTEXT:
 - Day of Week: ${playerData.dayOfWeek}
 - Day Type: ${playerData.dayType}
