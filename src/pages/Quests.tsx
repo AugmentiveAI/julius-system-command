@@ -43,6 +43,7 @@ import { usePillarStreak } from '@/hooks/usePillarStreak';
 import { PillarConfirmation } from '@/components/quests/PillarConfirmation';
 import { useAIQuests } from '@/hooks/useAIQuests';
 import { loadAIQuests } from '@/utils/aiQuestGenerator';
+import { JarvisPageBanner } from '@/components/jarvis/JarvisPageBanner';
 
 // ── Storage helpers ──────────────────────────────────────────────────
 
