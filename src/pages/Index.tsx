@@ -460,6 +460,40 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
     ? persuasionMap.get(focus.currentQuest.id) ?? null
     : null;
 
+  const buildChatContext = useCallback(() => {
+    const stored = localStorage.getItem(START_DATE_KEY);
+    const todayStr = getSystemDate();
+    let dn = 1;
+    if (stored) {
+      const startMs = new Date(stored + 'T12:00:00').getTime();
+      const todayMs = new Date(todayStr + 'T12:00:00').getTime();
+      dn = Math.max(1, Math.round((todayMs - startMs) / (1000 * 60 * 60 * 24)) + 1);
+    }
+    const now = new Date();
+    const dow = now.getDay();
+    return {
+      level: player.level,
+      currentXP: player.currentXP,
+      xpToNextLevel: player.xpToNextLevel,
+      totalXP: player.totalXP ?? 0,
+      streak: player.streak,
+      coldStreak: player.coldStreak ?? 0,
+      stats: player.stats,
+      goal: player.goal || null,
+      dayNumber: dn,
+      systemMode: systemRec,
+      currentTime: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      dayType: dow >= 4 ? 'Sprint Day' : 'Work Day',
+      questsCompletedToday: completedQuests,
+      questsTotalToday: quests.length,
+      shadowCount: shadows.length,
+      forceMultiplier: shadows.filter(s => s.status === 'active').length > 0
+        ? +(1 + shadows.filter(s => s.status === 'active').reduce((s, sh) => s + sh.contribution_score, 0) / 100).toFixed(1)
+        : 1,
+      dungeonsCleared: completedDungeons.length,
+    };
+  }, [player, systemRec, completedQuests, quests.length, shadows, completedDungeons.length]);
+
   return (
     <>
       <FlashOverlay show={showFlashEffect} />
