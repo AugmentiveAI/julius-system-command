@@ -67,6 +67,7 @@ const Training = () => {
     overloadPlan,
     trainingLevel,
     sessionsLogged,
+    resetWorkout,
   } = useWorkout();
   const { toast } = useToast();
   const { geneticState, sprintsToday } = useGeneticState();
@@ -463,10 +464,25 @@ const Training = () => {
           )}
 
           {workoutCompleted && (
-            <div className="mt-4 rounded-md bg-green-500/10 px-3 py-2 text-center">
-              <p className="font-tech text-sm text-green-400">
-                ✓ Workout complete. Well done, hunter.
-              </p>
+            <div className="mt-4 space-y-2">
+              <div className="rounded-md bg-green-500/10 px-3 py-2 text-center">
+                <p className="font-tech text-sm text-green-400">
+                  ✓ Workout complete. Well done, hunter.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  resetWorkout();
+                  setExerciseTracking({});
+                  setPrsHit([]);
+                  setShowRestTimer(false);
+                }}
+                className="w-full text-xs"
+              >
+                Reset Workout
+              </Button>
             </div>
           )}
         </div>
