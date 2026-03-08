@@ -44,6 +44,8 @@ import { PillarConfirmation } from '@/components/quests/PillarConfirmation';
 import { useAIQuests } from '@/hooks/useAIQuests';
 import { loadAIQuests } from '@/utils/aiQuestGenerator';
 import { JarvisPageBanner } from '@/components/jarvis/JarvisPageBanner';
+import { useJarvisBrainOptional } from '@/contexts/JarvisBrainContext';
+import { reorderQuestsWithJarvis, getReorderReason } from '@/utils/jarvisQuestReorder';
 
 // ── Storage helpers ──────────────────────────────────────────────────
 
@@ -184,6 +186,7 @@ const Quests = () => {
   const pillarStreak = usePillarStreak();
   const [pillarBonusToast, setPillarBonusToast] = useState<number | null>(null);
   const { aiResult } = useAIQuests();
+  const jarvis = useJarvisBrainOptional();
 
   // Morning confirmation — require if pillars were previewed last night but not yet confirmed today
   const [pillarsConfirmed, setPillarsConfirmed] = useState(() => {
@@ -289,10 +292,21 @@ const Quests = () => {
 
   const groupedQuests = useMemo(() => {
     if (!calibration) return null;
+
+    // JARVIS reordering: apply anticipation + genetic phase
+    const anticipation = jarvis?.anticipation ?? null;
+    const geneticPhase = jarvis?.geneticState?.comtPhase ?? null;
+    const reordered = reorderQuestsWithJarvis(calibration.recommendedQuests, anticipation, geneticPhase);
+
     const groups: Record<QuestTimeBlock, CalibratedQuest[]> = { morning: [], midday: [], afternoon: [], evening: [] };
-    calibration.recommendedQuests.forEach(q => groups[assignTimeBlock(q)].push(q));
+    reordered.forEach(q => groups[assignTimeBlock(q)].push(q));
     return groups;
-  }, [calibration]);
+  }, [calibration, jarvis?.anticipation, jarvis?.geneticState?.comtPhase]);
+
+  // Reorder reason for display
+  const reorderReason = useMemo(() => {
+    return getReorderReason(jarvis?.anticipation ?? null, jarvis?.geneticState?.comtPhase ?? null);
+  }, [jarvis?.anticipation, jarvis?.geneticState?.comtPhase]);
 
   // Enqueue quest-context comms
   const { enqueue: enqueueComm } = useSystemCommsContext();
@@ -557,7 +571,14 @@ const Quests = () => {
           {/* JARVIS Brain Banner */}
           <JarvisPageBanner page="quests" />
 
-          {/* Gentle nudge when no scan today */}
+          {/* JARVIS reorder reason */}
+          {reorderReason && (
+            <div className="flex items-center gap-2 rounded-md border border-primary/10 bg-primary/5 px-3 py-1.5">
+              <span className="font-mono text-[10px] text-primary/60 tracking-wider">
+                ⚡ Quest order: {reorderReason}
+              </span>
+            </div>
+          )}
           {!hasScan && fallbackCheck && (
             <button
               onClick={() => setScanOpen(true)}

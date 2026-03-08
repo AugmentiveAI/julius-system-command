@@ -7,9 +7,11 @@ import { useCaffeine } from '@/hooks/useCaffeine';
 import { useWorkout } from '@/hooks/useWorkout';
 import { useTrainingLog } from '@/hooks/useTrainingLog';
 import { useShadowArmy } from '@/hooks/useShadowArmy';
+import { useSystemIntelligenceAI } from '@/hooks/useSystemIntelligenceAI';
 import { InterventionContext, SystemIntervention, InterventionType } from '@/utils/interventionEngine';
 import { getSystemDate } from '@/utils/dayCycleEngine';
 import { GeneticState } from '@/utils/geneticEngine';
+import { Anticipation, SystemIntelligence } from '@/types/systemIntelligence';
 
 // ── Page-specific intervention filters ──────────────────────────────
 
@@ -66,6 +68,12 @@ interface JarvisBrainState {
   // Shared context data
   fatigueAccumulation: number;
   workoutCompleted: boolean;
+
+  // System Intelligence + Anticipation
+  intelligence: SystemIntelligence | null;
+  anticipation: Anticipation | null;
+  intelligenceLoading: boolean;
+  generateIntelligence: () => void;
 }
 
 const JarvisBrainCtx = createContext<JarvisBrainState | null>(null);
@@ -91,6 +99,8 @@ export function JarvisBrainProvider({ children }: { children: ReactNode }) {
   const { fatigueAccumulation } = useTrainingLog();
   const { shadows } = useShadowArmy();
   const { geneticState, sprintsToday, logSprint, logColdExposure, logMagnesium } = useGeneticState();
+  const { intelligence, loading: intelligenceLoading, generate: generateIntelligence } = useSystemIntelligenceAI();
+  const anticipation = intelligence?.anticipation ?? null;
 
   // Build intervention context from all shared state
   const buildInterventionContext = useCallback((): InterventionContext => {
@@ -198,11 +208,16 @@ export function JarvisBrainProvider({ children }: { children: ReactNode }) {
     logMagnesium,
     fatigueAccumulation,
     workoutCompleted,
+    intelligence,
+    anticipation,
+    intelligenceLoading,
+    generateIntelligence,
   }), [
     allInterventions, highestPriority, hasIntervention, dismissIntervention, refresh,
     getInterventionsForPage, getHighestForPage,
     geneticState, sprintsToday, logSprint, logColdExposure, logMagnesium,
     fatigueAccumulation, workoutCompleted,
+    intelligence, anticipation, intelligenceLoading, generateIntelligence,
   ]);
 
   return (
