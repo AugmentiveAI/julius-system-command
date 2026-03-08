@@ -182,6 +182,53 @@ export function useSystemIntelligenceAI() {
         status: d.status,
         xpReward: d.xp_reward,
       }));
+
+      // Build training context from logs
+      const trainingLogs = (trainingRes.data || []) as any[];
+      if (trainingLogs.length > 0) {
+        const totalSessions = trainingLogs.length;
+        const totalVolume = trainingLogs.reduce((s: number, l: any) => s + (l.total_volume ?? 0), 0);
+        const avgFatigue = Math.round(trainingLogs.reduce((s: number, l: any) => s + (l.fatigue_score ?? 0), 0) / totalSessions);
+        const readinessLogs = trainingLogs.filter((l: any) => l.readiness_pre != null);
+        const avgReadiness = readinessLogs.length > 0
+          ? Math.round(readinessLogs.reduce((s: number, l: any) => s + (l.readiness_pre ?? 0), 0) / readinessLogs.length)
+          : 0;
+        const sevenDayAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+        const fatigueAccum = trainingLogs
+          .filter((l: any) => new Date(l.completed_at).getTime() > sevenDayAgo)
+          .reduce((s: number, l: any) => s + (l.fatigue_score ?? 0), 0);
+        const workoutDist: Record<string, number> = {};
+        for (const l of trainingLogs) {
+          workoutDist[l.workout_type] = (workoutDist[l.workout_type] || 0) + 1;
+        }
+
+        // Extract PRs
+        const prMap = new Map<string, { name: string; weight: number; reps: number }>();
+        for (const log of trainingLogs) {
+          for (const ex of ((log.exercises as any[]) || [])) {
+            if (!ex.completed || !ex.weight) continue;
+            const existing = prMap.get(ex.name);
+            if (!existing || ex.weight > existing.weight) {
+              prMap.set(ex.name, { name: ex.name, weight: ex.weight, reps: ex.reps });
+            }
+          }
+        }
+
+        playerData.training = {
+          totalSessions,
+          totalVolume,
+          avgFatigue,
+          avgReadiness,
+          fatigueAccumulation: fatigueAccum,
+          mesocycleWeek: 1,
+          mesocycleLength: 4,
+          trainingLevel: totalSessions >= 10 ? 'intermediate' : totalSessions >= 3 ? 'beginner' : 'novice',
+          todayWorkoutType: trainingLogs[0]?.workout_type || 'unknown',
+          recentPRs: Array.from(prMap.values()).slice(0, 5),
+          workoutDistribution: workoutDist,
+        };
+      }
+
       // Call edge function
       const { data, error: fnError } = await supabase.functions.invoke('system-intelligence', {
         body: { playerData },
