@@ -359,15 +359,8 @@ export function ShadowArmyPanel({ onShadowAdded }: ShadowArmyPanelProps = {}) {
         });
       }
 
-      // Refresh shadow list to reflect updated power/contribution
-      const { data: refreshed } = await supabase
-        .from('shadow_army')
-        .select('*')
-        .eq('id', shadow.id)
-        .single();
-      if (refreshed) {
-        setShadows(prev => prev.map(s => s.id === shadow.id ? (refreshed as Shadow) : s));
-      }
+      // Refresh shadow to reflect updated power/contribution
+      await refetchShadow(shadow.id);
     } catch (e: any) {
       console.error('Shadow activation failed:', e);
       setActivation({
