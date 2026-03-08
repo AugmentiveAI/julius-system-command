@@ -290,7 +290,7 @@ interface ShadowArmyPanelProps {
 }
 
 export function ShadowArmyPanel({ onShadowAdded }: ShadowArmyPanelProps = {}) {
-  const { shadows, loading, addShadow, removeShadow, levelUp } = useShadowArmy();
+  const { shadows, loading, addShadow, removeShadow, levelUp, refetchShadow } = useShadowArmy();
   const { player } = usePlayer();
   const [expanded, setExpanded] = useState(false);
   const [adding, setAdding] = useState(false);
