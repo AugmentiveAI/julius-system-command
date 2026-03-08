@@ -203,13 +203,30 @@ function ShadowCard({ shadow, onLevelUp, onRemove, onUse }: {
           <span className="font-mono text-[10px] text-primary">LV {shadow.power_level}</span>
         </div>
       </div>
-      <div className="flex items-center justify-between mt-2">
-        <div className="flex items-center gap-2">
+      {/* Evolution Progress Bar */}
+      <div className="mt-2 space-y-1.5">
+        <div className="flex items-center justify-between">
           <span className="font-mono text-[9px] uppercase text-muted-foreground">{shadow.category}</span>
-          {shadow.contribution_score > 0 && (
-            <span className="font-mono text-[9px] text-secondary">+{shadow.contribution_score}%</span>
-          )}
+          <span className="font-mono text-[9px] text-muted-foreground">
+            {shadow.contribution_score > 0 
+              ? `${Math.min(100, ((shadow.contribution_score % 50) / 50) * 100).toFixed(0)}% to LV ${shadow.power_level + 1}`
+              : `LV ${shadow.power_level}`
+            }
+          </span>
         </div>
+        <div className="h-1 w-full rounded-full bg-border/50 overflow-hidden">
+          <div
+            className="h-full rounded-full transition-all duration-700 ease-out"
+            style={{
+              width: `${Math.min(100, ((shadow.contribution_score % 50) / 50) * 100)}%`,
+              background: shadow.power_level >= 5 
+                ? 'linear-gradient(90deg, hsl(var(--secondary)), hsl(270 80% 65%))' 
+                : 'linear-gradient(90deg, hsl(var(--primary)), hsl(var(--secondary)))',
+            }}
+          />
+        </div>
+      </div>
+      <div className="flex items-center justify-end mt-1.5">
         <div className="flex gap-1">
           <button onClick={onUse} className="p-1 rounded hover:bg-purple-500/10 transition-colors" title="Activate">
             <Zap className="h-3 w-3 text-purple-400" />
