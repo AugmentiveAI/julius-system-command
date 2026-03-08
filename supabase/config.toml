@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.system-chat]
 verify_jwt = false
+
+[functions.web-intel]
+verify_jwt = false
