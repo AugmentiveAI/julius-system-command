@@ -569,10 +569,13 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
                     ? new Date(Date.now() + timeLimitMinutes * 60 * 1000).toISOString()
                     : null;
 
-                const { data, error: dbErr } = await (await import('@/integrations/supabase/client')).supabase
+                const { data: userData } = await supabase.auth.getUser();
+                if (!userData.user) return;
+
+                const { data, error: dbErr } = await supabase
                   .from('dungeons')
                   .insert({
-                    user_id: (await (await import('@/integrations/supabase/client')).supabase.auth.getUser()).data.user!.id,
+                    user_id: userData.user.id,
                     dungeon_type: dungeon.type,
                     title: dungeon.title,
                     description: dungeon.description,
