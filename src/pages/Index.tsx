@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { TopBar } from '@/components/dashboard/TopBar';
 import { SystemIntelligencePanel, SystemIntelligenceLoading } from '@/components/dashboard/SystemIntelligencePanel';
 import { ShadowArmyPanel } from '@/components/shadows/ShadowArmyPanel';
