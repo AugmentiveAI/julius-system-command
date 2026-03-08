@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Eye, EyeOff, Zap, Key, Bot, Sparkles, RotateCcw, Calendar, Trash2, LogOut } from 'lucide-react';
+import { Eye, EyeOff, Zap, Key, Bot, Sparkles, RotateCcw, Calendar, Trash2, LogOut, Shield } from 'lucide-react';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { useAuth } from '@/contexts/AuthContext';
 import { Switch } from '@/components/ui/switch';
