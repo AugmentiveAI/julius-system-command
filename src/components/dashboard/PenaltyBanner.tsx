@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import { AlertTriangle, X, Skull } from 'lucide-react';
 import { PenaltyLevel } from '@/types/player';
 
@@ -34,39 +35,44 @@ const PENALTY_CONFIG = {
   },
 };
 
-export const PenaltyBanner = ({ penaltyLevel, onDismiss, isDismissed }: PenaltyBannerProps) => {
-  if (penaltyLevel === 0 || isDismissed) return null;
+export const PenaltyBanner = forwardRef<HTMLDivElement, PenaltyBannerProps>(
+  ({ penaltyLevel, onDismiss, isDismissed }, ref) => {
+    if (penaltyLevel === 0 || isDismissed) return null;
 
-  const config = PENALTY_CONFIG[penaltyLevel];
-  const { Icon } = config;
+    const config = PENALTY_CONFIG[penaltyLevel];
+    const { Icon } = config;
 
-  return (
-    <div
-      className={`relative rounded-lg border p-4 ${config.bgClass}`}
-      style={
-        penaltyLevel === 3
-          ? { boxShadow: '0 0 20px hsl(0 84% 50% / 0.3)', animation: 'pulse 2s infinite' }
-          : undefined
-      }
-    >
-      <div className="flex items-start gap-3">
-        <Icon className={`h-5 w-5 shrink-0 ${config.iconClass}`} />
-        <div className="flex-1">
-          <h3 className={`font-display text-sm font-bold uppercase tracking-wider ${config.textClass}`}>
-            {config.title}
-          </h3>
-          <p className="mt-1 font-tech text-sm text-muted-foreground">
-            {config.description}
-          </p>
+    return (
+      <div
+        ref={ref}
+        className={`relative rounded-lg border p-4 ${config.bgClass}`}
+        style={
+          penaltyLevel === 3
+            ? { boxShadow: '0 0 20px hsl(0 84% 50% / 0.3)', animation: 'pulse 2s infinite' }
+            : undefined
+        }
+      >
+        <div className="flex items-start gap-3">
+          <Icon className={`h-5 w-5 shrink-0 ${config.iconClass}`} />
+          <div className="flex-1">
+            <h3 className={`font-display text-sm font-bold uppercase tracking-wider ${config.textClass}`}>
+              {config.title}
+            </h3>
+            <p className="mt-1 font-tech text-sm text-muted-foreground">
+              {config.description}
+            </p>
+          </div>
+          <button
+            onClick={onDismiss}
+            className="shrink-0 rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            aria-label="Dismiss"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
-        <button
-          onClick={onDismiss}
-          className="shrink-0 rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          aria-label="Dismiss"
-        >
-          <X className="h-4 w-4" />
-        </button>
       </div>
-    </div>
-  );
-};
+    );
+  }
+);
+
+PenaltyBanner.displayName = 'PenaltyBanner';
