@@ -305,6 +305,51 @@ export type Database = {
         }
         Relationships: []
       }
+      training_log: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          exercises: Json
+          fatigue_score: number | null
+          genetic_phase: string | null
+          id: string
+          notes: string | null
+          readiness_pre: number | null
+          sprint_count: number | null
+          total_volume: number | null
+          user_id: string
+          workout_type: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          exercises?: Json
+          fatigue_score?: number | null
+          genetic_phase?: string | null
+          id?: string
+          notes?: string | null
+          readiness_pre?: number | null
+          sprint_count?: number | null
+          total_volume?: number | null
+          user_id: string
+          workout_type: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          exercises?: Json
+          fatigue_score?: number | null
+          genetic_phase?: string | null
+          id?: string
+          notes?: string | null
+          readiness_pre?: number | null
+          sprint_count?: number | null
+          total_volume?: number | null
+          user_id?: string
+          workout_type?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
