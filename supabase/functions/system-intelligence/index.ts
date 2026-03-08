@@ -294,7 +294,7 @@ Generate a complete System Intelligence analysis using the generate_intelligence
 
   } catch (e) {
     console.error('system-intelligence error:', e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : 'Unknown error' }), {
+    return new Response(JSON.stringify({ error: 'System intelligence temporarily offline.' }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
