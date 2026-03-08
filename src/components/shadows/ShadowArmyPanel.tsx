@@ -329,7 +329,8 @@ export function ShadowArmyPanel({ onShadowAdded }: ShadowArmyPanelProps = {}) {
             category: shadow.category,
             description: shadow.description,
             power_level: shadow.power_level,
-            activationCount: shadow.metadata?.activationCount || 0,
+            metadata: shadow.metadata || {},
+            activationCount: (shadow.metadata as any)?.activation_count || 0,
           },
           playerContext: {
             goal: player.goal,
@@ -342,7 +343,31 @@ export function ShadowArmyPanel({ onShadowAdded }: ShadowArmyPanelProps = {}) {
       });
 
       if (error) throw error;
-      setActivation(data as ShadowActivation);
+      const result = data as ShadowActivation;
+      setActivation(result);
+
+      // Show evolution toast if shadow leveled up
+      if (result.evolution?.evolved) {
+        toast(`⚡ ${shadow.name} evolved to LV ${result.evolution.newPower}`, {
+          description: 'Future activations will produce deeper intel.',
+          duration: 4000,
+        });
+      } else if (result.evolution) {
+        const progress = ((result.evolution.fractionalPower % 1) * 100).toFixed(0);
+        toast(`${shadow.name} gaining power... ${progress}% to next level`, {
+          duration: 2500,
+        });
+      }
+
+      // Refresh shadow list to reflect updated power/contribution
+      const { data: refreshed } = await supabase
+        .from('shadow_army')
+        .select('*')
+        .eq('id', shadow.id)
+        .single();
+      if (refreshed) {
+        setShadows(prev => prev.map(s => s.id === shadow.id ? (refreshed as Shadow) : s));
+      }
     } catch (e: any) {
       console.error('Shadow activation failed:', e);
       setActivation({
