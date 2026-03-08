@@ -55,6 +55,14 @@ import { getRankForLevel } from '@/types/skills';
 import { getSystemDate } from '@/utils/dayCycleEngine';
 import { loadAIQuests, isAIEnabled } from '@/utils/aiQuestGenerator';
 const LAST_SCAN_DATE_KEY = 'systemLastScanDate';
+const AI_SETTINGS_KEY = 'systemAISettings';
+
+function isAutoDeployEnabled(): boolean {
+  try {
+    const settings = JSON.parse(localStorage.getItem(AI_SETTINGS_KEY) || '{}');
+    return settings.autoDeploy === true;
+  } catch { return false; }
+}
 
 function needsDailyScan(): boolean {
   const today = getSystemDate();
