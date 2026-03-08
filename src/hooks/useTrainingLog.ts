@@ -91,12 +91,12 @@ export function useTrainingLog() {
     setLoading(true);
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
-    const { data, error } = await supabase
-      .from('training_log')
+    const { data, error } = await (supabase
+      .from('training_log' as any)
       .select('*')
       .eq('user_id', user.id)
       .gte('completed_at', since)
-      .order('completed_at', { ascending: false });
+      .order('completed_at', { ascending: false })) as { data: any[]; error: any };
 
     if (!error && data) {
       const entries = data.map(row => ({
