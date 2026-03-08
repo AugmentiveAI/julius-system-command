@@ -132,8 +132,10 @@ export function useSystemIntelligenceAI() {
       // Gather local data
       const playerData = gatherPlayerData(player);
 
-      // Fetch recent completions, shadow army, and dungeons from DB in parallel
-      const [completionsRes, shadowsRes, dungeonsRes] = await Promise.all([
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+      // Fetch recent completions, shadow army, dungeons, and training logs from DB in parallel
+      const [completionsRes, shadowsRes, dungeonsRes, trainingRes] = await Promise.all([
         supabase
           .from('quest_history')
           .select('quest_title, xp_earned, type, completed_at')
@@ -150,6 +152,12 @@ export function useSystemIntelligenceAI() {
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .limit(10),
+        (supabase
+          .from('training_log' as any)
+          .select('workout_type, total_volume, fatigue_score, readiness_pre, exercises, completed_at')
+          .eq('user_id', user.id)
+          .gte('completed_at', thirtyDaysAgo)
+          .order('completed_at', { ascending: false })) as any,
       ]);
 
       playerData.recentCompletions = (completionsRes.data || []).map((c: any) => ({
