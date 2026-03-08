@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
-import { Eye, EyeOff, Zap, Key, Bot, Sparkles, RotateCcw, Calendar, Trash2, LogOut, Shield } from 'lucide-react';
+import { useState } from 'react';
+import { Zap, Bot, RotateCcw, Calendar, Trash2, LogOut, Shield } from 'lucide-react';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { useAuth } from '@/contexts/AuthContext';
 import { Switch } from '@/components/ui/switch';
 import { useAIQuests } from '@/hooks/useAIQuests';
-import { hasAnyApiKey } from '@/utils/aiModelRouter';
 import { AwakeningSequence } from '@/components/onboarding/AwakeningSequence';
 
 const AI_SETTINGS_KEY = 'systemAISettings';
@@ -21,46 +20,6 @@ function saveSettings(s: any) {
   localStorage.setItem(AI_SETTINGS_KEY, JSON.stringify(s));
 }
 
-const MaskedInput = ({
-  label,
-  icon: Icon,
-  value,
-  onChange,
-  placeholder,
-}: {
-  label: string;
-  icon: React.ElementType;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder: string;
-}) => {
-  const [visible, setVisible] = useState(false);
-  return (
-    <div className="space-y-1.5">
-      <label className="flex items-center gap-2 font-mono text-xs text-muted-foreground">
-        <Icon className="h-3.5 w-3.5" />
-        {label}
-      </label>
-      <div className="relative">
-        <input
-          type={visible ? 'text' : 'password'}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          className="w-full rounded-md border border-border bg-muted/30 px-3 py-2.5 pr-10 font-mono text-xs text-foreground placeholder:text-muted-foreground/40 focus:border-primary/50 focus:outline-none transition-colors"
-        />
-        <button
-          type="button"
-          onClick={() => setVisible(!visible)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-        >
-          {visible ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-        </button>
-      </div>
-    </div>
-  );
-};
-
 const Settings = () => {
   const { signOut } = useAuth();
   const [settings, setSettings] = useState(loadSettings);
@@ -70,8 +29,6 @@ const Settings = () => {
     localStorage.getItem('systemStartDate') || new Date().toISOString().split('T')[0]
   );
 
-  const groqKey = settings.groqApiKey || '';
-  const geminiKey = settings.geminiApiKey || '';
   const aiEnabled = settings.aiEnabled || false;
   const [autoDeploy, setAutoDeploy] = useState(settings.autoDeploy || false);
 
@@ -142,23 +99,9 @@ const Settings = () => {
             </h2>
           </div>
 
-          {/* API Key Inputs */}
-          <div className="space-y-4">
-            <MaskedInput
-              label="Groq API Key (free tier)"
-              icon={Key}
-              value={groqKey}
-              onChange={(v) => updateField('groqApiKey', v)}
-              placeholder="gsk_..."
-            />
-            <MaskedInput
-              label="Google Gemini API Key (free tier)"
-              icon={Sparkles}
-              value={geminiKey}
-              onChange={(v) => updateField('geminiApiKey', v)}
-              placeholder="AIza..."
-            />
-          </div>
+          <p className="font-mono text-[10px] text-muted-foreground/60">
+            AI quest generation uses server-side intelligence. No API keys needed.
+          </p>
 
           {/* Toggle */}
           <div className="flex items-center justify-between rounded-md border border-border bg-muted/20 px-4 py-3">
@@ -169,24 +112,15 @@ const Settings = () => {
             <Switch
               checked={aiEnabled}
               onCheckedChange={(v) => updateField('aiEnabled', v)}
-              disabled={!hasAnyApiKey()}
             />
           </div>
-
-          {!hasAnyApiKey() && (
-            <p className="font-mono text-[10px] text-muted-foreground/60 text-center">
-              Add at least one API key to enable AI generation.
-            </p>
-          )}
 
           {/* Generate Button */}
           <button
             onClick={handleGenerate}
-            disabled={isGenerating || !hasAnyApiKey()}
+            disabled={isGenerating}
             className={`flex w-full items-center justify-center gap-2 rounded-lg border px-4 py-3.5 font-display text-xs uppercase tracking-[0.15em] transition-all
-              ${hasAnyApiKey()
-                ? 'border-primary/50 bg-primary/10 text-primary hover:bg-primary/20 hover:shadow-[0_0_20px_hsl(187_100%_50%/0.3)]'
-                : 'border-border bg-muted/10 text-muted-foreground/40 cursor-not-allowed'}
+              border-primary/50 bg-primary/10 text-primary hover:bg-primary/20 hover:shadow-[0_0_20px_hsl(187_100%_50%/0.3)]
               ${pulseGenerate ? 'animate-pulse shadow-[0_0_30px_hsl(187_100%_50%/0.4)]' : ''}
             `}
           >

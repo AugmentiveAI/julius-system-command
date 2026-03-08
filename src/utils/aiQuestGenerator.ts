@@ -2,7 +2,7 @@
  * AI Quest Generation Engine — gathers context and generates daily quests via AI.
  */
 
-import { routeAIRequest, hasAnyApiKey } from './aiModelRouter';
+import { routeAIRequest } from './aiModelRouter';
 import { getSystemDate } from './dayCycleEngine';
 import { PlayerStats, getLowestStat } from '@/types/player';
 
@@ -38,7 +38,6 @@ function gatherContext() {
     }
   } catch { /* ignore */ }
 
-  // Quest completion rate (last 7 days)
   let completionRate = 0;
   try {
     const historyRaw = localStorage.getItem('systemDayHistory');
@@ -103,7 +102,6 @@ OUTPUT FORMAT (JSON only, no markdown):
 
 function parseAIResponse(raw: string): { quests: AIGeneratedQuest[]; systemMessage: string } | null {
   try {
-    // Try parsing directly
     const parsed = JSON.parse(raw);
     if (parsed.quests && Array.isArray(parsed.quests)) {
       const validStats: Set<string> = new Set(['sales', 'systems', 'creative', 'discipline', 'network', 'wealth']);
@@ -118,7 +116,6 @@ function parseAIResponse(raw: string): { quests: AIGeneratedQuest[]; systemMessa
       return { quests, systemMessage: String(parsed.system_message || 'The System watches.') };
     }
   } catch {
-    // Try to extract JSON from response
     try {
       const match = raw.match(/\{[\s\S]*\}/);
       if (match) return parseAIResponse(match[0]);
@@ -128,15 +125,12 @@ function parseAIResponse(raw: string): { quests: AIGeneratedQuest[]; systemMessa
 }
 
 export async function generateAIQuests(): Promise<AIQuestResult> {
-  if (!hasAnyApiKey()) throw new Error('NO_API_KEYS');
-
   // Rate limit: don't generate more than once per hour
   try {
     const lastGen = localStorage.getItem(AI_LAST_GEN_KEY);
     if (lastGen) {
       const elapsed = Date.now() - Number(lastGen);
       if (elapsed < 60 * 60 * 1000) {
-        // Check if we already have quests for today
         const existing = loadAIQuests();
         if (existing && existing.generatedAt.startsWith(getSystemDate())) {
           return existing;
@@ -162,7 +156,6 @@ export async function generateAIQuests(): Promise<AIQuestResult> {
     provider,
   };
 
-  // Store
   localStorage.setItem(AI_QUESTS_KEY, JSON.stringify(result));
   localStorage.setItem(AI_LAST_GEN_KEY, String(Date.now()));
 
@@ -182,7 +175,7 @@ export function loadAIQuests(): AIQuestResult | null {
 export function isAIEnabled(): boolean {
   try {
     const settings = JSON.parse(localStorage.getItem('systemAISettings') || '{}');
-    return settings.aiEnabled === true && hasAnyApiKey();
+    return settings.aiEnabled === true;
   } catch {
     return false;
   }
