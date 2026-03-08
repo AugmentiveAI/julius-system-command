@@ -186,6 +186,7 @@ const Quests = () => {
   const pillarStreak = usePillarStreak();
   const [pillarBonusToast, setPillarBonusToast] = useState<number | null>(null);
   const { aiResult } = useAIQuests();
+  const jarvis = useJarvisBrainOptional();
 
   // Morning confirmation — require if pillars were previewed last night but not yet confirmed today
   const [pillarsConfirmed, setPillarsConfirmed] = useState(() => {
