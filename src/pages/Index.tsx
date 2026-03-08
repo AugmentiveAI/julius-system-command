@@ -103,6 +103,16 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
   const { workout, workoutCompleted, prescription: workoutPrescription, trainingLevel: wTrainingLevel, sessionsLogged: wSessionsLogged, todayWorkoutType } = useWorkout();
   const { recentLogs, personalRecords, fatigueAccumulation } = useTrainingLog();
   const { toast } = useToast();
+  const { strategy, dayNumber, playerTitle } = useSystemStrategy();
+  const { intelligence, loading: aiLoading, error: aiError, generate: generateIntelligence } = useSystemIntelligenceAI();
+  const { logColdExposure } = useGeneticState();
+  const weekly = useWeeklyPlanning();
+  const focusMode = useFocusModeContext();
+  const pillar = usePillarQuests();
+  const pillarStreak = usePillarStreak();
+  const { notifications, unreadCount, addNotification, markAllRead, clearAll: clearNotifications } = useSystemNotifications();
+  const { shadows, addShadow: _addShadow } = useShadowArmy();
+  const { completedDungeons, createDungeon: _createDungeon } = useDungeons();
 
   // ── Intervention Engine (JARVIS) ─────────────────────────────
   const buildInterventionContext = useCallback((): InterventionContext => {
@@ -112,7 +122,6 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
       .filter(q => q.completed)
       .reduce((sum, q) => sum + q.xp + (q.geneticBonus?.bonusXp || 0), 0);
 
-    // Last quest completion time
     let lastQuestMinAgo = 999;
     try {
       const raw = localStorage.getItem('systemCalibratedCompletions');
@@ -127,7 +136,6 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
       }
     } catch { /* ignore */ }
 
-    // Days since last shadow activation
     let daysSinceLastShadow = 30;
     try {
       if (shadows.length > 0) {
@@ -140,7 +148,6 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
       }
     } catch { /* ignore */ }
 
-    // Weekly plan check
     let weeklyPlanDone = false;
     try {
       const raw = localStorage.getItem('systemWeeklyPlan');
@@ -150,26 +157,19 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
       }
     } catch { /* ignore */ }
 
-    // Genetic phase
+    const hour = now.getHours();
     let geneticPhase = 'stable';
-    try {
-      const raw = localStorage.getItem('systemGeneticHUD');
-      if (raw) {
-        const hud = JSON.parse(raw);
-        const hour = now.getHours();
-        if (hour >= 8 && hour < 12) geneticPhase = 'peak';
-        else if (hour >= 14 && hour < 17) geneticPhase = 'dip';
-        else if (hour >= 17) geneticPhase = 'recovery';
-      }
-    } catch { /* ignore */ }
+    if (hour >= 8 && hour < 12) geneticPhase = 'peak';
+    else if (hour >= 14 && hour < 17) geneticPhase = 'dip';
+    else if (hour >= 17) geneticPhase = 'recovery';
 
     return {
-      currentHour: now.getHours(),
+      currentHour: hour,
       geneticPhase,
       questsCompletedToday: completedQ,
       questsTotalToday: quests.length,
       xpEarnedToday: totalXPToday,
-      averageDailyXP: 150, // Could be calculated from history
+      averageDailyXP: 150,
       streak: player.streak,
       lastCaffeineTime: logs.length > 0 ? logs[logs.length - 1] : null,
       caffeineWarningShownToday: warningDismissed,
@@ -188,16 +188,6 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
     buildContext: buildInterventionContext,
     enabled: true,
   });
-  const { strategy, dayNumber, playerTitle } = useSystemStrategy();
-  const { intelligence, loading: aiLoading, error: aiError, generate: generateIntelligence } = useSystemIntelligenceAI();
-  const { logColdExposure } = useGeneticState();
-  const weekly = useWeeklyPlanning();
-  const focusMode = useFocusModeContext();
-  const pillar = usePillarQuests();
-  const pillarStreak = usePillarStreak();
-  const { notifications, unreadCount, addNotification, markAllRead, clearAll: clearNotifications } = useSystemNotifications();
-  const { shadows, addShadow: _addShadow } = useShadowArmy();
-  const { completedDungeons, createDungeon: _createDungeon } = useDungeons();
 
   // Auto-deploy: track which suggestions have been auto-deployed this session
   const autoDeployedRef = useRef<Set<string>>(new Set());
