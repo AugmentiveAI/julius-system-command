@@ -73,6 +73,7 @@ const Settings = () => {
   const groqKey = settings.groqApiKey || '';
   const geminiKey = settings.geminiApiKey || '';
   const aiEnabled = settings.aiEnabled || false;
+  const [autoDeploy, setAutoDeploy] = useState(settings.autoDeploy || false);
 
   const updateField = (key: string, val: any) => {
     const next = { ...settings, [key]: val };
