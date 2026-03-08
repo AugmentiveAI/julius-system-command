@@ -571,7 +571,14 @@ const Quests = () => {
           {/* JARVIS Brain Banner */}
           <JarvisPageBanner page="quests" />
 
-          {/* Gentle nudge when no scan today */}
+          {/* JARVIS reorder reason */}
+          {reorderReason && (
+            <div className="flex items-center gap-2 rounded-md border border-primary/10 bg-primary/5 px-3 py-1.5">
+              <span className="font-mono text-[10px] text-primary/60 tracking-wider">
+                ⚡ Quest order: {reorderReason}
+              </span>
+            </div>
+          )}
           {!hasScan && fallbackCheck && (
             <button
               onClick={() => setScanOpen(true)}
