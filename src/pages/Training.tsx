@@ -67,6 +67,7 @@ const Training = () => {
     overloadPlan,
     trainingLevel,
     sessionsLogged,
+    resetWorkout,
   } = useWorkout();
   const { toast } = useToast();
   const { geneticState, sprintsToday } = useGeneticState();
