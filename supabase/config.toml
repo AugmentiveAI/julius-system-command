@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.training-intelligence]
 verify_jwt = false
+
+[functions.ai-quest-proxy]
+verify_jwt = false

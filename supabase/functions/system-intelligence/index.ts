@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { sanitizeStr, sanitizeNum, sanitizeStats, sanitizeArray } from "../_shared/sanitize.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -90,12 +91,38 @@ serve(async (req) => {
       });
     }
 
-    const { playerData } = await req.json();
-    if (!playerData) {
+    const { playerData: rawPlayerData } = await req.json();
+    if (!rawPlayerData) {
       return new Response(JSON.stringify({ error: 'Missing playerData' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    // Sanitize all user-supplied fields before prompt interpolation
+    const playerData = {
+      level: sanitizeNum(rawPlayerData.level, 1, 1, 999),
+      totalXP: sanitizeNum(rawPlayerData.totalXP),
+      currentXP: sanitizeNum(rawPlayerData.currentXP),
+      xpToNextLevel: sanitizeNum(rawPlayerData.xpToNextLevel, 100),
+      streak: sanitizeNum(rawPlayerData.streak),
+      coldStreak: sanitizeNum(rawPlayerData.coldStreak),
+      stats: sanitizeStats(rawPlayerData.stats),
+      goal: sanitizeStr(rawPlayerData.goal, 200),
+      dayNumber: sanitizeNum(rawPlayerData.dayNumber, 1),
+      systemMode: sanitizeStr(rawPlayerData.systemMode, 30),
+      stateHistory: sanitizeArray(rawPlayerData.stateHistory, 7),
+      recentCompletions: sanitizeArray(rawPlayerData.recentCompletions, 14),
+      resistanceData: rawPlayerData.resistanceData && typeof rawPlayerData.resistanceData === 'object' ? rawPlayerData.resistanceData : {},
+      shadowArmy: sanitizeArray(rawPlayerData.shadowArmy, 30),
+      activeDungeons: sanitizeArray(rawPlayerData.activeDungeons, 10),
+      training: rawPlayerData.training,
+      dayOfWeek: sanitizeStr(rawPlayerData.dayOfWeek, 20),
+      dayType: sanitizeStr(rawPlayerData.dayType, 30),
+      currentTime: sanitizeStr(rawPlayerData.currentTime, 30),
+      questsCompletedToday: sanitizeNum(rawPlayerData.questsCompletedToday),
+      questsTotalToday: sanitizeNum(rawPlayerData.questsTotalToday),
+      pillarStatus: rawPlayerData.pillarStatus && typeof rawPlayerData.pillarStatus === 'object' ? rawPlayerData.pillarStatus : {},
+    };
 
     // ─── Fetch real-time market intelligence via Groq ───
     let marketIntelBlock = '';
