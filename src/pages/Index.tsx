@@ -57,6 +57,7 @@ import { getSystemDate } from '@/utils/dayCycleEngine';
 import { loadAIQuests, isAIEnabled } from '@/utils/aiQuestGenerator';
 const LAST_SCAN_DATE_KEY = 'systemLastScanDate';
 const AI_SETTINGS_KEY = 'systemAISettings';
+const START_DATE_KEY = 'systemStartDate';
 
 function isAutoDeployEnabled(): boolean {
   try {
