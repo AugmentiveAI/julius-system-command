@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.web-intel]
 verify_jwt = false
+
+[functions.training-intelligence]
+verify_jwt = false
