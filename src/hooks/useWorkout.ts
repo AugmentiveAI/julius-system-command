@@ -220,5 +220,13 @@ export function useWorkout() {
     overloadPlan,
     trainingLevel: overloadState.detectedLevel,
     sessionsLogged: overloadState.sessionsLogged,
+    resetWorkout: useCallback(() => {
+      const swap = evaluateWorkoutSwap();
+      setState({
+        workout: getWorkoutForType(swap.finalType),
+        lastResetDate: getTodayDateString(),
+        workoutCompleted: false,
+      });
+    }, []),
   };
 }
