@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.shadow-activate]
 verify_jwt = false
+
+[functions.system-chat]
+verify_jwt = false
