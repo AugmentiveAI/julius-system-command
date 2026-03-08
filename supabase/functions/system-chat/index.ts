@@ -287,7 +287,7 @@ ${marketIntel}` : marketIntel;
     });
   } catch (e) {
     console.error('system-chat error:', e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : 'Unknown error' }), {
+    return new Response(JSON.stringify({ error: 'System intelligence error.' }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
