@@ -68,6 +68,12 @@ interface JarvisBrainState {
   // Shared context data
   fatigueAccumulation: number;
   workoutCompleted: boolean;
+
+  // System Intelligence + Anticipation
+  intelligence: SystemIntelligence | null;
+  anticipation: Anticipation | null;
+  intelligenceLoading: boolean;
+  generateIntelligence: () => void;
 }
 
 const JarvisBrainCtx = createContext<JarvisBrainState | null>(null);
