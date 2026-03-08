@@ -573,6 +573,12 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
         ? +(1 + shadows.filter(s => s.status === 'active').reduce((s, sh) => s + sh.contribution_score, 0) / 100).toFixed(1)
         : 1,
       dungeonsCleared: completedDungeons.length,
+      activeInterventions: activeInterventions.map(i => ({
+        priority: i.priority,
+        title: i.title,
+        message: i.message,
+        type: i.type,
+      })),
       training: buildTrainingContext({
         recentLogs,
         personalRecords,
@@ -585,7 +591,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
         sessionsLogged: wSessionsLogged,
       }),
     };
-  }, [player, systemRec, completedQuests, quests.length, shadows, completedDungeons.length, recentLogs, personalRecords, fatigueAccumulation, todayWorkoutType, workoutPrescription, wTrainingLevel, wSessionsLogged]);
+  }, [player, systemRec, completedQuests, quests.length, shadows, completedDungeons.length, recentLogs, personalRecords, fatigueAccumulation, todayWorkoutType, workoutPrescription, wTrainingLevel, wSessionsLogged, activeInterventions]);
 
   return (
     <>
