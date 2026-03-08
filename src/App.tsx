@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -255,7 +255,7 @@ const getDayDataFallback = () => {
   }
 };
 
-const App = () => (
+const App = React.forwardRef<HTMLDivElement>((_props, _ref) => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
@@ -271,6 +271,8 @@ const App = () => (
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
-);
+));
+
+App.displayName = 'App';
 
 export default App;
