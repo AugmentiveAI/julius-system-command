@@ -7,6 +7,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { usePlayer } from '@/hooks/usePlayer';
 import { getSystemDate } from '@/utils/dayCycleEngine';
 
+interface ShadowEvolution {
+  previousPower: number;
+  newPower: number;
+  evolved: boolean;
+  contributionScore: number;
+  activationCount: number;
+  fractionalPower: number;
+}
+
 interface ShadowActivation {
   title: string;
   content: string;
@@ -17,6 +26,7 @@ interface ShadowActivation {
   isScoutReport?: boolean;
   keyFindings?: string[];
   topTools?: { name: string; description: string; leveragePotential: string }[];
+  evolution?: ShadowEvolution;
 }
 
 const STATUS_COLORS: Record<string, string> = {
