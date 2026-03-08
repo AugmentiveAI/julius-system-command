@@ -47,6 +47,7 @@ import { useSystemNotifications } from '@/hooks/useSystemNotifications';
 import { useShadowArmy } from '@/hooks/useShadowArmy';
 import { useDungeons } from '@/hooks/useDungeons';
 import { SuggestedShadow, SuggestedDungeon } from '@/types/systemIntelligence';
+import { SystemChatPanel } from '@/components/chat/SystemChatPanel';
 import { ShadowCategory } from '@/types/shadowArmy';
 import { DungeonObjective } from '@/types/dungeon';
 import { useSkills } from '@/hooks/useSkills';
