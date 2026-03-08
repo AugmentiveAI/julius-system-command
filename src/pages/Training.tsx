@@ -289,6 +289,9 @@ const Training = () => {
 
         <DeloadBanner decision={deloadDecision} />
 
+        {/* JARVIS Brain Banner */}
+        <JarvisPageBanner page="training" />
+
         {calibrated.geneticAlert && (
           <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
             <p className="font-tech text-sm text-amber-400">
