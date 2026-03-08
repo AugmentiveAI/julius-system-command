@@ -97,7 +97,8 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
   const { player, penaltyLevel, showFlashEffect, dismissPenaltyBanner, levelUpState, setGoal, addXP, reduceStat, resetPenaltyDays } = usePlayer();
   const { logCaffeine, hasLoggedAfter10am, warningDismissed, dismissWarning, logs } = useCaffeine();
   const { toggleQuest, setQuestCompleted, quests } = useProtocolQuests();
-  const { workout, workoutCompleted } = useWorkout();
+  const { workout, workoutCompleted, prescription: workoutPrescription, trainingLevel: wTrainingLevel, sessionsLogged: wSessionsLogged, todayWorkoutType } = useWorkout();
+  const { recentLogs, personalRecords, fatigueAccumulation } = useTrainingLog();
   const { toast } = useToast();
   const { strategy, dayNumber, playerTitle } = useSystemStrategy();
   const { intelligence, loading: aiLoading, error: aiError, generate: generateIntelligence } = useSystemIntelligenceAI();
