@@ -1,0 +1,2 @@
+ALTER TABLE public.dungeons DROP CONSTRAINT dungeons_dungeon_type_check;
+ALTER TABLE public.dungeons ADD CONSTRAINT dungeons_dungeon_type_check CHECK (dungeon_type = ANY (ARRAY['boss_fight'::text, 'instant_dungeon'::text, 's_rank_gate'::text, 'penalty'::text]));
