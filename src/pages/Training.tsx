@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback } from 'react';
-import { Check, Dumbbell, Bike, Wind, Calendar, ArrowUp, ArrowDown, Minus, Activity, AlertTriangle, Repeat, TrendingUp, Target } from 'lucide-react';
+import { Dumbbell, Bike, Wind, Calendar, ArrowUp, ArrowDown, Minus, Activity, Repeat, Target } from 'lucide-react';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { useWorkout } from '@/hooks/useWorkout';
 import { WEEKLY_SCHEDULE, WorkoutType } from '@/types/training';
@@ -25,6 +25,8 @@ import { SessionSummaryModal } from '@/components/training/SessionSummaryModal';
 import { DeloadBanner } from '@/components/training/DeloadBanner';
 import { MesocycleProgress } from '@/components/training/MesocycleProgress';
 import { FatigueGauge } from '@/components/training/FatigueGauge';
+import { ExerciseProgressCard, ExerciseTrackingData, ExerciseSetData } from '@/components/training/ExerciseProgressCard';
+import { RestTimer } from '@/components/training/RestTimer';
 
 const WORKOUT_ICONS: Partial<Record<WorkoutType, React.ElementType>> = {
   'push-hypertrophy': Dumbbell,
@@ -68,13 +70,12 @@ const Training = () => {
   } = useWorkout();
   const { toast } = useToast();
   const { geneticState, sprintsToday } = useGeneticState();
-  const { fatigueAccumulation, recentLogs, logWorkout, getPR } = useTrainingLog();
+  const { fatigueAccumulation, recentLogs, logWorkout, getPR, getLastSession } = useTrainingLog();
 
   // ── Periodization state ────────────────────────────────────────
   const mesocycle = useMemo(() => getMesocycleState(), []);
   const weeklyRx = useMemo(() => getWeeklyPrescription(mesocycle), [mesocycle]);
 
-  // Build recent RPE and readiness arrays for deload evaluation
   const recentRPEs = useMemo(() =>
     recentLogs.slice(0, 5).map(l => l.fatigue_score ?? 5).reverse(),
     [recentLogs]
@@ -96,7 +97,6 @@ const Training = () => {
 
   // ── Readiness & Session Summary modals ─────────────────────────
   const [showReadiness, setShowReadiness] = useState(() => {
-    // Show readiness check if workout not completed and no readiness logged today
     const todayLog = recentLogs.find(l => {
       const d = new Date(l.completed_at);
       const now = new Date();
@@ -106,6 +106,46 @@ const Training = () => {
   });
   const [readinessScore, setReadinessScore] = useState<number | null>(null);
   const [showSummary, setShowSummary] = useState(false);
+
+  // ── Per-exercise tracking data ─────────────────────────────────
+  const [exerciseTracking, setExerciseTracking] = useState<Record<string, ExerciseTrackingData>>({});
+  const [showRestTimer, setShowRestTimer] = useState(false);
+  const [prsHit, setPrsHit] = useState<string[]>([]);
+
+  const handleSetComplete = useCallback((exerciseId: string, setData: ExerciseSetData) => {
+    setExerciseTracking(prev => {
+      const existing = prev[exerciseId];
+      const exercise = workout.exercises.find(e => e.id === exerciseId);
+      const sets = existing?.sets ? [...existing.sets, setData] : [setData];
+      return {
+        ...prev,
+        [exerciseId]: {
+          exerciseId,
+          exerciseName: exercise?.name ?? exerciseId,
+          sets,
+          allSetsComplete: sets.length >= (exercise?.sets ?? 0),
+        },
+      };
+    });
+
+    // Check for PR
+    const exercise = workout.exercises.find(e => e.id === exerciseId);
+    if (exercise && setData.weight > 0) {
+      const pr = getPR(exercise.name);
+      if (pr && setData.weight > pr.maxWeight) {
+        setPrsHit(prev => [...prev, `${exercise.name}: ${setData.weight} lbs × ${setData.reps}`]);
+      }
+    }
+
+    // Show rest timer after logging a set (for weight exercises)
+    if (setData.weight > 0) {
+      setShowRestTimer(true);
+    }
+  }, [workout.exercises, getPR]);
+
+  const handleExerciseAllComplete = useCallback((exerciseId: string) => {
+    toggleExercise(exerciseId);
+  }, [toggleExercise]);
 
   const handleReadinessComplete = useCallback((score: number) => {
     setReadinessScore(score);
@@ -123,6 +163,15 @@ const Training = () => {
     ? INTENSITY_COLORS[prescription.prescribedIntensity]
     : INTENSITY_COLORS.moderate;
 
+  // Calculate real volume from tracking data
+  const totalVolume = useMemo(() => {
+    return Object.values(exerciseTracking).reduce((total, ex) => {
+      return total + ex.sets
+        .filter(s => s.completed)
+        .reduce((sum, s) => sum + (s.weight * s.reps), 0);
+    }, 0);
+  }, [exerciseTracking]);
+
   const handleCompleteWorkout = () => {
     completeWorkout();
     toast(getSystemToast('workoutComplete', { xp: workout.xp }));
@@ -137,23 +186,49 @@ const Training = () => {
       });
     }
 
-    // Show session summary modal
+    setShowRestTimer(false);
     setShowSummary(true);
   };
 
   const handleSessionLogged = useCallback(async (fatigueScore: number, notes: string) => {
     setShowSummary(false);
 
-    await logWorkout({
-      workout_type: workout.type,
-      exercises: workout.exercises.map(ex => ({
+    // Build exercise data from tracking
+    const exerciseData = workout.exercises.map(ex => {
+      const tracking = exerciseTracking[ex.id];
+      if (tracking && tracking.sets.length > 0) {
+        const completedSets = tracking.sets.filter(s => s.completed);
+        const avgWeight = completedSets.length > 0
+          ? Math.round(completedSets.reduce((s, set) => s + set.weight, 0) / completedSets.length)
+          : 0;
+        const avgReps = completedSets.length > 0
+          ? Math.round(completedSets.reduce((s, set) => s + set.reps, 0) / completedSets.length)
+          : 0;
+        const avgRpe = completedSets.length > 0
+          ? Math.round(completedSets.reduce((s, set) => s + set.rpe, 0) / completedSets.length)
+          : fatigueScore;
+        return {
+          name: ex.name,
+          sets: completedSets.length,
+          reps: avgReps,
+          weight: avgWeight,
+          rpe: avgRpe,
+          completed: ex.completed,
+        };
+      }
+      return {
         name: ex.name,
         sets: ex.sets,
         reps: parseInt(ex.reps) || 0,
-        weight: 0, // Will be enhanced in Phase 3 with per-exercise weight tracking
+        weight: 0,
         rpe: fatigueScore,
         completed: ex.completed,
-      })),
+      };
+    });
+
+    await logWorkout({
+      workout_type: workout.type,
+      exercises: exerciseData,
       fatigue_score: fatigueScore,
       readiness_pre: readinessScore,
       genetic_phase: geneticState?.comtPhase ?? null,
@@ -166,31 +241,24 @@ const Training = () => {
       description: 'Training data saved to The System.',
       duration: 3000,
     });
-  }, [workout, readinessScore, geneticState, sprintsToday, logWorkout, toast]);
-
-  // Calculate total volume for summary (basic — no weight tracking yet)
-  const totalVolume = workout.exercises
-    .filter(e => e.completed)
-    .reduce((sum, e) => sum + (e.sets * (parseInt(e.reps) || 0)), 0);
+  }, [workout, exerciseTracking, readinessScore, geneticState, sprintsToday, logWorkout, toast]);
 
   return (
     <div className="min-h-screen bg-background pb-24" style={{ paddingTop: 'calc(1.5rem + env(safe-area-inset-top, 0px))' }}>
       <GeneticHUD />
 
-      {/* Pre-Workout Readiness Check */}
       <ReadinessCheckModal
         open={showReadiness}
         onComplete={handleReadinessComplete}
       />
 
-      {/* Post-Workout Session Summary */}
       <SessionSummaryModal
         open={showSummary}
         onComplete={handleSessionLogged}
         totalVolume={totalVolume}
         exercisesCompleted={completedCount}
         exercisesTotal={totalCount}
-        prsHit={[]}
+        prsHit={prsHit}
         xpEarned={workout.xp}
       />
 
@@ -217,10 +285,8 @@ const Training = () => {
           <FatigueGauge accumulation={fatigueAccumulation} />
         </div>
 
-        {/* Deload Banner */}
         <DeloadBanner decision={deloadDecision} />
 
-        {/* Genetic Calibration Alert */}
         {calibrated.geneticAlert && (
           <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
             <p className="font-tech text-sm text-amber-400">
@@ -234,7 +300,6 @@ const Training = () => {
           </div>
         )}
 
-        {/* System Override Banner — workout swap notification */}
         {swapDecision?.swapped && (
           <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 space-y-1">
             <div className="flex items-center gap-2">
@@ -256,6 +321,7 @@ const Training = () => {
             </div>
           </div>
         )}
+
         {prescription && (
           <div className={`rounded-lg border ${intensityStyle.border} ${intensityStyle.bg} p-4 space-y-3`}>
             <div className="flex items-center justify-between">
@@ -272,18 +338,14 @@ const Training = () => {
                 XP ×{prescription.xpMultiplier}
               </span>
             </div>
-
             <p className="font-tech text-sm text-foreground/80">
               {prescription.reason}
             </p>
-
             {prescription.overrideWarning && (
               <p className="font-mono text-[10px] text-amber-400">
                 ⚠ {prescription.overrideWarning}
               </p>
             )}
-
-            {/* Signal breakdown */}
             <div className="flex flex-wrap gap-2">
               {prescription.signals.map((signal, i) => (
                 <div
@@ -300,7 +362,6 @@ const Training = () => {
           </div>
         )}
 
-        {/* Context Line — WHY (from training intelligence) */}
         {trainingRec.reason && trainingRec.nudgeType !== 'none' && (
           <div className={`rounded-lg border p-3 ${
             trainingRec.nudgeType === 'comt-dip'
@@ -344,6 +405,11 @@ const Training = () => {
                 </h3>
                 <p className="text-sm text-muted-foreground">
                   {completedCount}/{totalCount} exercises complete
+                  {totalVolume > 0 && (
+                    <span className="ml-1.5 text-primary">
+                      · {totalVolume > 1000 ? `${(totalVolume / 1000).toFixed(1)}k` : totalVolume} lbs
+                    </span>
+                  )}
                 </p>
               </div>
             </div>
@@ -354,73 +420,39 @@ const Training = () => {
             </div>
           </div>
 
-          {/* Exercises List */}
+          {/* Rest Timer */}
+          {showRestTimer && !workoutCompleted && (
+            <div className="mt-3">
+              <RestTimer
+                onDismiss={() => setShowRestTimer(false)}
+                defaultSeconds={prescription?.prescribedIntensity === 'heavy' ? 180 : 120}
+              />
+            </div>
+          )}
+
+          {/* Exercise Cards */}
           <div className="mt-4 space-y-2">
             {workout.exercises.map(exercise => {
               const overload = overloadPlan.find(o => o.exerciseId === exercise.id);
-              const hasProgression = overload && overload.progression !== 'first-session' && overload.progression !== 'hold';
+              const lastSess = getLastSession(exercise.name);
+              const pr = getPR(exercise.name);
 
               return (
-                <div
+                <ExerciseProgressCard
                   key={exercise.id}
-                  className={`rounded-lg border p-3 transition-all ${
-                    exercise.completed
-                      ? 'border-green-500/30 bg-green-500/5'
-                      : 'border-border bg-card/50 hover:border-primary/50'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => toggleExercise(exercise.id)}
-                      disabled={workoutCompleted}
-                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-all ${
-                        exercise.completed
-                          ? 'border-green-500 bg-green-500'
-                          : 'border-muted-foreground hover:border-primary'
-                      } ${workoutCompleted ? 'cursor-not-allowed opacity-50' : ''}`}
-                    >
-                      {exercise.completed && <Check className="h-3 w-3 text-white" />}
-                    </button>
-                    <div className="flex-1">
-                      <p
-                        className={`font-tech text-sm ${
-                          exercise.completed
-                            ? 'text-muted-foreground line-through'
-                            : 'text-foreground'
-                        }`}
-                      >
-                        {exercise.name}
-                      </p>
-                      {/* Overload progression hint */}
-                      {hasProgression && !exercise.completed && (
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <TrendingUp className="h-3 w-3 text-primary" />
-                          <span className="font-mono text-[10px] text-primary">
-                            {overload.progressionNote}
-                          </span>
-                          {overload.suggestedWeight && (
-                            <span className="font-mono text-[10px] text-primary/70 ml-1">
-                              → {overload.suggestedWeight} lbs
-                            </span>
-                          )}
-                        </div>
-                      )}
-                      {overload?.progression === 'first-session' && !exercise.completed && (
-                        <span className="font-mono text-[10px] text-muted-foreground mt-0.5 block">
-                          {overload.progressionNote}
-                        </span>
-                      )}
-                    </div>
-                    <span className="font-tech text-xs text-muted-foreground">
-                      {exercise.sets} × {exercise.reps}
-                    </span>
-                  </div>
-                </div>
+                  exercise={exercise}
+                  overload={overload}
+                  personalRecord={pr}
+                  lastSession={lastSess ? { weight: lastSess.weight, reps: lastSess.reps, rpe: lastSess.rpe } : null}
+                  disabled={workoutCompleted}
+                  onSetComplete={handleSetComplete}
+                  onAllComplete={handleExerciseAllComplete}
+                  trackingData={exerciseTracking[exercise.id]}
+                />
               );
             })}
           </div>
 
-          {/* Complete Workout Button */}
           {allExercisesComplete && !workoutCompleted && (
             <Button
               onClick={handleCompleteWorkout}
