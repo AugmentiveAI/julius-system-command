@@ -13,6 +13,9 @@ interface ShadowActivation {
   evolutionHint: string;
   powerLevelImpact?: string;
   activatedAt: string;
+  isScoutReport?: boolean;
+  keyFindings?: string[];
+  topTools?: { name: string; description: string; leveragePotential: string }[];
 }
 
 const STATUS_COLORS: Record<string, string> = {
