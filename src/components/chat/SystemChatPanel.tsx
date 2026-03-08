@@ -43,7 +43,7 @@ export function SystemChatPanel({ buildContext }: SystemChatPanelProps) {
   const [input, setInput] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { messages, isStreaming, sendMessage, clearChat, stopStreaming } = useSystemChat(buildContext);
+  const { messages, isStreaming, isLoading, sendMessage, clearChat, stopStreaming } = useSystemChat(buildContext);
 
   // Auto-scroll
   useEffect(() => {
@@ -143,7 +143,16 @@ export function SystemChatPanel({ buildContext }: SystemChatPanelProps) {
 
           {/* Messages */}
           <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-            {messages.length === 0 && (
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center h-full">
+                <div className="flex gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
+                <p className="font-mono text-[9px] text-muted-foreground/50 mt-3 tracking-widest uppercase">Loading conversation</p>
+              </div>
+            ) : messages.length === 0 && (
               <div className="flex flex-col items-center justify-center h-full text-center px-6 space-y-4">
                 <div
                   className="w-16 h-16 rounded-2xl flex items-center justify-center"
