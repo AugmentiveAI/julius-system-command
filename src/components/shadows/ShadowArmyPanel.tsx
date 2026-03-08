@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { toast } from 'sonner';
 import { Plus, Swords, TrendingUp, ChevronDown, ChevronUp, Trash2, ArrowUp, Zap, X, Download, Loader2 } from 'lucide-react';
 import { Shadow, SHADOW_CATEGORIES, ShadowCategory, getCategoryIcon, getTotalArmyPower, getForceMultiplier } from '@/types/shadowArmy';
 import { useShadowArmy } from '@/hooks/useShadowArmy';
