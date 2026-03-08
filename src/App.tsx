@@ -255,7 +255,7 @@ const getDayDataFallback = () => {
   }
 };
 
-const App = React.forwardRef<HTMLDivElement>((_props, _ref) => (
+const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
@@ -271,8 +271,6 @@ const App = React.forwardRef<HTMLDivElement>((_props, _ref) => (
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
-));
-
-App.displayName = 'App';
+);
 
 export default App;
