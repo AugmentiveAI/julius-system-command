@@ -1,5 +1,6 @@
 import { useMemo, useState, useCallback } from 'react';
 import { Dumbbell, Bike, Wind, Calendar, ArrowUp, ArrowDown, Minus, Activity, Repeat, Target } from 'lucide-react';
+import { JarvisPageBanner } from '@/components/jarvis/JarvisPageBanner';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { useWorkout } from '@/hooks/useWorkout';
 import { WEEKLY_SCHEDULE, WorkoutType } from '@/types/training';

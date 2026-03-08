@@ -554,7 +554,10 @@ const Quests = () => {
           )}
 
           {/* Gentle nudge when no scan today */}
-          {!hasScan && fallbackCheck && (
+          {/* JARVIS Brain Banner */}
+          <JarvisPageBanner page="quests" />
+
+          {/* Gentle nudge when no scan today */}
             <button
               onClick={() => setScanOpen(true)}
               className="w-full rounded-lg border border-border bg-card/50 p-3 text-left transition-all hover:border-primary/30"
