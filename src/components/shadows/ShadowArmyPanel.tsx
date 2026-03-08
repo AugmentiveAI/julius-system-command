@@ -346,6 +346,7 @@ export function ShadowArmyPanel({ onShadowAdded }: ShadowArmyPanelProps = {}) {
             category: shadow.category,
             description: shadow.description,
             power_level: shadow.power_level,
+            contribution_score: shadow.contribution_score,
             metadata: shadow.metadata || {},
             activationCount: (shadow.metadata as any)?.activation_count || 0,
           },
