@@ -754,6 +754,9 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
 
         <BottomNav />
       </div>
+
+      {/* System Chat Interface */}
+      <SystemChatPanel buildContext={buildChatContext} />
     </>
   );
 };
