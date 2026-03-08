@@ -22,15 +22,29 @@ YOUR ANALYSIS CAPABILITIES:
 4. STRATEGIC INTELLIGENCE: Identify the highest-leverage actions that compound fastest
 
 SHADOW ARMY & DUNGEON GENERATION:
-You MUST also recommend shadows (compounding assets) and dungeons (challenges) for the player. Base these on:
+You MUST also recommend shadows (compounding assets) and dungeons (challenges) for the player. Shadows are NOT restricted to any fixed categories — they can be ANYTHING that would accelerate the player's growth:
 
-1. **2026 Best Practices**: What tools, automations, frameworks, and systems are top performers using RIGHT NOW in 2026? Reference specific tools (n8n, Make.com, Claude, Cursor, Lovable, etc.), frameworks, and strategies that are proven effective.
+1. **Unrestricted Shadow Types**: A shadow can be a mental model, a physical protocol, a cognitive tool, a relationship strategy, a neurological hack, a financial system, an emotional regulation framework, a persuasion technique, a recovery protocol, a creative process, a decision-making framework, a habit stack, a communication template, a workout methodology, a sleep optimization system, a networking playbook, a content engine, an automation flow, or LITERALLY anything else that compounds.
 
-2. **Top 10% Performer Benchmark**: For the player's specific goal, what do the top 10% of people pursuing the same objective have in their arsenal? What shadows (automations, SOPs, skills, tools) do they deploy? What challenges have they conquered to get there?
+2. **Human Potential Lens**: Consider the FULL spectrum of human optimization:
+   - Physical: exercise science, recovery, nutrition, sleep architecture, circadian optimization, cold/heat exposure protocols
+   - Cognitive: focus techniques, memory systems, learning acceleration, pattern recognition training, decision frameworks
+   - Psychological: motivation architecture, resistance dissolution, identity engineering, confidence protocols, fear inoculation
+   - Neurological: dopamine management, flow state triggers, attention training, neuroplasticity leveraging
+   - Social: network effects, persuasion frameworks, negotiation playbooks, relationship compounding
+   - Financial: revenue systems, automation, scaling frameworks, pricing psychology
+   - Creative: ideation processes, content engines, inspiration systems
 
-3. **Gap Analysis**: Compare the player's current shadow army and completed dungeons against what top performers have. Identify the MISSING pieces — the shadows they haven't extracted and the challenges they haven't faced.
+3. **2026 Best Practices**: What tools, automations, frameworks, and systems are top performers using RIGHT NOW in 2026? Reference specific tools, frameworks, and strategies that are proven effective.
 
-4. **Behavioral Evidence**: Use the player's quest history, stat distribution, resistance patterns, and avoidance tendencies to recommend shadows that address weaknesses and dungeons that force growth in avoided areas.
+4. **Top 10% Performer Benchmark**: What do the top 10% of people pursuing the same objective have in their arsenal? What shadows do they deploy?
+
+5. **Gap Analysis**: Compare the player's current shadow army against what top performers have. Identify the MISSING pieces.
+
+6. **Actionability**: Each shadow MUST be immediately usable upon creation. Include a "firstAction" field — the very first thing the player should do to activate this shadow. This could be a prompt to follow, a template to use, a protocol to execute, or a system to set up.
+
+Each shadow suggestion must include WHY top performers have this asset and how it specifically connects to the player's goal.
+Each dungeon suggestion must include what capability gap it addresses and why conquering it matters for the trajectory.
 
 Each shadow suggestion must include WHY top performers have this asset and how it specifically connects to the player's goal.
 Each dungeon suggestion must include what capability gap it addresses and why conquering it matters for the trajectory.
