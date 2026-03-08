@@ -88,10 +88,47 @@ function ShadowActivationModal({ shadow, activation, loading, onClose, onActivat
           <div className="space-y-4">
             <div className="rounded-lg border border-primary/20 bg-muted/20 p-4">
               <h4 className="font-tech text-sm text-primary mb-2">{activation.title}</h4>
+              {activation.isScoutReport && (
+                <span className="inline-block mb-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 font-mono text-[9px] text-cyan-400 uppercase tracking-wider">
+                  🔍 Recon Report
+                </span>
+              )}
               <div className="font-mono text-[11px] text-foreground/80 leading-relaxed whitespace-pre-wrap">
                 {activation.content}
               </div>
             </div>
+
+            {/* Scout: Key Findings */}
+            {activation.isScoutReport && activation.keyFindings && activation.keyFindings.length > 0 && (
+              <div className="space-y-2">
+                <p className="font-mono text-[9px] tracking-widest text-cyan-400 uppercase">Key Findings</p>
+                {activation.keyFindings.map((finding, i) => (
+                  <div key={i} className="flex items-start gap-2 rounded-md border border-cyan-500/20 bg-cyan-500/5 p-2.5">
+                    <span className="font-mono text-[10px] text-cyan-400 shrink-0">▸</span>
+                    <p className="font-mono text-[10px] text-foreground/70">{finding}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Scout: Top Tools */}
+            {activation.isScoutReport && activation.topTools && activation.topTools.length > 0 && (
+              <div className="space-y-2">
+                <p className="font-mono text-[9px] tracking-widest text-cyan-400 uppercase">Intel: Tools & Platforms</p>
+                {activation.topTools.map((tool, i) => (
+                  <div key={i} className="rounded-md border border-border bg-muted/10 p-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-[10px] text-foreground font-semibold">{tool.name}</span>
+                      <span className={`font-mono text-[8px] uppercase tracking-wider ${
+                        tool.leveragePotential === 'critical' ? 'text-red-400' :
+                        tool.leveragePotential === 'high' ? 'text-amber-400' : 'text-muted-foreground'
+                      }`}>{tool.leveragePotential}</span>
+                    </div>
+                    <p className="font-mono text-[9px] text-muted-foreground mt-1">{tool.description}</p>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {activation.quickActions.length > 0 && (
               <div className="space-y-2">
