@@ -264,7 +264,9 @@ const App = () => (
           <DayCycleProvider getCurrentDayData={getDayDataFallback}>
             <BrowserRouter>
               <FocusModeProvider>
-                <AppWithFAB />
+                <JarvisBrainProvider>
+                  <AppWithFAB />
+                </JarvisBrainProvider>
               </FocusModeProvider>
             </BrowserRouter>
           </DayCycleProvider>
