@@ -118,7 +118,6 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
     allInterventions: activeInterventions,
     highestPriority,
     dismissIntervention,
-    getInterventionsForPage,
     logColdExposure,
   } = useJarvisBrain();
 
