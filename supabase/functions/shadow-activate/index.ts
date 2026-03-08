@@ -236,11 +236,50 @@ ${shadow.power_level >= 5 ? 'This is a HIGH POWER shadow — generate expert-tie
 
     const result = JSON.parse(toolCall.function.arguments);
 
+    // ─── Auto-evolve shadow after successful activation ───
+    const currentPower = shadow.power_level || 1;
+    const currentContribution = shadow.contribution_score || 0;
+    const powerIncrement = isScout ? 0.5 : 0.25; // Scouts evolve faster
+    const contributionIncrement = isScout ? 15 : 10;
+    const newPower = Math.min(10, currentPower + powerIncrement);
+    const newContribution = currentContribution + contributionIncrement;
+
+    // Only level up on whole numbers
+    const newPowerLevel = Math.floor(newPower) > Math.floor(currentPower)
+      ? Math.floor(newPower)
+      : currentPower;
+    const evolvedThisActivation = newPowerLevel > currentPower;
+
+    if (shadow.id) {
+      await supabase
+        .from('shadow_army')
+        .update({
+          power_level: newPowerLevel,
+          contribution_score: newContribution,
+          metadata: {
+            ...(shadow.metadata || {}),
+            activation_count: ((shadow.metadata?.activation_count as number) || 0) + 1,
+            last_activated: new Date().toISOString(),
+            fractional_power: newPower,
+          },
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', shadow.id);
+    }
+
     return new Response(JSON.stringify({
       ...result,
       shadowId: shadow.id,
       isScoutReport: isScout,
       activatedAt: new Date().toISOString(),
+      evolution: {
+        previousPower: currentPower,
+        newPower: newPowerLevel,
+        evolved: evolvedThisActivation,
+        contributionScore: newContribution,
+        activationCount: ((shadow.metadata?.activation_count as number) || 0) + 1,
+        fractionalPower: newPower,
+      },
     }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
