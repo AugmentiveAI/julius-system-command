@@ -104,7 +104,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
   const { toast } = useToast();
   const { strategy, dayNumber, playerTitle } = useSystemStrategy();
   const { intelligence, loading: aiLoading, error: aiError, generate: generateIntelligence } = useSystemIntelligenceAI();
-  const { logColdExposure } = useGeneticState();
+  const { } = useGeneticState(); // genetic state now via JarvisBrain
   const weekly = useWeeklyPlanning();
   const focusMode = useFocusModeContext();
   const pillar = usePillarQuests();
