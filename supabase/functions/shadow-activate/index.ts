@@ -49,12 +49,21 @@ serve(async (req) => {
       });
     }
 
-    const { shadow, playerContext } = await req.json();
+    const { shadow, playerContext: rawCtx } = await req.json();
     if (!shadow) {
       return new Response(JSON.stringify({ error: 'Missing shadow data' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    // Sanitize player context before prompt interpolation
+    const playerContext = rawCtx ? {
+      goal: sanitizeStr(rawCtx.goal, 200),
+      level: sanitizeNum(rawCtx.level, 1, 1, 999),
+      stats: sanitizeStats(rawCtx.stats),
+      currentTime: sanitizeStr(rawCtx.currentTime, 30),
+      dayType: sanitizeStr(rawCtx.dayType, 30),
+    } : {};
 
     const isScout = isScoutShadow(shadow);
 

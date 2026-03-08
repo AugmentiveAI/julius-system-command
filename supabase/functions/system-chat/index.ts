@@ -196,12 +196,35 @@ serve(async (req) => {
       });
     }
 
-    const { messages, playerContext } = await req.json();
+    const { messages, playerContext: rawCtx } = await req.json();
     if (!messages || !Array.isArray(messages)) {
       return new Response(JSON.stringify({ error: 'Missing messages array' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    // Sanitize player context before prompt interpolation
+    const playerContext = rawCtx ? {
+      level: sanitizeNum(rawCtx.level, 1, 1, 999),
+      totalXP: sanitizeNum(rawCtx.totalXP),
+      currentXP: sanitizeNum(rawCtx.currentXP),
+      xpToNextLevel: sanitizeNum(rawCtx.xpToNextLevel, 100),
+      streak: sanitizeNum(rawCtx.streak),
+      coldStreak: sanitizeNum(rawCtx.coldStreak),
+      stats: sanitizeStats(rawCtx.stats),
+      goal: sanitizeStr(rawCtx.goal, 200),
+      dayNumber: sanitizeNum(rawCtx.dayNumber, 1),
+      systemMode: sanitizeStr(rawCtx.systemMode, 30),
+      currentTime: sanitizeStr(rawCtx.currentTime, 30),
+      dayType: sanitizeStr(rawCtx.dayType, 30),
+      questsCompletedToday: sanitizeNum(rawCtx.questsCompletedToday),
+      questsTotalToday: sanitizeNum(rawCtx.questsTotalToday),
+      shadowCount: sanitizeNum(rawCtx.shadowCount),
+      forceMultiplier: sanitizeNum(rawCtx.forceMultiplier, 1, 0, 100),
+      dungeonsCleared: sanitizeNum(rawCtx.dungeonsCleared),
+      training: rawCtx.training,
+      activeInterventions: Array.isArray(rawCtx.activeInterventions) ? rawCtx.activeInterventions.slice(0, 10) : [],
+    } : null;
 
     // Generate proactive opener if this is the start of a conversation
     const proactiveOpener = messages.length <= 1 ? generateProactiveOpener(playerContext) : null;

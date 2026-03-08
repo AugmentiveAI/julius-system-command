@@ -211,10 +211,19 @@ serve(async (req) => {
     }
 
     const body: IntelRequest = await req.json();
-    const { mode = 'scan', topics = [], playerContext, depth = 1 } = body;
+    const { mode = 'scan', topics = [], playerContext: rawCtx, depth: rawDepth = 1 } = body;
 
-    const topicStr = topics.join(', ');
-    const goalStr = playerContext?.goal || 'building an AI consultancy to $10K MRR';
+    // Sanitize inputs
+    const depth = sanitizeNum(rawDepth, 1, 1, 10);
+    const sanitizedTopics = sanitizeArray(topics, 5).map(t => sanitizeStr(t, 100));
+    const topicStr = sanitizedTopics.join(', ');
+    const goalStr = sanitizeStr(rawCtx?.goal, 200) || 'building an AI consultancy to $10K MRR';
+    const playerContext = rawCtx ? {
+      goal: goalStr,
+      level: sanitizeNum(rawCtx.level, 1, 1, 999),
+      shadowArmy: sanitizeArray(rawCtx.shadowArmy, 30),
+      stats: rawCtx.stats,
+    } : undefined;
 
     // ─── MODE: BRIEF (Fast Groq pulse) ───
     if (mode === 'brief') {
