@@ -94,7 +94,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
   const pillarStreak = usePillarStreak();
   const { notifications, unreadCount, addNotification, markAllRead, clearAll: clearNotifications } = useSystemNotifications();
   const { shadows, addShadow: _addShadow } = useShadowArmy();
-  const { completedDungeons } = useDungeons();
+  const { completedDungeons, createDungeon: _createDungeon } = useDungeons();
 
   // Skills system
   const skillCtx = useMemo(() => ({
