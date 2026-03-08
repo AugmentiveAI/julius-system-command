@@ -99,6 +99,53 @@ serve(async (req) => {
       });
     }
 
+    // ─── Fetch real-time market intelligence via Groq ───
+    let marketIntelBlock = '';
+    try {
+      const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
+      if (GROQ_API_KEY) {
+        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${GROQ_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            messages: [
+              { role: 'system', content: 'You are a market intelligence engine. Return ONLY JSON with 2026 market data for AI consulting and automation. Be specific — name real tools, companies, trends.' },
+              { role: 'user', content: `2026 market intelligence for someone building an AI consultancy targeting $10K MRR. Return JSON: { "marketPulse": "one-line direction", "topTrends": ["5 specific trends with detail"], "hotTools": ["5 specific 2026 tools with descriptions"], "competitorLandscape": "2-3 sentences on competitive dynamics", "pricingIntel": "current market rates for AI consulting services", "emergingOpportunities": ["3 time-sensitive opportunities"], "threatAssessment": "biggest market risks right now" }` },
+            ],
+            response_format: { type: 'json_object' },
+            temperature: 0.7,
+            max_tokens: 1024,
+          }),
+        });
+
+        if (groqRes.ok) {
+          const groqData = await groqRes.json();
+          const intel = groqData.choices?.[0]?.message?.content || '';
+          try {
+            const parsed = JSON.parse(intel);
+            marketIntelBlock = `
+
+REAL-TIME 2026 MARKET INTELLIGENCE (from live scan):
+- Market Pulse: ${parsed.marketPulse || 'N/A'}
+- Top Trends: ${(parsed.topTrends || []).join(' | ')}
+- Hot Tools: ${(parsed.hotTools || []).join(' | ')}
+- Competitor Landscape: ${parsed.competitorLandscape || 'N/A'}
+- Pricing Intel: ${parsed.pricingIntel || 'N/A'}
+- Emerging Opportunities: ${(parsed.emergingOpportunities || []).join(' | ')}
+- Threat Assessment: ${parsed.threatAssessment || 'N/A'}
+
+CRITICAL: Use this real-time intelligence to ground your daily brief, trajectory forecast, and challenge generation in 2026 market reality. Reference specific tools and trends by name.`;
+          } catch { /* ignore parse errors */ }
+        }
+      }
+    } catch (e) {
+      console.warn('Market intel scan failed (non-critical):', e);
+    }
+
     const userPrompt = `Analyze the following player data and generate today's System Intelligence output.
 
 PLAYER STATE:
@@ -134,6 +181,7 @@ TODAY'S CONTEXT:
 - Time: ${playerData.currentTime}
 - Quests Completed Today: ${playerData.questsCompletedToday} / ${playerData.questsTotalToday}
 - Pillars Status: ${JSON.stringify(playerData.pillarStatus || {})}
+${marketIntelBlock}
 
 CRITICAL INSTRUCTIONS FOR SHADOW & DUNGEON SUGGESTIONS:
 - Suggest 1-3 shadows the player NEEDS but doesn't have yet, based on what top 10% performers pursuing "${playerData.goal || 'building an AI consultancy'}" have in their arsenal in 2026.

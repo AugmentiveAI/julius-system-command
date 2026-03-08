@@ -57,6 +57,54 @@ serve(async (req) => {
 
     const isScout = isScoutShadow(shadow);
 
+    // ─── Pre-fetch live intel for scout shadows via Groq ───
+    let liveIntelBlock = '';
+    if (isScout) {
+      try {
+        const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
+        if (GROQ_API_KEY) {
+          const scoutTopic = shadow.description || shadow.name;
+          const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${GROQ_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'llama-3.3-70b-versatile',
+              messages: [
+                { role: 'system', content: 'You are a tactical intelligence scanner. Return ONLY JSON with current 2026 data on the requested topic. Be extremely specific — name real companies, tools, people, numbers.' },
+                { role: 'user', content: `Fast intel scan on: "${scoutTopic}" in the context of AI consulting and automation in 2026. Return JSON: { "quickFindings": ["5 specific data points"], "topPlayers": ["3 specific companies/people dominating this space"], "toolStack": ["3 specific tools being used"], "marketSignal": "one-line trend direction", "contrarian": "one insight that goes against conventional wisdom" }` },
+              ],
+              response_format: { type: 'json_object' },
+              temperature: 0.7,
+              max_tokens: 768,
+            }),
+          });
+
+          if (groqRes.ok) {
+            const groqData = await groqRes.json();
+            const intel = groqData.choices?.[0]?.message?.content || '';
+            try {
+              const parsed = JSON.parse(intel);
+              liveIntelBlock = `
+
+LIVE INTELLIGENCE FEED (from tactical scan):
+- Quick Findings: ${(parsed.quickFindings || []).join(' | ')}
+- Top Players: ${(parsed.topPlayers || []).join(' | ')}
+- Tool Stack: ${(parsed.toolStack || []).join(' | ')}
+- Market Signal: ${parsed.marketSignal || 'N/A'}
+- Contrarian Insight: ${parsed.contrarian || 'N/A'}
+
+CRITICAL: Integrate this live intelligence into your recon report. Reference these specific findings, companies, and tools. Your report should reflect CURRENT 2026 reality, not outdated information.`;
+            } catch { /* ignore */ }
+          }
+        }
+      } catch (e) {
+        console.warn('Scout live intel failed (non-critical):', e);
+      }
+    }
+
     // ─── SCOUT MODE: Deep research agent ───
     const scoutSystemPrompt = `You are SCOUT — an elite reconnaissance shadow deployed by THE SYSTEM. Your mission: conduct deep intelligence gathering on real-world 2026 data, trends, market dynamics, and top-performer strategies.
 
@@ -84,8 +132,9 @@ PLAYER CONTEXT:
     const scoutUserPrompt = `RECONNAISSANCE MISSION: "${shadow.name}"
 Target Domain: ${shadow.description || shadow.name}
 Power Level: ${shadow.power_level || 1} (higher = deeper, more advanced intel)
+${liveIntelBlock}
 
-Execute full reconnaissance. Use the scout_report tool to deliver your findings.
+Execute full reconnaissance. Integrate the live intelligence feed above into your report. Use the scout_report tool to deliver your findings.
 
 ${shadow.power_level >= 3 ? 'ENHANCED RECON: Include competitor analysis, market sizing estimates, and emerging 2026 disruptors.' : ''}
 ${shadow.power_level >= 5 ? 'DEEP RECON: Include contrarian insights that go AGAINST conventional wisdom, plus second-order effects most people miss.' : ''}
