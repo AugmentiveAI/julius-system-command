@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { TopBar } from '@/components/dashboard/TopBar';
 import { SystemIntelligencePanel, SystemIntelligenceLoading } from '@/components/dashboard/SystemIntelligencePanel';
 import { ShadowArmyPanel } from '@/components/shadows/ShadowArmyPanel';
@@ -45,6 +46,9 @@ import { usePillarStreak } from '@/hooks/usePillarStreak';
 import { useSystemNotifications } from '@/hooks/useSystemNotifications';
 import { useShadowArmy } from '@/hooks/useShadowArmy';
 import { useDungeons } from '@/hooks/useDungeons';
+import { SuggestedShadow, SuggestedDungeon } from '@/types/systemIntelligence';
+import { ShadowCategory } from '@/types/shadowArmy';
+import { DungeonObjective } from '@/types/dungeon';
 import { useSkills } from '@/hooks/useSkills';
 import { usePenaltyDungeon } from '@/hooks/usePenaltyDungeon';
 import { getRankForLevel } from '@/types/skills';
@@ -91,7 +95,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
   const pillarStreak = usePillarStreak();
   const { notifications, unreadCount, addNotification, markAllRead, clearAll: clearNotifications } = useSystemNotifications();
   const { shadows, addShadow: _addShadow } = useShadowArmy();
-  const { completedDungeons } = useDungeons();
+  const { completedDungeons, createDungeon: _createDungeon } = useDungeons();
 
   // Skills system
   const skillCtx = useMemo(() => ({
@@ -544,6 +548,50 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
               onCompleteChallenge={(id) => {
                 const challenge = intelligence.dynamicChallenges.find(c => c.id === id);
                 if (challenge) addXP(challenge.xpReward);
+              }}
+              onAcceptShadow={async (shadow: SuggestedShadow) => {
+                const result = await _addShadow(shadow.name, shadow.category as ShadowCategory, shadow.description);
+                if (result?.data) {
+                  setAriseState({ show: true, name: shadow.name });
+                  addNotification('shadow_extracted', 'Shadow Recruited', `"${shadow.name}" extracted on System recommendation: ${shadow.reasoning}`, { shadowName: shadow.name });
+                }
+              }}
+              onAcceptDungeon={async (dungeon: SuggestedDungeon) => {
+                const objectives: DungeonObjective[] = dungeon.objectives.map((title, i) => ({
+                  id: `obj-${i}`,
+                  title,
+                  completed: false,
+                }));
+                const timeLimitMinutes = dungeon.type === 'instant_dungeon' ? 45 : null;
+                const expiresAt = dungeon.type === 'boss_fight'
+                  ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+                  : timeLimitMinutes
+                    ? new Date(Date.now() + timeLimitMinutes * 60 * 1000).toISOString()
+                    : null;
+
+                const { data: userData } = await supabase.auth.getUser();
+                if (!userData.user) return;
+
+                const { data, error: dbErr } = await supabase
+                  .from('dungeons')
+                  .insert({
+                    user_id: userData.user.id,
+                    dungeon_type: dungeon.type,
+                    title: dungeon.title,
+                    description: dungeon.description,
+                    difficulty: dungeon.difficulty,
+                    xp_reward: dungeon.xpReward,
+                    time_limit_minutes: timeLimitMinutes,
+                    objectives: objectives as any,
+                    status: 'available',
+                    expires_at: expiresAt,
+                  })
+                  .select()
+                  .single();
+
+                if (data && !dbErr) {
+                  addNotification('dungeon_cleared', 'Dungeon Gate Opened', `"${dungeon.title}" materialized. ${dungeon.reasoning}`, { dungeonTitle: dungeon.title });
+                }
               }}
             />
           )}

@@ -15,11 +15,31 @@ export interface DynamicChallenge {
   leverageType: 'revenue' | 'skill' | 'network' | 'systems' | 'compound';
 }
 
+export interface SuggestedShadow {
+  name: string;
+  category: 'automation' | 'client' | 'content' | 'sop' | 'skill' | 'tool';
+  description: string;
+  reasoning: string;
+}
+
+export interface SuggestedDungeon {
+  title: string;
+  description: string;
+  type: 'boss_fight' | 'instant_dungeon' | 's_rank_gate';
+  difficulty: 'B-Rank' | 'A-Rank' | 'S-Rank';
+  objectives: string[];
+  xpReward: number;
+  timeEstimate: string;
+  reasoning: string;
+}
+
 export interface SystemIntelligence {
   dailyBrief: string;
   strategicAnalysis: string;
   trajectoryForecast: TrajectoryForecast;
   dynamicChallenges: DynamicChallenge[];
+  suggestedShadows?: SuggestedShadow[];
+  suggestedDungeons?: SuggestedDungeon[];
   patternAlert?: string | null;
   systemConfidence: number;
   generatedAt: string;
