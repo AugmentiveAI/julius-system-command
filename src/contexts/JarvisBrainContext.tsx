@@ -105,6 +105,12 @@ interface JarvisBrainState {
 
   // Proactive Message
   generateProactiveMessage: () => ProactiveMessage | null;
+
+  // Activity & Calendar
+  activitySummary: DailyActivitySummary | null;
+  recentActivities: Activity[];
+  calendarContext: string;
+  nextCalendarEvent: CalendarEvent | null;
 }
 
 const JarvisBrainCtx = createContext<JarvisBrainState | null>(null);
