@@ -1,20 +1,24 @@
 {
   "appName": "The System",
-  "description": "A genetically-calibrated, AI-powered life-optimization engine inspired by Solo Leveling. Gamifies daily productivity through quests, XP, leveling, shadow armies, dungeons, and real-time market intelligence.",
+  "version": "2.0 — JARVIS Cross-Reference Build",
+  "lastUpdated": "2026-03-09",
+  "description": "A genetically-calibrated, AI-powered life-optimization engine inspired by Solo Leveling. Gamifies daily productivity through quests, XP, leveling, shadow armies, dungeons, and real-time market intelligence. Features a JARVIS-class cross-referencing engine that unifies all subsystems.",
   "theme": "Solo Leveling × Jarvis — dark cyberpunk UI with holographic cyan/purple accents",
   "techStack": {
     "frontend": "React 18 + Vite + TypeScript",
-    "styling": "Tailwind CSS + shadcn/ui + custom design tokens",
+    "styling": "Tailwind CSS + shadcn/ui + custom design tokens (HSL-based)",
     "routing": "react-router-dom v6",
     "stateManagement": "React Context + localStorage + Supabase (via Lovable Cloud)",
     "ai": {
       "primary": "Lovable AI Gateway (Gemini 3 Flash Preview)",
       "tactical": "Groq (Llama 3.3 70B Versatile)",
-      "pattern": "Dual-model pipeline — Groq for fast tactical scans, Gemini for deep strategic synthesis"
+      "pattern": "Dual-model pipeline — Groq for fast tactical scans, Gemini for deep strategic synthesis",
+      "crossReference": "JARVIS cross-referencing engine unifies shadow army, inventory, dungeons, genetic state, and training data into a single intelligence context"
     },
     "database": "Supabase (PostgreSQL with RLS)",
-    "auth": "Supabase Auth (email/password)",
-    "pwa": "vite-plugin-pwa"
+    "auth": "Supabase Auth (email/password with email verification)",
+    "pwa": "vite-plugin-pwa",
+    "charts": "Recharts"
   },
 
   "authentication": {
@@ -57,7 +61,7 @@
       },
       "dungeons": {
         "purpose": "Time-limited challenges — boss fights, instant dungeons, S-rank gates",
-        "columns": ["user_id", "dungeon_type", "title", "description", "difficulty", "xp_reward", "time_limit_minutes", "objectives (jsonb)", "status", "started_at", "completed_at", "expires_at", "genetic_modifiers (jsonb)", "metadata (jsonb)"],
+        "columns": ["user_id", "dungeon_type", "title", "description", "difficulty", "xp_reward", "time_limit_minutes", "objectives (jsonb)", "status", "started_at", "completed_at", "expires_at", "genetic_modifiers (jsonb)", "metadata (jsonb)", "unlocked_by (jsonb)"],
         "rls": "Full CRUD for own rows",
         "types": ["boss_fight", "instant_dungeon", "s_rank_gate"]
       },
@@ -76,6 +80,11 @@
         "purpose": "Persistent System Chat conversation history",
         "columns": ["user_id", "role", "content", "conversation_id", "created_at"],
         "rls": "SELECT, INSERT, DELETE for own rows"
+      },
+      "training_log": {
+        "purpose": "Workout session logs with exercise data, fatigue, and genetic phase",
+        "columns": ["user_id", "workout_type", "exercises (jsonb)", "total_volume", "fatigue_score", "readiness_pre", "sprint_count", "genetic_phase", "notes", "completed_at"],
+        "rls": "Full CRUD for own rows"
       },
       "user_roles": {
         "purpose": "Role-based access control",
@@ -96,24 +105,28 @@
       "model": "Gemini 3 Flash Preview (via Lovable AI Gateway)",
       "features": [
         "Streaming SSE responses",
-        "Player state injection (level, stats, streak, goal, shadows, dungeons)",
+        "Player state injection (level, stats, streak, goal, shadows, dungeons, inventory)",
         "Real-time market intelligence injection via Groq pre-fetch",
         "Solo Leveling + Jarvis voice personality",
-        "2026 market-aware responses"
+        "2026 market-aware responses",
+        "Cross-references shadow army, inventory, and dungeon data"
       ],
       "file": "supabase/functions/system-chat/index.ts"
     },
     "system-intelligence": {
-      "purpose": "Daily AI-generated strategic analysis — briefs, trajectory forecasts, challenges, shadow/dungeon recommendations",
+      "purpose": "Daily AI-generated strategic analysis — briefs, trajectory forecasts, challenges, shadow/dungeon recommendations, anticipation engine",
       "model": "Gemini 3 Flash Preview (structured tool calling)",
       "features": [
         "Daily strategic brief generation",
         "Trajectory forecasting (current vs optimized vs ceiling)",
         "Dynamic challenge generation (B/A/S rank, calibrated to player edge)",
-        "Shadow army recommendations (unrestricted categories — cognitive, physical, neurological, etc.)",
+        "Shadow army recommendations (unrestricted categories)",
         "Dungeon recommendations (calibrated to weakest stats)",
+        "Anticipation engine (today: peak/crash windows, quest order; week: sprint days, projected XP; strategic: trajectory, acceleration, bottleneck)",
+        "Pattern alert detection",
         "Real-time 2026 market intelligence via Groq pre-fetch",
-        "Genetic profile awareness (COMT Val/Val, ACTN3 CC)"
+        "Genetic profile awareness (COMT Val/Val, ACTN3 CC, CYP1A2 slow)",
+        "JARVIS cross-reference: unifies shadow army + inventory + dungeon + training data"
       ],
       "file": "supabase/functions/system-intelligence/index.ts"
     },
@@ -132,6 +145,15 @@
       ],
       "file": "supabase/functions/shadow-activate/index.ts"
     },
+    "training-intelligence": {
+      "purpose": "AI-powered training recommendations based on genetic state, workout history, and fatigue",
+      "model": "Gemini 3 Flash Preview",
+      "file": "supabase/functions/training-intelligence/index.ts"
+    },
+    "ai-quest-proxy": {
+      "purpose": "AI-generated quest content proxy",
+      "file": "supabase/functions/ai-quest-proxy/index.ts"
+    },
     "web-intel": {
       "purpose": "Dual-model intelligence gathering engine for market research",
       "modes": {
@@ -148,25 +170,28 @@
     "/": {
       "name": "Dashboard (Index)",
       "file": "src/pages/Index.tsx",
-      "description": "Main dashboard — System Intelligence panel, Shadow Army, Dungeons, Progress Ring, Today's Snapshot, Quick Actions, System Chat",
+      "description": "Main dashboard — System Intelligence panel, Shadow Army, Dungeons, Progress Ring, Today's Snapshot, Quick Actions, System Chat, Trajectory Forecaster",
       "components": [
         "TopBar (system mode indicator, notifications, force refresh)",
         "DashboardMessage (AI-generated daily brief)",
         "SystemIntelligencePanel (strategic analysis, trajectory, challenges, shadow/dungeon suggestions)",
-        "ShadowArmyPanel (view/add/activate shadows)",
-        "DungeonPanel (view/start/complete dungeons)",
+        "ShadowArmyPanel (view/add/activate shadows with power levels and evolution)",
+        "DungeonPanel (view/start/complete dungeons with objectives)",
+        "TrajectoryForecaster (90-day XP projection chart with JARVIS cross-reference insights)",
         "ProgressRing (XP, level, pillar arcs)",
         "TodaySnapshot (quests completed, XP, streak)",
         "DashboardActions (scan, cold exposure, caffeine, supplements)",
         "SystemChatPanel (floating AI chat interface)",
-        "StatusWindow (detailed player stats sheet)",
+        "StatusWindow (detailed player stats sheet with skills, genetic buffs, shadow army)",
+        "SystemInterventionBanner (contextual system interventions)",
+        "JarvisPageBanner (JARVIS cross-reference status indicator)",
         "BottomNav"
       ],
       "overlays": [
         "FlashOverlay (XP gain flash)",
         "LevelUpOverlay (level up cinematic)",
         "RankUpOverlay (rank promotion cinematic)",
-        "SkillUnlockOverlay (new skill acquired)",
+        "SkillUnlockOverlay (new skill acquired — deduplicated via localStorage)",
         "AriseOverlay (shadow extraction cinematic)",
         "PenaltyDungeonOverlay (mandatory penalty quest)",
         "LootDropToast / LootCinematicReveal (item drops)",
@@ -179,7 +204,8 @@
         "useWeeklyPlanning", "usePillarQuests", "usePillarStreak",
         "useSystemNotifications", "useShadowArmy", "useDungeons",
         "useSkills", "usePenaltyDungeon", "useLootDrops",
-        "useFocusMode", "usePersuasion", "useCaffeine"
+        "useFocusMode", "usePersuasion", "useCaffeine",
+        "useSystemInterventions", "useLocalDataMigration"
       ]
     },
     "/quests": {
@@ -196,20 +222,32 @@
         "Pillar quests (Mind, Body, Skill — daily non-negotiables)",
         "Pre-commitment system (evening commitment for next day)",
         "Loot drops on quest completion",
-        "Weekly planning for sprint days (Thu-Sat)"
+        "Weekly planning for sprint days (Thu-Sat)",
+        "JARVIS page banner with cross-reference context"
       ]
     },
     "/training": {
       "name": "Training",
       "file": "src/pages/Training.tsx",
-      "description": "Workout module — genetically-calibrated exercise tracking with progressive overload",
+      "description": "Workout module — genetically-calibrated exercise tracking with progressive overload and AI intelligence",
       "features": [
         "Weekly workout schedule (push/pull/legs/power/peloton/animal-flow/rest)",
         "Exercise checklist with progressive overload hints",
         "Genetic HUD (COMT phase, energy state, sprint count)",
         "Training prescription (intensity level based on readiness score)",
         "Workout swap system (auto-adjusts based on muscle recovery)",
-        "Post-workout buff system (stat bonuses after training)"
+        "Post-workout buff system (stat bonuses after training)",
+        "Rest timer with haptic feedback",
+        "RPE slider (rate of perceived exertion)",
+        "Session summary modal (volume, fatigue, XP earned)",
+        "Exercise progress tracking cards",
+        "Mesocycle progress visualization",
+        "Fatigue gauge",
+        "Readiness check modal",
+        "Deload banner (auto-detects deload need)",
+        "Training log persistence to database",
+        "AI training intelligence recommendations",
+        "JARVIS page banner with cross-reference context"
       ]
     },
     "/progress": {
@@ -230,7 +268,7 @@
       "file": "src/pages/More.tsx",
       "description": "Menu hub — genetic profile, inventory, supplements, settings, about",
       "subViews": [
-        "Genetic Profile (COMT/ACTN3/CYP1A2 traits — buffs and debuffs)",
+        "Genetic Profile (COMT/ACTN3/CYP1A2/BDNF/APOE traits — buffs and debuffs)",
         "Inventory (automations, cash reserves, clients, skills, templates)",
         "Supplement Protocol (morning/midday/evening supplement checklists)",
         "Settings link",
@@ -297,6 +335,10 @@
     "SystemCommsContext": {
       "purpose": "System communication banners — queued messages with priority levels",
       "file": "src/contexts/SystemCommsContext.tsx"
+    },
+    "JarvisBrainContext": {
+      "purpose": "JARVIS cross-referencing intelligence — unifies shadow army, inventory, dungeons, genetic state, and training data into a single context for all components to consume",
+      "file": "src/contexts/JarvisBrainContext.tsx"
     }
   },
 
@@ -313,16 +355,16 @@
     },
     "ai": {
       "useSystemChat": "Conversational AI — streaming chat with Gemini, player context injection, chat persistence to DB",
-      "useSystemIntelligenceAI": "Daily System Intelligence generation — calls system-intelligence edge function",
+      "useSystemIntelligenceAI": "Daily System Intelligence generation — calls system-intelligence edge function with full cross-reference context",
       "useAIQuests": "AI-generated quest content from Groq/Gemini",
       "useSystemStrategy": "Derived strategy state — daily brief, predictions, shadow monarch progress"
     },
     "gamification": {
-      "useShadowArmy": "Shadow army CRUD — add, remove, activate shadows (backed by Supabase)",
+      "useShadowArmy": "Shadow army CRUD — add, remove, activate shadows (backed by Supabase). Includes scout mode with live market intel.",
       "useShadowQuest": "Hidden shadow quest system — quests that appear after consecutive completions",
       "useDungeons": "Dungeon CRUD — create, start, complete dungeons (backed by Supabase)",
       "usePenaltyDungeon": "Penalty dungeon system — triggers after 2+ zero-completion days",
-      "useSkills": "Skill unlock system — 8 skills with various unlock conditions (streak, stats, quest count, etc.)",
+      "useSkills": "Skill unlock system — 8 skills with various unlock conditions. Deduplicates unlock overlays via localStorage (SHOWN_UNLOCKS_KEY).",
       "useLootDrops": "Random loot drop system — items drop on quest completion",
       "usePillarQuests": "Daily pillar quests (Mind, Body, Skill) — non-negotiable daily minimums",
       "usePillarStreak": "Pillar completion streak tracking with shield system",
@@ -332,18 +374,24 @@
       "usePersuasion": "Persuasion engine — selects optimal motivational technique per quest based on player psychological profile",
       "usePreCommitment": "Evening pre-commitment system — commit to tomorrow's hardest quest",
       "useFocusMode": "Focus mode — presents quests one at a time for deep focus execution",
-      "useSystemComms": "System communication banners — contextual messages based on state"
+      "useSystemComms": "System communication banners — contextual messages based on state",
+      "useSystemInterventions": "Contextual system interventions — detects states requiring attention and surfaces actionable banners"
     },
     "biometric": {
       "useGeneticState": "Genetic HUD state — COMT phase detection, energy tracking, sprint counting",
       "useCaffeine": "Caffeine logging — tracks intake timing relative to CYP1A2 slow metabolism",
       "useWorkout": "Workout tracking — exercises, completion, progressive overload, muscle recovery",
-      "useDayCycle": "Day/night cycle detection — PST timezone"
+      "useDayCycle": "Day/night cycle detection — PST timezone",
+      "useRestTimer": "Rest timer between sets with haptic feedback"
+    },
+    "training": {
+      "useTrainingLog": "Training session persistence to database — exercises, volume, fatigue, genetic phase",
+      "useTrainingIntelligence": "AI-powered training recommendations based on genetic state and workout history"
     },
     "utility": {
       "useWeeklyPlanning": "Weekly sprint planning (Thu-Sat) with auto-priority and time allocation",
       "useSystemNotifications": "In-app notification management (backed by Supabase)",
-      "useTrajectoryData": "Data aggregation for trajectory forecasting",
+      "useTrajectoryData": "Data aggregation for trajectory forecasting — 90-day XP projections",
       "useLocalDataMigration": "One-time migration of localStorage data to Supabase on first login"
     }
   },
@@ -359,6 +407,7 @@
     "lootEngine": "Random loot drop calculations with rarity tiers",
     "shadowQuests": "Shadow quest generation and state management",
     "overloadEngine": "Progressive overload calculations for training",
+    "periodizationEngine": "Training periodization — mesocycle planning and deload detection",
     "muscleRecovery": "Muscle group recovery tracking (48-72hr windows)",
     "trainingIntelligence": "Training recommendations based on genetic state, sprint count, and time of day",
     "trainingPrescription": "Workout intensity prescription based on readiness score and genetic signals",
@@ -367,31 +416,33 @@
     "weeklyRhythm": "Weekly rhythm detection (work days vs sprint days)",
     "aiModelRouter": "Routes AI requests to appropriate model (Groq vs Gemini)",
     "aiQuestGenerator": "AI-generated quest content management",
+    "interventionEngine": "System intervention detection engine — identifies states requiring attention",
+    "jarvisQuestReorder": "JARVIS-powered quest reordering based on genetic state and time of day",
     "revenueImpact": "Revenue impact calculations for business quests",
     "haptics": "Haptic feedback utilities for mobile"
   },
 
   "types": {
-    "player": "Player, PlayerStats, Rank, PenaltyState — 6 stats (sales, systems, creative, discipline, network, wealth), 8 ranks (E→Shadow Monarch)",
+    "player": "Player, PlayerStats, Rank, PenaltyState — 6 stats (sales, systems, creative, discipline, network, wealth), 8 ranks (E→Shadow Monarch), stat cap at 100",
     "quest": "Quest, DailyQuestState — 5 default daily quests",
-    "quests": "QuestTimeBlock (morning/midday/afternoon/evening), time block configs",
+    "quests": "QuestTimeBlock (morning/midday/afternoon/evening), ProtocolQuest with genetic bonus support, time block configs",
     "questDifficulty": "QuestDifficulty (E/D/C/B/A/S), badge configs with glow effects",
-    "skills": "Skill, SkillUnlockCondition — 8 skills (Morning Dominion, Iron Will, Shadow Extraction, Dungeon Sense, Ruler's Authority, Stealth, Pillar Mastery, Dash)",
+    "skills": "Skill, SkillUnlockCondition — 8 skills (Morning Dominion, Iron Will, Shadow Extraction, Dungeon Sense, Ruler's Authority, Stealth, Pillar Mastery, Dash). Rank thresholds for level-based rank promotion.",
     "dungeon": "DungeonType, DungeonObjective, DungeonStatus",
-    "shadowArmy": "ShadowCategory, ShadowSoldier",
-    "genetics": "GeneticProfile, JULIUS_GENETICS — COMT Val/Val, ACTN3 CC, CYP1A2 slow metabolism traits",
+    "shadowArmy": "Shadow, ShadowCategory (automation/client/content/sop/skill/tool), ShadowStatus (active/dormant/evolving), category icons and descriptions, getTotalArmyPower, getForceMultiplier",
+    "genetics": "GeneticProfile, GeneticTrait — 6 traits: COMT Val/Val (warrior focus + analysis paralysis), ACTN3 CC (sprinter), BDNF Val/Val (rapid adaptation), CYP1A2 slow (caffeine debuff), APOE e4 (neuroprotection required)",
     "history": "QuestCompletionEntry, DaySummary, WeeklySummary, HistoryState",
     "inventory": "InventoryState — automationsDeployed, cashReserves, activeClients, skillsCreated, templatesFrameworks",
     "loot": "LootItem, LootRarity, LootDrop",
     "training": "WorkoutType, Exercise, WeeklySchedule",
+    "overload": "OverloadPlan, ProgressionType",
     "playerState": "PlayerStateCheck — state scan data (energy, sleep, stress, mood, motivation)",
-    "systemIntelligence": "SystemIntelligence, SuggestedShadow, SuggestedDungeon, DynamicChallenge, TrajectoryForecast",
+    "systemIntelligence": "SystemIntelligence, SuggestedShadow (with activationType), SuggestedDungeon, DynamicChallenge (with leverageType), TrajectoryForecast, Anticipation (today/thisWeek/strategic)",
     "persuasionEngine": "PersuasionTechnique (12 types), PersuasionProfile, TechniqueEffectiveness",
     "pillarQuests": "Pillar (mind/body/skill), PillarQuest, PillarConfig",
     "mainQuest": "MainQuest — long-term milestone quests",
-    "overload": "OverloadPlan, ProgressionType",
     "penaltyDungeon": "PenaltyDungeon types",
-    "xp": "XP calculation types"
+    "xp": "LEVEL_THRESHOLDS (10 levels), DailyXPBreakdown, getLevelFromTotalXP, DAILY_XP_MAX (525), getColdStreakBonus"
   },
 
   "data": {
@@ -406,7 +457,8 @@
       "1. AwakeningSequence — cinematic Solo Leveling-style intro animation",
       "2. GoalCapture — player enters their primary objective in one sentence",
       "3. SystemBriefing — explains the System's capabilities and rules",
-      "4. First state scan auto-triggers on dashboard"
+      "4. DataMigrationDialog — one-time localStorage → Supabase migration prompt",
+      "5. First state scan auto-triggers on dashboard"
     ],
     "files": [
       "src/components/onboarding/AwakeningSequence.tsx",
@@ -418,16 +470,18 @@
 
   "gamificationSystems": {
     "xpAndLeveling": {
-      "description": "XP earned from quest completion, training, loot bonuses. Level-up at thresholds (500 XP increments scaling up).",
+      "description": "XP earned from quest completion, training, loot bonuses. Fixed level thresholds: 0/500/1500/3500/7000/12000/20000/32000/50000/75000. Max level 10.",
       "effects": ["FlashOverlay on XP gain", "LevelUpOverlay cinematic", "RankUpOverlay on rank promotion"]
     },
     "rankSystem": {
       "ranks": ["E-Rank Hunter (L1)", "D-Rank Hunter (L2)", "C-Rank Hunter (L4)", "B-Rank Hunter (L6)", "A-Rank Hunter (L7)", "S-Rank Hunter (L8)", "Monarch Candidate (L9)", "Shadow Monarch (L10)"],
-      "description": "Rank promotions trigger cinematic overlays"
+      "description": "Rank promotions trigger cinematic overlays. Stat cap is 100 per stat."
     },
     "shadowArmy": {
-      "description": "Compounding assets the player extracts and levels up. Each shadow has a power level (1-10) and contribution score. Activating shadows generates AI content (templates, protocols, recon reports). Scout shadows perform live market research.",
-      "evolution": "Shadows auto-evolve on activation — scouts evolve faster (0.5 power per activation vs 0.25)"
+      "description": "Compounding assets the player extracts and levels up. Each shadow has a power level (1-10) and contribution score. Activating shadows generates AI content (templates, protocols, recon reports). Scout shadows perform live market research. Categories: automation, client, content, sop, skill, tool.",
+      "evolution": "Shadows auto-evolve on activation — scouts evolve faster (0.5 power per activation vs 0.25)",
+      "forceMultiplier": "Calculated from total active shadow contribution scores: 1 + (totalContribution / 100)",
+      "crossReference": "Shadow army data is injected into JARVIS intelligence context for cross-system analysis"
     },
     "dungeons": {
       "types": {
@@ -435,22 +489,33 @@
         "boss_fight": "Week-long stretch goal",
         "s_rank_gate": "Elite challenge"
       },
-      "description": "Challenges with objectives, time limits, and XP rewards. AI-recommended based on weakest stats."
+      "description": "Challenges with objectives, time limits, and XP rewards. AI-recommended based on weakest stats. Backed by Supabase with full CRUD."
     },
     "penaltySystem": {
       "description": "2+ consecutive zero-completion days triggers mandatory Penalty Dungeon — 4hr timed quest with 3 objectives. Failure = -3 to lowest stat permanently.",
+      "levels": "Level 1 (1 day missed): warning. Level 2 (2 days): penalty dungeon. Level 3 (3+ days): severe penalty.",
       "ui": "Full-screen blocking red/black pulsing overlay"
     },
     "streaks": {
       "completionStreak": "Consecutive days completing at least 1 quest",
-      "coldStreak": "Consecutive days of cold exposure",
+      "coldStreak": "Consecutive days of cold exposure (bonus: 10 XP per day, max 70)",
       "pillarStreak": "Consecutive days completing all 3 pillars (Mind/Body/Skill)",
       "milestones": [3, 7, 14, 30]
     },
     "skills": {
       "count": 8,
-      "skills": ["Morning Dominion", "Iron Will", "Shadow Extraction", "Dungeon Sense", "Ruler's Authority", "Stealth", "Pillar Mastery", "Dash"],
-      "unlockConditions": ["streak thresholds", "stat thresholds", "quest counts", "dungeon clears", "shadow counts", "cold streaks", "pillar streaks"]
+      "skills": [
+        "Morning Dominion (7-day streak → +10% XP on morning quests)",
+        "Iron Will (7-day cold streak → +2 Discipline per milestone)",
+        "Shadow Extraction (3 shadows → +10% army power multiplier)",
+        "Dungeon Sense (3 dungeon clears → +15% XP from dungeons)",
+        "Ruler's Authority (all stats >50 → all stat gains +0.1)",
+        "Stealth (50 quests → shadow quests appear 20% more often)",
+        "Pillar Mastery (14-day pillar streak → +25 XP pillar bonus)",
+        "Dash (Discipline >30 → +1 max sprint slot)"
+      ],
+      "unlockConditions": ["streak thresholds", "stat thresholds", "quest counts", "dungeon clears", "shadow counts", "cold streaks", "pillar streaks"],
+      "deduplication": "Skill unlock overlays are tracked in localStorage (systemShownUnlocks) to prevent re-triggering on page reload"
     },
     "lootSystem": {
       "description": "Random drops on quest completion with rarity tiers. Cinematic reveal for rare+ items."
@@ -472,32 +537,57 @@
     "archetype": "Warrior-Sprinter",
     "traits": {
       "COMT_ValVal": {
-        "type": "buff",
-        "effect": "High dopamine baseline — peak cognitive performance 8-12am, crash 14-17 (2-5pm)",
-        "systemIntegration": "Morning quests get bonus XP. System warns about caffeine after 10am. Afternoon recovery mode."
+        "type": "buff + debuff",
+        "effect": "High dopamine baseline — peak cognitive performance 8-12am, crash 14-17 (2-5pm). Risk of analysis paralysis without deadlines.",
+        "systemIntegration": "Morning quests get bonus XP. System warns about caffeine after 10am. Afternoon recovery mode. Hard deadlines enforced."
       },
       "ACTN3_CC": {
         "type": "buff",
         "effect": "Fast-twitch muscle fiber dominance — optimal in 45min explosive bursts",
         "systemIntegration": "Sprint timer set to 45 minutes. Training prescriptions favor power/explosive work. Diminishing returns after 4 consecutive sprints."
       },
+      "BDNF_ValVal": {
+        "type": "buff",
+        "effect": "Exercise immediately boosts learning capacity",
+        "systemIntegration": "Schedule learning 2-4hr post-workout for maximum BDNF benefit"
+      },
       "CYP1A2_SlowMetabolizer": {
         "type": "debuff",
-        "effect": "Slow caffeine metabolism — caffeine after 10am disrupts sleep",
-        "systemIntegration": "Caffeine logging warns after 10am. Quest auto-fails if caffeine consumed late. System banners warn of debuff."
+        "effect": "Slow caffeine metabolism — caffeine half-life 6-9 hours, after 10am disrupts sleep",
+        "systemIntegration": "Caffeine logging warns after 10am. System banners warn of debuff."
+      },
+      "APOE_e4": {
+        "type": "debuff",
+        "effect": "Requires proactive neuroprotection",
+        "systemIntegration": "Sleep 7-8hr, exercise, Omega-3, meditation recommended. System monitors sleep-related quest completion."
       }
     }
   },
 
   "aiFeatures": {
+    "jarvisCrossReference": {
+      "description": "JARVIS-class cross-referencing engine that unifies all subsystems into a single intelligence context. Identifies gaps, synergies, and optimization opportunities across shadow army, inventory, dungeons, genetic state, training, and quest history.",
+      "context": "JarvisBrainContext.tsx",
+      "consumers": ["SystemIntelligencePanel", "TrajectoryForecaster", "StatusWindow", "SystemChatPanel", "DungeonPanel", "ShadowArmyPanel"],
+      "dataUnified": ["shadow army (count, categories, power, multiplier)", "inventory (automations, clients, skills, templates, cash)", "dungeons (active, completed, types)", "genetic state (COMT phase, energy, sprint count)", "training (workout history, fatigue, readiness)", "quest history (completions, streaks, patterns)"]
+    },
     "systemChat": {
       "description": "Jarvis-style conversational interface. Streaming responses. Full player context injection. 2026 market intelligence grounding via Groq pre-fetch. Chat history persisted to database.",
       "personality": "Cold, clinical, certain. Data-driven confrontation. Solo Leveling voice. Never hedges.",
-      "contextInjected": ["level", "XP", "stats", "streak", "goal", "day number", "system mode", "time", "quests today", "shadow count", "force multiplier", "dungeons cleared", "real-time market intelligence"]
+      "contextInjected": ["level", "XP", "stats", "streak", "goal", "day number", "system mode", "time", "quests today", "shadow count", "force multiplier", "dungeons cleared", "real-time market intelligence", "inventory data"]
     },
     "systemIntelligence": {
       "description": "Daily AI-generated strategic analysis. Runs on dashboard load (once per day).",
-      "outputs": ["Daily brief (80 char max)", "Strategic analysis (2-4 sentences)", "Trajectory forecast (current/optimized/ceiling/critical leverage)", "3 dynamic challenges (B/A/S rank)", "1-3 shadow recommendations", "1-2 dungeon recommendations"]
+      "outputs": [
+        "Daily brief (80 char max)",
+        "Strategic analysis (2-4 sentences)",
+        "Trajectory forecast (current/optimized/ceiling/critical leverage)",
+        "3 dynamic challenges (B/A/S rank with leverage types: revenue/skill/network/systems/compound)",
+        "1-3 shadow recommendations (with activation types: template/protocol/system/framework/exercise/tool_setup/creative)",
+        "1-2 dungeon recommendations",
+        "Anticipation (today: peak/crash windows, quest order, warnings; week: sprint days, projected XP, risks, opportunities; strategic: trajectory, acceleration, leverage, bottleneck)",
+        "Pattern alert (optional behavioral pattern detection)"
+      ]
     },
     "shadowActivation": {
       "description": "AI generates actionable content when shadows are activated. Scout shadows perform live market research with dual-model intelligence.",
@@ -505,6 +595,9 @@
     },
     "webIntel": {
       "description": "Standalone dual-model intelligence engine with 4 modes (brief, scan, deep, scout). Used by other systems for market grounding."
+    },
+    "trainingIntelligence": {
+      "description": "AI-powered training recommendations — workout intensity, exercise selection, deload timing based on genetic state and fatigue data."
     }
   },
 
@@ -521,7 +614,7 @@
   },
 
   "componentGroups": {
-    "dashboard": ["TopBar", "DashboardMessage", "SystemIntelligencePanel", "ProgressRing", "TodaySnapshot", "DashboardActions", "QuickActions", "StatusWindow", "StreakCounter", "SystemMessage", "PlayerProfile", "ShadowMonarchBar", "StatsRadarChart", "ResistanceCard", "SystemPredictions", "SystemWarnings", "SystemBrief", "TrajectoryForecaster", "CurrentStateCard", "PenaltyBanner", "DailyXPBar"],
+    "dashboard": ["TopBar", "DashboardMessage", "SystemIntelligencePanel", "ProgressRing", "TodaySnapshot", "DashboardActions", "QuickActions", "StatusWindow", "StreakCounter", "SystemMessage", "PlayerProfile", "ShadowMonarchBar", "StatsRadarChart", "ResistanceCard", "SystemPredictions", "SystemWarnings", "SystemBrief", "TrajectoryForecaster", "CurrentStateCard", "PenaltyBanner", "DailyXPBar", "SystemInterventionBanner"],
     "quests": ["QuestCard", "CalibratedQuestCard", "ProtocolQuestCard", "ShadowQuestCard", "QuestsHeader", "TimeBlockSection", "SprintOverlay", "CalibrationBanner", "CalibrationDetails", "PillarConfirmation", "PreCommitmentBanner", "PreCommitmentModal", "ShadowQuestNotification"],
     "effects": ["FlashOverlay", "LevelUpOverlay", "AriseOverlay", "RankUpOverlay", "SkillUnlockOverlay", "PenaltyDungeonOverlay", "LootDropToast", "LootCinematicReveal"],
     "shadows": ["ShadowArmyPanel"],
@@ -538,7 +631,9 @@
     "onboarding": ["AwakeningSequence", "GoalCapture", "SystemBriefing", "DataMigrationDialog"],
     "navigation": ["BottomNav"],
     "comms": ["SystemCommsBanner"],
-    "warnings": ["GeneticWarning"]
+    "warnings": ["GeneticWarning"],
+    "jarvis": ["JarvisPageBanner"],
+    "training": ["DeloadBanner", "ExerciseProgressCard", "FatigueGauge", "MesocycleProgress", "RPESlider", "ReadinessCheckModal", "RestTimer", "SessionSummaryModal"]
   },
 
   "secrets": {
@@ -581,7 +676,21 @@
       "systemMuscleRecovery (muscle recovery tracking)",
       "systemDayCycle (day/night cycle state)",
       "systemAISettings (AI engine configuration — API keys, toggles)",
-      "systemAIQuests (AI-generated quest cache)"
+      "systemAIQuests (AI-generated quest cache)",
+      "systemShownUnlocks (skill unlock overlay deduplication — prevents re-triggering on reload)",
+      "the-system-migrated-{userId} (one-time migration flag per user)"
     ]
+  },
+
+  "fileCount": {
+    "pages": 8,
+    "components": 67,
+    "hooks": 39,
+    "utils": 23,
+    "types": 15,
+    "contexts": 6,
+    "edgeFunctions": 6,
+    "dataFiles": 4,
+    "total": "~168 source files"
   }
 }
