@@ -231,6 +231,30 @@ export function DungeonPanel({ onXPGained }: DungeonPanelProps) {
     setShowTemplates(false);
   };
 
+  const getKeyType = (dungeonType: string): 'boss_key' | 's_rank_key' | null => {
+    if (dungeonType === 'boss_fight') return 'boss_key';
+    if (dungeonType === 's_rank_gate') return 's_rank_key';
+    return null;
+  };
+
+  const getKeyName = (keyType: string): string => {
+    if (keyType === 'boss_key') return 'Boss Gate Key';
+    if (keyType === 's_rank_key') return 'S-Rank Gate Key';
+    return 'Key';
+  };
+
+  const handleEnterDungeon = (dungeon: Dungeon) => {
+    const keyType = getKeyType(dungeon.dungeon_type);
+    if (keyType) {
+      if (!hasKey(keyType)) {
+        setKeyModal({ open: true, title: dungeon.title, keyName: getKeyName(keyType), owned: 0 });
+        return;
+      }
+      useKey(keyType);
+    }
+    enterDungeon(dungeon.id);
+  };
+
   const handleCompleteObjective = async (dungeonId: string, objectiveId: string) => {
     const result = await completeObjective(dungeonId, objectiveId);
     if (result?.completed) {
