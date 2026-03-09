@@ -38,7 +38,7 @@ interface TopBarProps {
   threats?: Threat[];
 }
 
-export const TopBar = ({ systemRecommendation, onForceRefresh, notifications = [], unreadCount = 0, onNotificationsOpen, onNotificationsClear }: TopBarProps) => {
+export const TopBar = ({ systemRecommendation, onForceRefresh, notifications = [], unreadCount = 0, onNotificationsOpen, onNotificationsClear, threatLevel = 'nominal', threats = [] }: TopBarProps) => {
   const { geneticState, sprintsToday } = useGeneticState();
   const { active: focusActive, toggle: toggleFocus } = useFocusModeContext();
   const dayNumber = getDayNumber();
