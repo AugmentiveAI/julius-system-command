@@ -12,6 +12,8 @@ import { useThreatAssessment } from '@/hooks/useThreatAssessment';
 import { useUserLearning } from '@/hooks/useUserLearning';
 import { useJarvisSynthesis } from '@/hooks/useJarvisSynthesis';
 import { useJarvisAnticipation } from '@/hooks/useJarvisAnticipation';
+import { useActivityLog } from '@/hooks/useActivityLog';
+import { useCalendarContext } from '@/hooks/useCalendarContext';
 import { InterventionContext, SystemIntervention, InterventionType } from '@/utils/interventionEngine';
 import { getSystemDate } from '@/utils/dayCycleEngine';
 import { GeneticState } from '@/utils/geneticEngine';
