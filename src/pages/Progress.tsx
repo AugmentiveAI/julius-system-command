@@ -11,6 +11,7 @@ import { DayGroup } from '@/components/history/DayGroup';
 import { AARHistoryCard } from '@/components/progress/AARHistoryCard';
 import { LoopsPanel } from '@/components/progress/LoopsPanel';
 import { CornerstoneCard } from '@/components/dashboard/CornerstoneCard';
+import { ShadowIntelPanel } from '@/components/shadows/ShadowIntelPanel';
 import { AARModal } from '@/components/aar/AARModal';
 import { WeeklyAARModal } from '@/components/aar/WeeklyAARModal';
 import { usePlayer } from '@/hooks/usePlayer';
@@ -19,6 +20,7 @@ import { useSystemStrategy } from '@/hooks/useSystemStrategy';
 import { useAfterActionReview } from '@/hooks/useAfterActionReview';
 import { useNarrativeLoops } from '@/hooks/useNarrativeLoops';
 import { useCornerstone } from '@/hooks/useCornerstone';
+import { useJarvisBrainOptional } from '@/contexts/JarvisBrainContext';
 import { DailyAAR } from '@/types/afterActionReview';
 import {
   Collapsible,
