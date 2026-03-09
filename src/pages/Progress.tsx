@@ -175,6 +175,33 @@ const Progress = () => {
 
         <div className="h-px bg-border" />
 
+        {/* Shadow Intel */}
+        {brain && (
+          <Collapsible open={intelOpen} onOpenChange={setIntelOpen}>
+            <CollapsibleTrigger asChild>
+              <div>
+                <SectionHeader
+                  title={`SHADOW INTEL${brain.unreadFindings.length > 0 ? ` (${brain.unreadFindings.length})` : ''}`}
+                  isOpen={intelOpen}
+                  onToggle={() => setIntelOpen(o => !o)}
+                />
+              </div>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="pb-4">
+                <ShadowIntelPanel
+                  findings={brain.unreadFindings}
+                  onMarkRead={(id) => brain.updateFindingStatus(id, 'read')}
+                  onActOn={(id) => brain.updateFindingStatus(id, 'acted_on')}
+                  onDismiss={(id) => brain.updateFindingStatus(id, 'dismissed')}
+                />
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        )}
+
+        <div className="h-px bg-border" />
+
         {/* a. Milestones */}
         <Collapsible open={milestonesOpen} onOpenChange={setMilestonesOpen}>
           <CollapsibleTrigger asChild>
