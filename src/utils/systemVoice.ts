@@ -44,7 +44,12 @@ export type SystemContext =
   | 'emergencyTriggered'
   | 'emergencyCompleted'
   | 'emergencyFailed'
-  | 'surgeTriggered';
+  | 'surgeTriggered'
+  | 'dailyDebrief'
+  | 'weeklyDebrief'
+  | 'patternDetected'
+  | 'cornerstoneProtected'
+  | 'cornerstoneAtRisk';
 
 interface VoiceData {
   level?: number;
