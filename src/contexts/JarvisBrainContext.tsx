@@ -12,10 +12,13 @@ import { useThreatAssessment } from '@/hooks/useThreatAssessment';
 import { useUserLearning } from '@/hooks/useUserLearning';
 import { useJarvisSynthesis } from '@/hooks/useJarvisSynthesis';
 import { useJarvisAnticipation } from '@/hooks/useJarvisAnticipation';
+import { useActivityLog } from '@/hooks/useActivityLog';
+import { useCalendarContext } from '@/hooks/useCalendarContext';
 import { InterventionContext, SystemIntervention, InterventionType } from '@/utils/interventionEngine';
 import { getSystemDate } from '@/utils/dayCycleEngine';
 import { GeneticState } from '@/utils/geneticEngine';
 import { Anticipation, SystemIntelligence } from '@/types/systemIntelligence';
+import { DailyActivitySummary, Activity, CalendarEvent } from '@/types/activity';
 import { Threat, ThreatLevel } from '@/types/threat';
 import {
   UserLearning,
@@ -102,6 +105,12 @@ interface JarvisBrainState {
 
   // Proactive Message
   generateProactiveMessage: () => ProactiveMessage | null;
+
+  // Activity & Calendar
+  activitySummary: DailyActivitySummary | null;
+  recentActivities: Activity[];
+  calendarContext: string;
+  nextCalendarEvent: CalendarEvent | null;
 }
 
 const JarvisBrainCtx = createContext<JarvisBrainState | null>(null);
@@ -130,6 +139,12 @@ export function JarvisBrainProvider({ children }: { children: ReactNode }) {
   const { intelligence, loading: intelligenceLoading, generate: generateIntelligence } = useSystemIntelligenceAI();
   const { threats, overallLevel: overallThreatLevel, hasCriticalThreat } = useThreatAssessment();
   const anticipation = intelligence?.anticipation ?? null;
+
+  // ── Capture layer hooks ───────────────────────────────────────
+  const { todaySummary: activitySummary, getRecentActivities } = useActivityLog();
+  const { getJarvisContext: getCalendarContext, nextEvent: nextCalendarEvent } = useCalendarContext();
+  const recentActivities = useMemo(() => getRecentActivities(5), [getRecentActivities]);
+  const calendarContext = useMemo(() => getCalendarContext(), [getCalendarContext]);
 
   // ── NEW hooks ──────────────────────────────────────────────────
   const { learning, getPrediction, isGoodTimeFor, getInsights } = useUserLearning();
@@ -332,6 +347,10 @@ export function JarvisBrainProvider({ children }: { children: ReactNode }) {
     jarvisAnticipations,
     activeAnticipations,
     generateProactiveMessage,
+    activitySummary,
+    recentActivities,
+    calendarContext,
+    nextCalendarEvent,
   }), [
     allInterventions, highestPriority, hasIntervention, dismissIntervention, refresh,
     getInterventionsForPage, getHighestForPage,
@@ -343,6 +362,7 @@ export function JarvisBrainProvider({ children }: { children: ReactNode }) {
     unreadFindings, updateFindingStatus, suggestShadows,
     synthesizedInsights, getTopInsight, synthesize,
     jarvisAnticipations, activeAnticipations, generateProactiveMessage,
+    activitySummary, recentActivities, calendarContext, nextCalendarEvent,
   ]);
 
   return (

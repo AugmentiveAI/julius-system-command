@@ -70,6 +70,7 @@ import { AARModal } from '@/components/aar/AARModal';
 import { useAfterActionReview } from '@/hooks/useAfterActionReview';
 import { useNarrativeLoops } from '@/hooks/useNarrativeLoops';
 import { useCornerstone } from '@/hooks/useCornerstone';
+import CaptureFAB from '@/components/capture/CaptureFAB';
 const LAST_SCAN_DATE_KEY = 'systemLastScanDate';
 const AI_SETTINGS_KEY = 'systemAISettings';
 const START_DATE_KEY = 'systemStartDate';
@@ -849,6 +850,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
         </div>
 
         <BottomNav />
+        <CaptureFAB />
       </div>
 
       {/* System Chat Interface */}
