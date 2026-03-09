@@ -160,6 +160,7 @@ const AppContent = () => {
         <Route path="/more" element={<ProtectedRoute><More /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
         <Route path="/system-analytics" element={<ProtectedRoute><SystemAnalytics /></ProtectedRoute>} />
+        <Route path="/store" element={<ProtectedRoute><Store /></ProtectedRoute>} />
         <Route path="/auth" element={<AuthRoute />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="*" element={<NotFound />} />

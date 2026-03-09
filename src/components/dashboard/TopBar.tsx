@@ -93,8 +93,9 @@ export const TopBar = ({ systemRecommendation, onForceRefresh, notifications = [
         </PopoverContent>
       </Popover>
 
-      {/* Right: Focus toggle + Sprint counter + Day */}
+      {/* Right: Currency + Focus toggle + Sprint counter + Day */}
       <div className="flex items-center gap-2">
+        <CurrencyDisplay />
         <ThreatIndicator overallLevel={threatLevel} threats={threats} />
         <SystemNotificationPanel
           notifications={notifications}
