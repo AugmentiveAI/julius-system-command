@@ -248,6 +248,11 @@ export function useSystemIntelligenceAI() {
         };
       }
 
+      // Inventory data
+      if (inventoryRes.data?.data && typeof inventoryRes.data.data === 'object') {
+        playerData.inventory = inventoryRes.data.data;
+      }
+
       // Call edge function
       const { data, error: fnError } = await supabase.functions.invoke('system-intelligence', {
         body: { playerData },
