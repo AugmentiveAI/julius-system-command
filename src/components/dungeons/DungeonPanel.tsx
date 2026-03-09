@@ -59,12 +59,16 @@ function DungeonCard({
   onCompleteObjective,
   onAbandon,
   onClaimXP,
+  keyRequired,
+  hasKey,
 }: {
   dungeon: Dungeon;
   onEnter: () => void;
   onCompleteObjective: (objectiveId: string) => void;
   onAbandon: () => void;
   onClaimXP: () => void;
+  keyRequired?: string | null;
+  hasKey?: boolean;
 }) {
   const [detailOpen, setDetailOpen] = useState(dungeon.status === 'active');
   const config = TYPE_CONFIG[dungeon.dungeon_type];
