@@ -652,6 +652,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
           threats={threats}
         />
 
+        <ActiveBoostsBar />
         <div className="mx-auto max-w-md space-y-5 px-4 mt-2">
           {/* Emergency Quest Banner */}
           {emergency.hasActiveEmergency && emergency.activeEmergency && (
