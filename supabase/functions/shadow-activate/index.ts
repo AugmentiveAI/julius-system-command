@@ -65,6 +65,11 @@ serve(async (req) => {
       dayType: sanitizeStr(rawCtx.dayType, 30),
     } : {};
 
+    // Sanitize shadow fields before any prompt interpolation
+    const safeName = sanitizeStr(shadow.name, 100);
+    const safeDesc = sanitizeStr(shadow.description, 300);
+    const safeCat = sanitizeStr(shadow.category, 50);
+
     const isScout = isScoutShadow(shadow);
 
     // ─── Pre-fetch live intel for scout shadows via Groq ───
@@ -73,7 +78,7 @@ serve(async (req) => {
       try {
         const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
         if (GROQ_API_KEY) {
-          const scoutTopic = shadow.description || shadow.name;
+          const scoutTopic = safeDesc || safeName;
           const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
             headers: {
