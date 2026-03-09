@@ -32,6 +32,7 @@ import More from "./pages/More";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import SystemAnalytics from "./pages/SystemAnalytics";
+import Store from "./pages/Store";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 
