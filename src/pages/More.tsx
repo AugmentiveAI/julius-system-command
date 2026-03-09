@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dna, Backpack, Pill, BarChart3, Settings, Info, ChevronRight, RotateCcw, Calendar, Trash2 } from 'lucide-react';
+import { Dna, Backpack, Pill, BarChart3, Settings, Info, ChevronRight, RotateCcw, Calendar, Trash2, Store } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { JULIUS_GENETICS, GeneticTrait } from '@/types/genetics';
