@@ -542,6 +542,14 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
 
   return (
     <>
+      {/* Emergency Quest Overlay */}
+      {emergency.showOverlay && emergency.activeEmergency && (
+        <EmergencyQuestOverlay
+          quest={emergency.activeEmergency}
+          show={emergency.showOverlay}
+          onAccept={emergency.acceptEmergency}
+        />
+      )}
       <FlashOverlay show={showFlashEffect} />
       <LevelUpOverlay show={levelUpState.show} newLevel={levelUpState.newLevel} />
       <RankUpOverlay show={rankUpState.show} newRank={rankUpState.rank} onDone={() => setRankUpState({ show: false, rank: '' })} />
