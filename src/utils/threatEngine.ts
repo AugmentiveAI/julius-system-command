@@ -164,6 +164,24 @@ const THREAT_RULES: ThreatRule[] = [
       recommendation: 'Increase revenue-generating activities.',
     }),
   },
+
+  // ── CORNERSTONE ────────────────────────────────────
+  {
+    id: 'cornerstone_at_risk',
+    condition: (ctx) => {
+      if (!(ctx as any).cornerstoneAtRisk) return false;
+      const hour = new Date().getHours();
+      return hour >= 10;
+    },
+    build: (ctx) => ({
+      category: 'momentum',
+      level: new Date().getHours() >= 14 ? 'high' : 'elevated',
+      title: 'Cornerstone at Risk',
+      description: `Keystone behavior not yet completed today.`,
+      metric: `${(ctx as any).cornerstoneCorrelation || 0}% of good days have this`,
+      recommendation: 'Protect the cornerstone immediately.',
+    }),
+  },
 ];
 
 export function evaluateThreats(ctx: ThreatContext): Threat[] {

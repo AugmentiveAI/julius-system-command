@@ -516,6 +516,11 @@ const TOAST_TITLES: Partial<Record<SystemContext, string>> = {
   emergencyCompleted: '✅ Emergency Resolved',
   emergencyFailed: '❌ Emergency Failed',
   surgeTriggered: '⚡ SURGE DETECTED',
+  dailyDebrief: '📊 Daily Debrief',
+  weeklyDebrief: '📋 Weekly Debrief',
+  patternDetected: '🔄 Pattern Detected',
+  cornerstoneProtected: '🛡️ Cornerstone Protected',
+  cornerstoneAtRisk: '⚠️ Cornerstone at Risk',
 };
 
 export function getSystemToast(context: SystemContext, data: VoiceData = {}): SystemToast {

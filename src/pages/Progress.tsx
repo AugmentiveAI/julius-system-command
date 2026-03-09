@@ -8,9 +8,18 @@ import { ResistanceCard2 } from '@/components/dashboard/ResistanceCard';
 import { SystemPredictions } from '@/components/dashboard/SystemPredictions';
 import { WeeklySummaryCard } from '@/components/history/WeeklySummaryCard';
 import { DayGroup } from '@/components/history/DayGroup';
+import { AARHistoryCard } from '@/components/progress/AARHistoryCard';
+import { LoopsPanel } from '@/components/progress/LoopsPanel';
+import { CornerstoneCard } from '@/components/dashboard/CornerstoneCard';
+import { AARModal } from '@/components/aar/AARModal';
+import { WeeklyAARModal } from '@/components/aar/WeeklyAARModal';
 import { usePlayer } from '@/hooks/usePlayer';
 import { useHistoryContext } from '@/contexts/HistoryContext';
 import { useSystemStrategy } from '@/hooks/useSystemStrategy';
+import { useAfterActionReview } from '@/hooks/useAfterActionReview';
+import { useNarrativeLoops } from '@/hooks/useNarrativeLoops';
+import { useCornerstone } from '@/hooks/useCornerstone';
+import { DailyAAR } from '@/types/afterActionReview';
 import {
   Collapsible,
   CollapsibleContent,
@@ -43,6 +52,9 @@ const Progress = () => {
   const { player, mainQuests, completeMainQuest } = usePlayer();
   const { addCompletion, daysSummary, weeklySummary } = useHistoryContext();
   const { strategy } = useSystemStrategy();
+  const aar = useAfterActionReview();
+  const { activeLoops, breakLoop } = useNarrativeLoops();
+  const { cornerstone, todayHonored } = useCornerstone();
 
   const [milestonesOpen, setMilestonesOpen] = useState(true);
   const [statsOpen, setStatsOpen] = useState(true);
@@ -50,6 +62,10 @@ const Progress = () => {
   const [resistanceOpen, setResistanceOpen] = useState(false);
   const [predictionsOpen, setPredictionsOpen] = useState(false);
   const [weeklyOpen, setWeeklyOpen] = useState(false);
+  const [reviewsOpen, setReviewsOpen] = useState(true);
+  const [loopsOpen, setLoopsOpen] = useState(false);
+
+  const [selectedAAR, setSelectedAAR] = useState<DailyAAR | null>(null);
 
   const completedCount = mainQuests.filter(q => q.completed).length;
   const sortedQuests = [...mainQuests].sort((a, b) => (a.completed === b.completed ? 0 : a.completed ? 1 : -1));
@@ -70,10 +86,90 @@ const Progress = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24" style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}>
+      {/* AAR Modals */}
+      <AARModal
+        aar={aar.todayAAR}
+        open={aar.showDailyModal}
+        onOpenChange={aar.setShowDailyModal}
+      />
+      <AARModal
+        aar={selectedAAR}
+        open={!!selectedAAR}
+        onOpenChange={(open) => { if (!open) setSelectedAAR(null); }}
+      />
+      <WeeklyAARModal
+        aar={aar.weeklyAAR}
+        open={aar.showWeeklyModal}
+        onOpenChange={aar.setShowWeeklyModal}
+      />
+
       <div className="mx-auto max-w-md space-y-1 px-4">
         <h1 className="font-display text-sm uppercase tracking-[0.3em] text-muted-foreground text-center mb-4">
           Progress
         </h1>
+
+        {/* Cornerstone Card */}
+        {cornerstone && (
+          <div className="mb-3">
+            <CornerstoneCard cornerstone={cornerstone} todayHonored={todayHonored} />
+          </div>
+        )}
+
+        {/* Performance Reviews */}
+        <Collapsible open={reviewsOpen} onOpenChange={setReviewsOpen}>
+          <CollapsibleTrigger asChild>
+            <div>
+              <SectionHeader title="PERFORMANCE REVIEWS" isOpen={reviewsOpen} onToggle={() => setReviewsOpen(o => !o)} />
+            </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="space-y-3 pb-4">
+              <AARHistoryCard
+                history={aar.aarHistory}
+                onSelectDay={(a) => setSelectedAAR(a)}
+              />
+              {aar.weeklyAAR && (
+                <button
+                  onClick={() => aar.setShowWeeklyModal(true)}
+                  className="w-full py-2 rounded-md border border-secondary/30 bg-secondary/5 font-mono text-[10px] tracking-wider text-secondary uppercase hover:bg-secondary/10 transition-colors"
+                >
+                  View Weekly Report
+                </button>
+              )}
+              {!aar.todayAAR && (
+                <button
+                  onClick={() => aar.generateDailyAAR()}
+                  disabled={aar.isGenerating}
+                  className="w-full py-2 rounded-md border border-primary/30 bg-primary/5 font-mono text-[10px] tracking-wider text-primary uppercase hover:bg-primary/10 transition-colors disabled:opacity-50"
+                >
+                  {aar.isGenerating ? 'Generating...' : 'Generate Daily Review Now'}
+                </button>
+              )}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+
+        <div className="h-px bg-border" />
+
+        {/* Narrative Loops */}
+        <Collapsible open={loopsOpen} onOpenChange={setLoopsOpen}>
+          <CollapsibleTrigger asChild>
+            <div>
+              <SectionHeader
+                title={`BEHAVIORAL PATTERNS${activeLoops.length > 0 ? ` (${activeLoops.length})` : ''}`}
+                isOpen={loopsOpen}
+                onToggle={() => setLoopsOpen(o => !o)}
+              />
+            </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="pb-4">
+              <LoopsPanel loops={activeLoops} onBreakLoop={breakLoop} />
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+
+        <div className="h-px bg-border" />
 
         {/* a. Milestones */}
         <Collapsible open={milestonesOpen} onOpenChange={setMilestonesOpen}>

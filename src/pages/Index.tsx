@@ -673,7 +673,12 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
             />
           )}
 
-          {/* Caffeine Warning */}
+          {/* Cornerstone Alert */}
+          {cornerstone && !todayHonored && (
+            <CornerstoneAlert cornerstone={cornerstone} todayHonored={todayHonored} />
+          )}
+
+           {/* Caffeine Warning */}
           {hasLoggedAfter10am && !warningDismissed && (
             <GeneticWarning
               level="danger"
