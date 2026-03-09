@@ -94,6 +94,7 @@ export const TopBar = ({ systemRecommendation, onForceRefresh, notifications = [
 
       {/* Right: Focus toggle + Sprint counter + Day */}
       <div className="flex items-center gap-2">
+        <ThreatIndicator overallLevel={threatLevel} threats={threats} />
         <SystemNotificationPanel
           notifications={notifications}
           unreadCount={unreadCount}
