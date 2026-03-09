@@ -640,6 +640,14 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
         />
 
         <div className="mx-auto max-w-md space-y-5 px-4 mt-2">
+          {/* Emergency Quest Banner */}
+          {emergency.hasActiveEmergency && emergency.activeEmergency && (
+            <EmergencyQuestBanner
+              quest={emergency.activeEmergency}
+              onCompleteObjective={emergency.completeObjective}
+            />
+          )}
+
           {/* 0. System Interventions (JARVIS) */}
           {highestPriority && (
             <SystemInterventionBanner

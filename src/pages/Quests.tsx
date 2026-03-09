@@ -581,6 +581,14 @@ const Quests = () => {
           )}
 
           {/* Gentle nudge when no scan today */}
+          {/* Emergency Quest Banner */}
+          {emergency.hasActiveEmergency && emergency.activeEmergency && (
+            <EmergencyQuestBanner
+              quest={emergency.activeEmergency}
+              onCompleteObjective={emergency.completeObjective}
+            />
+          )}
+
           {/* JARVIS Brain Banner */}
           <JarvisPageBanner page="quests" />
 

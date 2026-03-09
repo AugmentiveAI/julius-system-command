@@ -467,6 +467,10 @@ const TOAST_TITLES: Partial<Record<SystemContext, string>> = {
   pillarShieldUsed: '🛡️ Shield Activated',
   pillarShieldBroken: '🛡️ Shield Depleted',
   pillarStreakMilestone: '🏛️ Pillar Streak Milestone',
+  emergencyTriggered: '🚨 EMERGENCY PROTOCOL',
+  emergencyCompleted: '✅ Emergency Resolved',
+  emergencyFailed: '❌ Emergency Failed',
+  surgeTriggered: '⚡ SURGE DETECTED',
 };
 
 export function getSystemToast(context: SystemContext, data: VoiceData = {}): SystemToast {
