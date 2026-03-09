@@ -164,10 +164,18 @@ function DungeonCard({
               {dungeon.status === 'available' && (
                 <button
                   onClick={onEnter}
-                  className="flex items-center gap-1 rounded-md border border-primary/50 bg-primary/10 px-3 py-1.5 font-mono text-[10px] text-primary transition-all hover:bg-primary/20"
+                  disabled={keyRequired && !hasKey}
+                  className={`flex items-center gap-1 rounded-md border px-3 py-1.5 font-mono text-[10px] transition-all ${
+                    keyRequired && !hasKey
+                      ? 'border-muted text-muted-foreground cursor-not-allowed'
+                      : 'border-primary/50 bg-primary/10 text-primary hover:bg-primary/20'
+                  }`}
                 >
-                  <Play className="h-3 w-3" />
-                  ENTER
+                  {keyRequired && !hasKey ? (
+                    <><Key className="h-3 w-3" /> KEY REQUIRED</>
+                  ) : (
+                    <><Play className="h-3 w-3" /> ENTER</>
+                  )}
                 </button>
               )}
               {isCompleted && (
