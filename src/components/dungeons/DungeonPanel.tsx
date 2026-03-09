@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Skull, Timer, Crown, ChevronDown, ChevronUp, Plus, Swords, Lock, CheckCircle2, XCircle, Play, Zap } from 'lucide-react';
+import { Skull, Timer, Crown, ChevronDown, ChevronUp, Plus, Swords, Lock, CheckCircle2, XCircle, Play, Zap, Key } from 'lucide-react';
 import { Dungeon, DungeonTemplate, DungeonObjective, DungeonType, GeneticModifier } from '@/types/dungeon';
 import { useDungeons } from '@/hooks/useDungeons';
+import { useStore } from '@/hooks/useStore';
+import { KeyRequiredModal } from '@/components/dungeons/KeyRequiredModal';
 
 const TYPE_CONFIG: Record<DungeonType, { icon: typeof Skull; label: string; color: string; borderColor: string }> = {
   boss_fight: { icon: Skull, label: 'BOSS FIGHT', color: 'text-red-400', borderColor: 'border-red-400/30' },
