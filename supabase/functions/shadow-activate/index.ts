@@ -182,16 +182,16 @@ PLAYER CONTEXT:
 - Time of day: ${playerContext?.currentTime || 'unknown'}
 - Energy/Day type: ${playerContext?.dayType || 'work'}`;
 
-    const standardUserPrompt = `ACTIVATE SHADOW: "${shadow.name}"
-Category: ${shadow.category}
-Description: ${shadow.description || 'No description'}
-Power Level: ${shadow.power_level || 1}
-Activation Count: ${shadow.activationCount || 0}
+    const standardUserPrompt = `ACTIVATE SHADOW: "${safeName}"
+Category: ${safeCat}
+Description: ${safeDesc || 'No description'}
+Power Level: ${safePower}
+Activation Count: ${sanitizeNum(shadow.activationCount, 0, 0, 9999)}
 
-Generate actionable content for this shadow activation using the activate_shadow tool. Scale the depth and sophistication based on power level ${shadow.power_level || 1}/10.
+Generate actionable content for this shadow activation using the activate_shadow tool. Scale the depth and sophistication based on power level ${safePower}/10.
 
-${shadow.power_level >= 3 ? 'This shadow has been leveled up — generate MORE advanced and nuanced content than a level 1 shadow would produce.' : ''}
-${shadow.power_level >= 5 ? 'This is a HIGH POWER shadow — generate expert-tier content with advanced techniques and compound strategies.' : ''}`;
+${safePower >= 3 ? 'This shadow has been leveled up — generate MORE advanced and nuanced content than a level 1 shadow would produce.' : ''}
+${safePower >= 5 ? 'This is a HIGH POWER shadow — generate expert-tier content with advanced techniques and compound strategies.' : ''}`;
 
     // Choose tools based on mode
     const tools = isScout ? [
