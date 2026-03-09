@@ -508,6 +508,15 @@ const Quests = () => {
         }}
       />
 
+      {/* Emergency Quest Overlay */}
+      {emergency.showOverlay && emergency.activeEmergency && (
+        <EmergencyQuestOverlay
+          quest={emergency.activeEmergency}
+          show={emergency.showOverlay}
+          onAccept={emergency.acceptEmergency}
+        />
+      )}
+
       {/* Sprint timer overlay */}
       <SprintOverlay
         state={sprint.state}
