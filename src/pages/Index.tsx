@@ -614,6 +614,8 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
           unreadCount={unreadCount}
           onNotificationsOpen={markAllRead}
           onNotificationsClear={clearNotifications}
+          threatLevel={overallThreatLevel}
+          threats={threats}
         />
 
         <div className="mx-auto max-w-md space-y-5 px-4 mt-2">
