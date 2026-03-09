@@ -144,16 +144,18 @@ PLAYER CONTEXT:
 - Level: ${playerContext?.level || 1}
 - Current capabilities: ${JSON.stringify(playerContext?.stats || {})}`;
 
-    const scoutUserPrompt = `RECONNAISSANCE MISSION: "${shadow.name}"
-Target Domain: ${shadow.description || shadow.name}
-Power Level: ${shadow.power_level || 1} (higher = deeper, more advanced intel)
+    const safePower = sanitizeNum(shadow.power_level, 1, 1, 10);
+
+    const scoutUserPrompt = `RECONNAISSANCE MISSION: "${safeName}"
+Target Domain: ${safeDesc || safeName}
+Power Level: ${safePower} (higher = deeper, more advanced intel)
 ${liveIntelBlock}
 
 Execute full reconnaissance. Integrate the live intelligence feed above into your report. Use the scout_report tool to deliver your findings.
 
-${shadow.power_level >= 3 ? 'ENHANCED RECON: Include competitor analysis, market sizing estimates, and emerging 2026 disruptors.' : ''}
-${shadow.power_level >= 5 ? 'DEEP RECON: Include contrarian insights that go AGAINST conventional wisdom, plus second-order effects most people miss.' : ''}
-${shadow.power_level >= 7 ? 'ELITE RECON: Include predictive analysis — what will the landscape look like in 6-12 months based on current signals?' : ''}`;
+${safePower >= 3 ? 'ENHANCED RECON: Include competitor analysis, market sizing estimates, and emerging 2026 disruptors.' : ''}
+${safePower >= 5 ? 'DEEP RECON: Include contrarian insights that go AGAINST conventional wisdom, plus second-order effects most people miss.' : ''}
+${safePower >= 7 ? 'ELITE RECON: Include predictive analysis — what will the landscape look like in 6-12 months based on current signals?' : ''}`;
 
     // ─── STANDARD MODE: Content/protocol/framework generation ───
     const standardSystemPrompt = `You are THE SYSTEM's Shadow Activation Engine. When a player activates a shadow, you generate immediately actionable content tailored to that shadow's purpose and the player's context.
