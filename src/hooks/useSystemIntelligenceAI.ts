@@ -84,6 +84,18 @@ function gatherPlayerData(player: any) {
     systemMode = stateHistory[stateHistory.length - 1].systemRecommendation || 'steady';
   }
 
+  // Skills
+  let unlockedSkills: any[] = [];
+  try {
+    const raw = localStorage.getItem('systemSkills');
+    if (raw) {
+      const skills = JSON.parse(raw);
+      unlockedSkills = skills
+        .filter((s: any) => s.unlocked)
+        .map((s: any) => ({ name: s.name, category: s.category, effect: s.effect, level: s.level }));
+    }
+  } catch { /* ignore */ }
+
   return {
     level: player.level,
     totalXP: player.totalXP,
@@ -99,7 +111,7 @@ function gatherPlayerData(player: any) {
     recentCompletions: [] as any[],
     shadowArmy: [] as any[],
     activeDungeons: [] as any[],
-    training: null as any, // Will be filled from DB
+    training: null as any,
     resistanceData,
     dayOfWeek: dayOfWeek[dayNum],
     dayType,
@@ -107,6 +119,8 @@ function gatherPlayerData(player: any) {
     questsCompletedToday,
     questsTotalToday,
     pillarStatus,
+    unlockedSkills,
+    inventory: null as any, // Will be filled from DB
   };
 }
 
