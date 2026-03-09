@@ -46,6 +46,9 @@ import { loadAIQuests } from '@/utils/aiQuestGenerator';
 import { JarvisPageBanner } from '@/components/jarvis/JarvisPageBanner';
 import { useJarvisBrainOptional } from '@/contexts/JarvisBrainContext';
 import { reorderQuestsWithJarvis, getReorderReason } from '@/utils/jarvisQuestReorder';
+import { useEmergencyQuests } from '@/hooks/useEmergencyQuests';
+import { EmergencyQuestBanner } from '@/components/quests/EmergencyQuestBanner';
+import { EmergencyQuestOverlay } from '@/components/effects/EmergencyQuestOverlay';
 
 // ── Storage helpers ──────────────────────────────────────────────────
 
