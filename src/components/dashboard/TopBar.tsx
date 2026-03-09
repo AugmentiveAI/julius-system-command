@@ -34,6 +34,8 @@ interface TopBarProps {
   unreadCount?: number;
   onNotificationsOpen?: () => void;
   onNotificationsClear?: () => void;
+  threatLevel?: ThreatLevel;
+  threats?: Threat[];
 }
 
 export const TopBar = ({ systemRecommendation, onForceRefresh, notifications = [], unreadCount = 0, onNotificationsOpen, onNotificationsClear }: TopBarProps) => {
