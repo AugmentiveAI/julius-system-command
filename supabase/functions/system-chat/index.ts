@@ -251,6 +251,10 @@ TRAINING MODULE:
       ? `\nACTIVE SYSTEM INTERVENTIONS:\n${playerContext.activeInterventions.map((i: any) => `- [${i.priority.toUpperCase()}] ${i.title}: ${i.message}`).join('\n')}`
       : '';
 
+    const threatBlock = playerContext?.threats?.active?.length > 0
+      ? `\nACTIVE THREATS (Level: ${playerContext.threats.overall?.toUpperCase() || 'NOMINAL'}):\n${playerContext.threats.active.map((t: any) => `- [${t.level.toUpperCase()}] ${t.title} — ${t.metric}`).join('\n')}\nIMPORTANT: Reference active threats when relevant. If threat level is HIGH or CRITICAL, lead with threat awareness.`
+      : '';
+
     const contextBlock = playerContext ? `
 CURRENT PLAYER STATE:
 - Level: ${playerContext.level} | XP: ${playerContext.currentXP}/${playerContext.xpToNextLevel} | Total XP: ${playerContext.totalXP}
