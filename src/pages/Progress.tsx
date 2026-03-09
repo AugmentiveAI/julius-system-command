@@ -57,6 +57,7 @@ const Progress = () => {
   const aar = useAfterActionReview();
   const { activeLoops, breakLoop } = useNarrativeLoops();
   const { cornerstone, todayHonored } = useCornerstone();
+  const brain = useJarvisBrainOptional();
 
   const [milestonesOpen, setMilestonesOpen] = useState(true);
   const [statsOpen, setStatsOpen] = useState(true);
@@ -66,6 +67,7 @@ const Progress = () => {
   const [weeklyOpen, setWeeklyOpen] = useState(false);
   const [reviewsOpen, setReviewsOpen] = useState(true);
   const [loopsOpen, setLoopsOpen] = useState(false);
+  const [intelOpen, setIntelOpen] = useState(false);
 
   const [selectedAAR, setSelectedAAR] = useState<DailyAAR | null>(null);
 
