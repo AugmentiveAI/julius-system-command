@@ -513,6 +513,15 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
         message: i.message,
         type: i.type,
       })),
+      threats: {
+        overall: overallThreatLevel,
+        active: threats.map(t => ({
+          category: t.category,
+          level: t.level,
+          title: t.title,
+          metric: t.metric,
+        })),
+      },
       training: buildTrainingContext({
         recentLogs,
         personalRecords,
@@ -525,7 +534,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
         sessionsLogged: wSessionsLogged,
       }),
     };
-  }, [player, systemRec, completedQuests, quests.length, shadows, completedDungeons.length, recentLogs, personalRecords, fatigueAccumulation, todayWorkoutType, workoutPrescription, wTrainingLevel, wSessionsLogged, activeInterventions]);
+  }, [player, systemRec, completedQuests, quests.length, shadows, completedDungeons.length, recentLogs, personalRecords, fatigueAccumulation, todayWorkoutType, workoutPrescription, wTrainingLevel, wSessionsLogged, activeInterventions, threats, overallThreatLevel]);
 
   return (
     <>
