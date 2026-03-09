@@ -122,6 +122,8 @@ serve(async (req) => {
       questsCompletedToday: sanitizeNum(rawPlayerData.questsCompletedToday),
       questsTotalToday: sanitizeNum(rawPlayerData.questsTotalToday),
       pillarStatus: rawPlayerData.pillarStatus && typeof rawPlayerData.pillarStatus === 'object' ? rawPlayerData.pillarStatus : {},
+      unlockedSkills: sanitizeArray(rawPlayerData.unlockedSkills, 20),
+      inventory: rawPlayerData.inventory && typeof rawPlayerData.inventory === 'object' ? rawPlayerData.inventory : {},
     };
 
     // ─── Fetch real-time market intelligence via Groq ───
