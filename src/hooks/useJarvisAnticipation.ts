@@ -1,0 +1,149 @@
+import { useState, useEffect, useCallback } from 'react';
+import { JarvisAnticipation, UserLearning } from '@/types/learning';
+
+const STORAGE_KEY = 'jarvisAnticipations';
+
+function generateId(): string {
+  return `antic-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+}
+
+function setHour(date: Date, hour: number): Date {
+  const d = new Date(date);
+  d.setHours(hour, 0, 0, 0);
+  return d;
+}
+
+export function useJarvisAnticipation(learning: UserLearning | null) {
+  const [anticipations, setAnticipations] = useState<JarvisAnticipation[]>([]);
+
+  // Load stored
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) setAnticipations(JSON.parse(stored));
+    } catch { /* ignore */ }
+  }, []);
+
+  // Save on change
+  useEffect(() => {
+    if (anticipations.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(anticipations));
+    }
+  }, [anticipations]);
+
+  const anticipate = useCallback(() => {
+    const newAnticipations: JarvisAnticipation[] = [];
+    const now = new Date();
+    const currentHour = now.getHours();
+
+    if (!learning) return newAnticipations;
+
+    // 1. Peak window approaching
+    const nextPeakHour = learning.execution.peakHours.find(h => h > currentHour);
+    if (nextPeakHour && nextPeakHour - currentHour <= 2) {
+      newAnticipations.push({
+        id: generateId(),
+        type: 'opportunity',
+        prediction: 'Peak performance window approaching',
+        confidence: 0.85,
+        expectedTime: setHour(now, nextPeakHour).toISOString(),
+        windowStart: setHour(now, nextPeakHour - 1).toISOString(),
+        windowEnd: setHour(now, nextPeakHour).toISOString(),
+        preparation: {
+          type: 'task',
+          description: 'Prepare your highest-priority task to execute when peak begins',
+        },
+        surfaced: false,
+      });
+    }
+
+    // 2. Crash window approaching
+    const nextCrashHour = learning.energy.crashHours.find(h => h > currentHour);
+    if (nextCrashHour && nextCrashHour - currentHour <= 2) {
+      newAnticipations.push({
+        id: generateId(),
+        type: 'prevention',
+        prediction: 'Energy crash expected',
+        confidence: 0.75,
+        expectedTime: setHour(now, nextCrashHour).toISOString(),
+        windowStart: setHour(now, nextCrashHour - 1).toISOString(),
+        windowEnd: setHour(now, nextCrashHour).toISOString(),
+        preparation: {
+          type: 'decision',
+          description: 'Plan lighter tasks or a break for this window',
+        },
+        surfaced: false,
+      });
+    }
+
+    // 3. Peak window active now
+    if (learning.execution.peakHours.includes(currentHour)) {
+      newAnticipations.push({
+        id: generateId(),
+        type: 'opportunity',
+        prediction: 'Peak window active — execute now',
+        confidence: 0.9,
+        expectedTime: now.toISOString(),
+        windowStart: setHour(now, currentHour).toISOString(),
+        windowEnd: setHour(now, currentHour + 1).toISOString(),
+        preparation: {
+          type: 'task',
+          description: 'Your data shows this is your most productive hour. Start your top priority.',
+        },
+        surfaced: false,
+      });
+    }
+
+    // 4. End of day — streak protection
+    if (currentHour >= 20) {
+      newAnticipations.push({
+        id: generateId(),
+        type: 'reminder',
+        prediction: 'Day ending — protect your streak',
+        confidence: 0.95,
+        expectedTime: setHour(now, 21).toISOString(),
+        windowStart: setHour(now, 20).toISOString(),
+        windowEnd: setHour(now, 23).toISOString(),
+        preparation: {
+          type: 'task',
+          description: 'Complete any remaining quests to maintain your streak',
+        },
+        surfaced: false,
+      });
+    }
+
+    setAnticipations(newAnticipations);
+    return newAnticipations;
+  }, [learning]);
+
+  // Run on interval
+  useEffect(() => {
+    anticipate();
+    const interval = setInterval(anticipate, 30 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [anticipate]);
+
+  const getActiveAnticipations = useCallback((): JarvisAnticipation[] => {
+    const now = new Date();
+    return anticipations.filter(a => {
+      const start = new Date(a.windowStart);
+      const end = new Date(a.windowEnd);
+      return !a.surfaced && now >= start && now <= end;
+    });
+  }, [anticipations]);
+
+  const markSurfaced = useCallback((id: string) => {
+    setAnticipations(prev =>
+      prev.map(a =>
+        a.id === id ? { ...a, surfaced: true, surfacedAt: new Date().toISOString() } : a
+      )
+    );
+  }, []);
+
+  return {
+    anticipations,
+    getActiveAnticipations,
+    markSurfaced,
+    anticipate,
+  };
+}

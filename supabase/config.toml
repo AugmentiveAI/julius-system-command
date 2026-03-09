@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.ai-quest-proxy]
 verify_jwt = false
+
+[functions.shadow-research]
+verify_jwt = false

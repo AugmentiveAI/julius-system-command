@@ -11,6 +11,7 @@ import { DayGroup } from '@/components/history/DayGroup';
 import { AARHistoryCard } from '@/components/progress/AARHistoryCard';
 import { LoopsPanel } from '@/components/progress/LoopsPanel';
 import { CornerstoneCard } from '@/components/dashboard/CornerstoneCard';
+import { ShadowIntelPanel } from '@/components/shadows/ShadowIntelPanel';
 import { AARModal } from '@/components/aar/AARModal';
 import { WeeklyAARModal } from '@/components/aar/WeeklyAARModal';
 import { usePlayer } from '@/hooks/usePlayer';
@@ -19,6 +20,7 @@ import { useSystemStrategy } from '@/hooks/useSystemStrategy';
 import { useAfterActionReview } from '@/hooks/useAfterActionReview';
 import { useNarrativeLoops } from '@/hooks/useNarrativeLoops';
 import { useCornerstone } from '@/hooks/useCornerstone';
+import { useJarvisBrainOptional } from '@/contexts/JarvisBrainContext';
 import { DailyAAR } from '@/types/afterActionReview';
 import {
   Collapsible,
@@ -55,6 +57,7 @@ const Progress = () => {
   const aar = useAfterActionReview();
   const { activeLoops, breakLoop } = useNarrativeLoops();
   const { cornerstone, todayHonored } = useCornerstone();
+  const brain = useJarvisBrainOptional();
 
   const [milestonesOpen, setMilestonesOpen] = useState(true);
   const [statsOpen, setStatsOpen] = useState(true);
@@ -64,6 +67,7 @@ const Progress = () => {
   const [weeklyOpen, setWeeklyOpen] = useState(false);
   const [reviewsOpen, setReviewsOpen] = useState(true);
   const [loopsOpen, setLoopsOpen] = useState(false);
+  const [intelOpen, setIntelOpen] = useState(false);
 
   const [selectedAAR, setSelectedAAR] = useState<DailyAAR | null>(null);
 
@@ -168,6 +172,33 @@ const Progress = () => {
             </div>
           </CollapsibleContent>
         </Collapsible>
+
+        <div className="h-px bg-border" />
+
+        {/* Shadow Intel */}
+        {brain && (
+          <Collapsible open={intelOpen} onOpenChange={setIntelOpen}>
+            <CollapsibleTrigger asChild>
+              <div>
+                <SectionHeader
+                  title={`SHADOW INTEL${brain.unreadFindings.length > 0 ? ` (${brain.unreadFindings.length})` : ''}`}
+                  isOpen={intelOpen}
+                  onToggle={() => setIntelOpen(o => !o)}
+                />
+              </div>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="pb-4">
+                <ShadowIntelPanel
+                  findings={brain.unreadFindings}
+                  onMarkRead={(id) => brain.updateFindingStatus(id, 'read')}
+                  onActOn={(id) => brain.updateFindingStatus(id, 'acted_on')}
+                  onDismiss={(id) => brain.updateFindingStatus(id, 'dismissed')}
+                />
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        )}
 
         <div className="h-px bg-border" />
 

@@ -9,41 +9,38 @@ import { useTrainingLog } from '@/hooks/useTrainingLog';
 import { useShadowArmy } from '@/hooks/useShadowArmy';
 import { useSystemIntelligenceAI } from '@/hooks/useSystemIntelligenceAI';
 import { useThreatAssessment } from '@/hooks/useThreatAssessment';
+import { useUserLearning } from '@/hooks/useUserLearning';
+import { useJarvisSynthesis } from '@/hooks/useJarvisSynthesis';
+import { useJarvisAnticipation } from '@/hooks/useJarvisAnticipation';
 import { InterventionContext, SystemIntervention, InterventionType } from '@/utils/interventionEngine';
 import { getSystemDate } from '@/utils/dayCycleEngine';
 import { GeneticState } from '@/utils/geneticEngine';
 import { Anticipation, SystemIntelligence } from '@/types/systemIntelligence';
 import { Threat, ThreatLevel } from '@/types/threat';
+import {
+  UserLearning,
+  SynthesizedInsight,
+  JarvisAnticipation,
+  ResearchFinding,
+  ProactiveMessage,
+} from '@/types/learning';
+import { ShadowTemplate } from '@/data/shadowTemplates';
 
 // ── Page-specific intervention filters ──────────────────────────────
 
 const QUEST_RELEVANT_TYPES: Set<InterventionType> = new Set([
-  'genetic_optimization',
-  'momentum_capture',
-  'opportunity_window',
-  'risk_alert',
-  'accountability_check',
-  'celebration',
-  'strategic_pivot',
+  'genetic_optimization', 'momentum_capture', 'opportunity_window',
+  'risk_alert', 'accountability_check', 'celebration', 'strategic_pivot',
 ]);
 
 const TRAINING_RELEVANT_TYPES: Set<InterventionType> = new Set([
-  'recovery_mandate',
-  'genetic_optimization',
-  'risk_alert',
-  'pattern_insight',
+  'recovery_mandate', 'genetic_optimization', 'risk_alert', 'pattern_insight',
 ]);
 
 const DASHBOARD_RELEVANT_TYPES: Set<InterventionType> = new Set([
-  'opportunity_window',
-  'risk_alert',
-  'pattern_insight',
-  'strategic_pivot',
-  'momentum_capture',
-  'recovery_mandate',
-  'genetic_optimization',
-  'accountability_check',
-  'celebration',
+  'opportunity_window', 'risk_alert', 'pattern_insight', 'strategic_pivot',
+  'momentum_capture', 'recovery_mandate', 'genetic_optimization',
+  'accountability_check', 'celebration',
 ]);
 
 // ── Context type ────────────────────────────────────────────────────
@@ -81,6 +78,30 @@ interface JarvisBrainState {
   threats: Threat[];
   overallThreatLevel: ThreatLevel;
   hasCriticalThreat: boolean;
+
+  // ── NEW: Enhanced Intelligence ─────────────────────────────────
+  // User Learning
+  learning: UserLearning | null;
+  learningInsights: { strengths: string[]; growthAreas: string[]; recommendations: string[] } | null;
+  getPrediction: (type: 'energy' | 'productivity' | 'focus') => number;
+  isGoodTimeFor: (category: string) => boolean;
+
+  // Shadow Intelligence
+  unreadFindings: ResearchFinding[];
+  updateFindingStatus: (id: string, status: 'read' | 'acted_on' | 'dismissed') => void;
+  suggestShadows: (goalText: string) => ShadowTemplate[];
+
+  // Synthesis
+  synthesizedInsights: SynthesizedInsight[];
+  getTopInsight: () => SynthesizedInsight | null;
+  synthesize: () => SynthesizedInsight[];
+
+  // Anticipation Engine
+  jarvisAnticipations: JarvisAnticipation[];
+  activeAnticipations: JarvisAnticipation[];
+
+  // Proactive Message
+  generateProactiveMessage: () => ProactiveMessage | null;
 }
 
 const JarvisBrainCtx = createContext<JarvisBrainState | null>(null);
@@ -104,11 +125,29 @@ export function JarvisBrainProvider({ children }: { children: ReactNode }) {
   const { logs, warningDismissed } = useCaffeine();
   const { workoutCompleted, todayWorkoutType } = useWorkout();
   const { fatigueAccumulation } = useTrainingLog();
-  const { shadows } = useShadowArmy();
+  const { shadows, getUnreadFindings, updateFindingStatus, suggestShadows } = useShadowArmy();
   const { geneticState, sprintsToday, logSprint, logColdExposure, logMagnesium } = useGeneticState();
   const { intelligence, loading: intelligenceLoading, generate: generateIntelligence } = useSystemIntelligenceAI();
   const { threats, overallLevel: overallThreatLevel, hasCriticalThreat } = useThreatAssessment();
   const anticipation = intelligence?.anticipation ?? null;
+
+  // ── NEW hooks ──────────────────────────────────────────────────
+  const { learning, getPrediction, isGoodTimeFor, getInsights } = useUserLearning();
+
+  const unreadFindings = useMemo(() => getUnreadFindings(), [getUnreadFindings]);
+
+  const {
+    insights: synthesizedInsights,
+    getTopInsight,
+    synthesize,
+  } = useJarvisSynthesis(learning, unreadFindings);
+
+  const {
+    anticipations: jarvisAnticipations,
+    getActiveAnticipations,
+  } = useJarvisAnticipation(learning);
+
+  const activeAnticipations = useMemo(() => getActiveAnticipations(), [getActiveAnticipations]);
 
   // Build intervention context from all shared state
   const buildInterventionContext = useCallback((): InterventionContext => {
@@ -201,6 +240,62 @@ export function JarvisBrainProvider({ children }: { children: ReactNode }) {
     return filtered[0] ?? null;
   }, [getInterventionsForPage]);
 
+  // ── Proactive message generator ──────────────────────────────
+  const generateProactiveMessage = useCallback((): ProactiveMessage | null => {
+    // 1. Active anticipations (time-sensitive)
+    if (activeAnticipations.length > 0) {
+      const top = activeAnticipations[0];
+      return {
+        type: 'anticipation',
+        short: top.prediction,
+        full: `${top.prediction}. ${top.preparation?.description || ''}`,
+        priority: 'high',
+        actions: top.preparation ? [{ label: 'View', action: 'view_anticipation' }] : undefined,
+      };
+    }
+
+    // 2. High-priority synthesized insights
+    const topInsight = getTopInsight();
+    if (topInsight && topInsight.priority >= 7) {
+      return {
+        type: 'insight',
+        short: topInsight.headline,
+        full: topInsight.detail,
+        priority: topInsight.priority >= 9 ? 'high' : 'medium',
+        actions: topInsight.suggestedAction
+          ? [{ label: topInsight.suggestedAction.description.slice(0, 30), action: 'act_on_insight' }]
+          : undefined,
+      };
+    }
+
+    // 3. Unread shadow findings
+    if (unreadFindings.length > 0) {
+      const finding = unreadFindings[0];
+      return {
+        type: 'shadow_intel',
+        short: `Shadow intel: ${finding.content.title}`,
+        full: finding.content.summary,
+        priority: finding.content.relevanceScore >= 8 ? 'high' : 'medium',
+        actions: [
+          { label: 'View', action: 'view_finding' },
+          { label: 'Dismiss', action: 'dismiss_finding' },
+        ],
+      };
+    }
+
+    // 4. Pattern-based nudge
+    if (learning && getPrediction('productivity') > 0.8) {
+      return {
+        type: 'nudge',
+        short: 'Peak window active. Execute.',
+        full: 'Your data shows this is your most productive time. Start your top priority now.',
+        priority: 'medium',
+      };
+    }
+
+    return null;
+  }, [activeAnticipations, getTopInsight, unreadFindings, learning, getPrediction]);
+
   const value = useMemo<JarvisBrainState>(() => ({
     allInterventions,
     highestPriority,
@@ -223,6 +318,20 @@ export function JarvisBrainProvider({ children }: { children: ReactNode }) {
     threats,
     overallThreatLevel,
     hasCriticalThreat,
+    // NEW
+    learning,
+    learningInsights: getInsights(),
+    getPrediction,
+    isGoodTimeFor,
+    unreadFindings,
+    updateFindingStatus,
+    suggestShadows,
+    synthesizedInsights,
+    getTopInsight,
+    synthesize,
+    jarvisAnticipations,
+    activeAnticipations,
+    generateProactiveMessage,
   }), [
     allInterventions, highestPriority, hasIntervention, dismissIntervention, refresh,
     getInterventionsForPage, getHighestForPage,
@@ -230,6 +339,10 @@ export function JarvisBrainProvider({ children }: { children: ReactNode }) {
     fatigueAccumulation, workoutCompleted,
     intelligence, anticipation, intelligenceLoading, generateIntelligence,
     threats, overallThreatLevel, hasCriticalThreat,
+    learning, getInsights, getPrediction, isGoodTimeFor,
+    unreadFindings, updateFindingStatus, suggestShadows,
+    synthesizedInsights, getTopInsight, synthesize,
+    jarvisAnticipations, activeAnticipations, generateProactiveMessage,
   ]);
 
   return (
