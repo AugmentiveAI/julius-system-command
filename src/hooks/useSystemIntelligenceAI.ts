@@ -84,6 +84,18 @@ function gatherPlayerData(player: any) {
     systemMode = stateHistory[stateHistory.length - 1].systemRecommendation || 'steady';
   }
 
+  // Skills
+  let unlockedSkills: any[] = [];
+  try {
+    const raw = localStorage.getItem('systemSkills');
+    if (raw) {
+      const skills = JSON.parse(raw);
+      unlockedSkills = skills
+        .filter((s: any) => s.unlocked)
+        .map((s: any) => ({ name: s.name, category: s.category, effect: s.effect, level: s.level }));
+    }
+  } catch { /* ignore */ }
+
   return {
     level: player.level,
     totalXP: player.totalXP,
@@ -99,7 +111,7 @@ function gatherPlayerData(player: any) {
     recentCompletions: [] as any[],
     shadowArmy: [] as any[],
     activeDungeons: [] as any[],
-    training: null as any, // Will be filled from DB
+    training: null as any,
     resistanceData,
     dayOfWeek: dayOfWeek[dayNum],
     dayType,
@@ -107,6 +119,8 @@ function gatherPlayerData(player: any) {
     questsCompletedToday,
     questsTotalToday,
     pillarStatus,
+    unlockedSkills,
+    inventory: null as any, // Will be filled from DB
   };
 }
 
@@ -134,8 +148,8 @@ export function useSystemIntelligenceAI() {
 
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
-      // Fetch recent completions, shadow army, dungeons, and training logs from DB in parallel
-      const [completionsRes, shadowsRes, dungeonsRes, trainingRes] = await Promise.all([
+      // Fetch recent completions, shadow army, dungeons, training logs, and inventory from DB in parallel
+      const [completionsRes, shadowsRes, dungeonsRes, trainingRes, inventoryRes] = await Promise.all([
         supabase
           .from('quest_history')
           .select('quest_title, xp_earned, type, completed_at')
@@ -158,6 +172,11 @@ export function useSystemIntelligenceAI() {
           .eq('user_id', user.id)
           .gte('completed_at', thirtyDaysAgo)
           .order('completed_at', { ascending: false })) as any,
+        supabase
+          .from('inventory')
+          .select('data')
+          .eq('user_id', user.id)
+          .maybeSingle(),
       ]);
 
       playerData.recentCompletions = (completionsRes.data || []).map((c: any) => ({
@@ -227,6 +246,11 @@ export function useSystemIntelligenceAI() {
           recentPRs: Array.from(prMap.values()).slice(0, 5),
           workoutDistribution: workoutDist,
         };
+      }
+
+      // Inventory data
+      if (inventoryRes.data?.data && typeof inventoryRes.data.data === 'object') {
+        playerData.inventory = inventoryRes.data.data;
       }
 
       // Call edge function
