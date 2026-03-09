@@ -559,6 +559,9 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
           onAccept={emergency.acceptEmergency}
         />
       )}
+      {/* Behavioral Intelligence Overlays */}
+      <LoopDetectedOverlay loop={newLoopDetected} onAcknowledge={clearNewLoopAlert} />
+      <AARModal aar={aarReview.todayAAR} open={aarReview.showDailyModal} onOpenChange={aarReview.setShowDailyModal} />
       <FlashOverlay show={showFlashEffect} />
       <LevelUpOverlay show={levelUpState.show} newLevel={levelUpState.newLevel} />
       <RankUpOverlay show={rankUpState.show} newRank={rankUpState.rank} onDone={() => setRankUpState({ show: false, rank: '' })} />
