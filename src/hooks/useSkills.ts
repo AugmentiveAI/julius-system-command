@@ -56,6 +56,21 @@ function checkCondition(condition: SkillUnlockCondition, ctx: SkillCheckContext)
   }
 }
 
+const SHOWN_UNLOCKS_KEY = 'systemSkillsShownUnlocks';
+
+function getShownUnlocks(): Set<string> {
+  try {
+    const raw = localStorage.getItem(SHOWN_UNLOCKS_KEY);
+    return raw ? new Set(JSON.parse(raw)) : new Set();
+  } catch { return new Set(); }
+}
+
+function markShown(id: string) {
+  const shown = getShownUnlocks();
+  shown.add(id);
+  localStorage.setItem(SHOWN_UNLOCKS_KEY, JSON.stringify([...shown]));
+}
+
 export function useSkills(ctx: SkillCheckContext) {
   const [skills, setSkills] = useState<Skill[]>(loadSkills);
   const [newlyUnlocked, setNewlyUnlocked] = useState<Skill | null>(null);
@@ -64,6 +79,8 @@ export function useSkills(ctx: SkillCheckContext) {
 
   // Check for new unlocks whenever context changes
   useEffect(() => {
+    const shownUnlocks = getShownUnlocks();
+    
     setSkills(prev => {
       let changed = false;
       const updated = prev.map(skill => {
@@ -71,14 +88,13 @@ export function useSkills(ctx: SkillCheckContext) {
         const def = SKILL_DEFINITIONS.find(d => d.id === skill.id);
         if (!def) return skill;
         if (checkCondition(def.unlockCondition, ctx)) {
-          // Only show overlay if this is a genuinely new unlock (not already saved)
-          const savedSkills = loadSkills();
-          const savedSkill = savedSkills.find(s => s.id === skill.id);
-          if (savedSkill?.unlocked) return { ...skill, unlocked: true, level: savedSkill.level };
-          
           changed = true;
           const unlocked = { ...skill, unlocked: true, level: 1, unlockedAt: new Date().toISOString() };
-          setNewlyUnlocked(unlocked);
+          // Only show overlay if we haven't shown it before
+          if (!shownUnlocks.has(skill.id)) {
+            markShown(skill.id);
+            setNewlyUnlocked(unlocked);
+          }
           return unlocked;
         }
         return skill;
