@@ -125,6 +125,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
     threats,
     overallThreatLevel,
   } = useJarvisBrain();
+  const emergency = useEmergencyQuests();
 
   // Auto-deploy: track which suggestions have been auto-deployed this session
   const autoDeployedRef = useRef<Set<string>>(new Set());
