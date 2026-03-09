@@ -63,6 +63,12 @@ import { SystemInterventionBanner } from '@/components/dashboard/SystemIntervent
 import { useEmergencyQuests } from '@/hooks/useEmergencyQuests';
 import { EmergencyQuestOverlay } from '@/components/effects/EmergencyQuestOverlay';
 import { EmergencyQuestBanner } from '@/components/quests/EmergencyQuestBanner';
+import { CornerstoneAlert } from '@/components/warnings/CornerstoneAlert';
+import { LoopDetectedOverlay } from '@/components/effects/LoopDetectedOverlay';
+import { AARModal } from '@/components/aar/AARModal';
+import { useAfterActionReview } from '@/hooks/useAfterActionReview';
+import { useNarrativeLoops } from '@/hooks/useNarrativeLoops';
+import { useCornerstone } from '@/hooks/useCornerstone';
 const LAST_SCAN_DATE_KEY = 'systemLastScanDate';
 const AI_SETTINGS_KEY = 'systemAISettings';
 const START_DATE_KEY = 'systemStartDate';
@@ -126,6 +132,9 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
     overallThreatLevel,
   } = useJarvisBrain();
   const emergency = useEmergencyQuests();
+  const aarReview = useAfterActionReview();
+  const { newLoopDetected, clearNewLoopAlert } = useNarrativeLoops();
+  const { cornerstone, todayHonored } = useCornerstone();
 
   // Auto-deploy: track which suggestions have been auto-deployed this session
   const autoDeployedRef = useRef<Set<string>>(new Set());
@@ -550,6 +559,9 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
           onAccept={emergency.acceptEmergency}
         />
       )}
+      {/* Behavioral Intelligence Overlays */}
+      <LoopDetectedOverlay loop={newLoopDetected} onAcknowledge={clearNewLoopAlert} />
+      <AARModal aar={aarReview.todayAAR} open={aarReview.showDailyModal} onOpenChange={aarReview.setShowDailyModal} />
       <FlashOverlay show={showFlashEffect} />
       <LevelUpOverlay show={levelUpState.show} newLevel={levelUpState.newLevel} />
       <RankUpOverlay show={rankUpState.show} newRank={rankUpState.rank} onDone={() => setRankUpState({ show: false, rank: '' })} />
@@ -661,7 +673,12 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
             />
           )}
 
-          {/* Caffeine Warning */}
+          {/* Cornerstone Alert */}
+          {cornerstone && !todayHonored && (
+            <CornerstoneAlert cornerstone={cornerstone} todayHonored={todayHonored} />
+          )}
+
+           {/* Caffeine Warning */}
           {hasLoggedAfter10am && !warningDismissed && (
             <GeneticWarning
               level="danger"
