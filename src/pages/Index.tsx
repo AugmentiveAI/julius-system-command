@@ -850,6 +850,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
         </div>
 
         <BottomNav />
+        <CaptureFAB />
       </div>
 
       {/* System Chat Interface */}
