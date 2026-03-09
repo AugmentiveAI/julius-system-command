@@ -40,7 +40,11 @@ export type SystemContext =
   | 'pillarMissedSilent'
   | 'pillarShieldUsed'
   | 'pillarShieldBroken'
-  | 'pillarStreakMilestone';
+  | 'pillarStreakMilestone'
+  | 'emergencyTriggered'
+  | 'emergencyCompleted'
+  | 'emergencyFailed'
+  | 'surgeTriggered';
 
 interface VoiceData {
   level?: number;
