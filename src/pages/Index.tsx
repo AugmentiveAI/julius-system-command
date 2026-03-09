@@ -63,6 +63,12 @@ import { SystemInterventionBanner } from '@/components/dashboard/SystemIntervent
 import { useEmergencyQuests } from '@/hooks/useEmergencyQuests';
 import { EmergencyQuestOverlay } from '@/components/effects/EmergencyQuestOverlay';
 import { EmergencyQuestBanner } from '@/components/quests/EmergencyQuestBanner';
+import { CornerstoneAlert } from '@/components/warnings/CornerstoneAlert';
+import { LoopDetectedOverlay } from '@/components/effects/LoopDetectedOverlay';
+import { AARModal } from '@/components/aar/AARModal';
+import { useAfterActionReview } from '@/hooks/useAfterActionReview';
+import { useNarrativeLoops } from '@/hooks/useNarrativeLoops';
+import { useCornerstone } from '@/hooks/useCornerstone';
 const LAST_SCAN_DATE_KEY = 'systemLastScanDate';
 const AI_SETTINGS_KEY = 'systemAISettings';
 const START_DATE_KEY = 'systemStartDate';
