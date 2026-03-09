@@ -8,10 +8,12 @@ import { useWorkout } from '@/hooks/useWorkout';
 import { useTrainingLog } from '@/hooks/useTrainingLog';
 import { useShadowArmy } from '@/hooks/useShadowArmy';
 import { useSystemIntelligenceAI } from '@/hooks/useSystemIntelligenceAI';
+import { useThreatAssessment } from '@/hooks/useThreatAssessment';
 import { InterventionContext, SystemIntervention, InterventionType } from '@/utils/interventionEngine';
 import { getSystemDate } from '@/utils/dayCycleEngine';
 import { GeneticState } from '@/utils/geneticEngine';
 import { Anticipation, SystemIntelligence } from '@/types/systemIntelligence';
+import { Threat, ThreatLevel } from '@/types/threat';
 
 // ── Page-specific intervention filters ──────────────────────────────
 
