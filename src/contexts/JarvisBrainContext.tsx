@@ -107,6 +107,7 @@ export function JarvisBrainProvider({ children }: { children: ReactNode }) {
   const { shadows } = useShadowArmy();
   const { geneticState, sprintsToday, logSprint, logColdExposure, logMagnesium } = useGeneticState();
   const { intelligence, loading: intelligenceLoading, generate: generateIntelligence } = useSystemIntelligenceAI();
+  const { threats, overallLevel: overallThreatLevel, hasCriticalThreat } = useThreatAssessment();
   const anticipation = intelligence?.anticipation ?? null;
 
   // Build intervention context from all shared state
