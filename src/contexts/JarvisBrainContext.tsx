@@ -18,6 +18,7 @@ import { InterventionContext, SystemIntervention, InterventionType } from '@/uti
 import { getSystemDate } from '@/utils/dayCycleEngine';
 import { GeneticState } from '@/utils/geneticEngine';
 import { Anticipation, SystemIntelligence } from '@/types/systemIntelligence';
+import { DailyActivitySummary, Activity, CalendarEvent } from '@/types/activity';
 import { Threat, ThreatLevel } from '@/types/threat';
 import {
   UserLearning,
