@@ -76,6 +76,11 @@ interface JarvisBrainState {
   anticipation: Anticipation | null;
   intelligenceLoading: boolean;
   generateIntelligence: () => void;
+
+  // Threat Assessment
+  threats: Threat[];
+  overallThreatLevel: ThreatLevel;
+  hasCriticalThreat: boolean;
 }
 
 const JarvisBrainCtx = createContext<JarvisBrainState | null>(null);
