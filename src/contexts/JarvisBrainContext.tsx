@@ -362,6 +362,7 @@ export function JarvisBrainProvider({ children }: { children: ReactNode }) {
     unreadFindings, updateFindingStatus, suggestShadows,
     synthesizedInsights, getTopInsight, synthesize,
     jarvisAnticipations, activeAnticipations, generateProactiveMessage,
+    activitySummary, recentActivities, calendarContext, nextCalendarEvent,
   ]);
 
   return (
