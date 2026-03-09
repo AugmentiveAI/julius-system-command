@@ -46,6 +46,9 @@ import { loadAIQuests } from '@/utils/aiQuestGenerator';
 import { JarvisPageBanner } from '@/components/jarvis/JarvisPageBanner';
 import { useJarvisBrainOptional } from '@/contexts/JarvisBrainContext';
 import { reorderQuestsWithJarvis, getReorderReason } from '@/utils/jarvisQuestReorder';
+import { useEmergencyQuests } from '@/hooks/useEmergencyQuests';
+import { EmergencyQuestBanner } from '@/components/quests/EmergencyQuestBanner';
+import { EmergencyQuestOverlay } from '@/components/effects/EmergencyQuestOverlay';
 
 // ── Storage helpers ──────────────────────────────────────────────────
 
@@ -187,6 +190,7 @@ const Quests = () => {
   const [pillarBonusToast, setPillarBonusToast] = useState<number | null>(null);
   const { aiResult } = useAIQuests();
   const jarvis = useJarvisBrainOptional();
+  const emergency = useEmergencyQuests();
 
   // Morning confirmation — require if pillars were previewed last night but not yet confirmed today
   const [pillarsConfirmed, setPillarsConfirmed] = useState(() => {
@@ -504,6 +508,15 @@ const Quests = () => {
         }}
       />
 
+      {/* Emergency Quest Overlay */}
+      {emergency.showOverlay && emergency.activeEmergency && (
+        <EmergencyQuestOverlay
+          quest={emergency.activeEmergency}
+          show={emergency.showOverlay}
+          onAccept={emergency.acceptEmergency}
+        />
+      )}
+
       {/* Sprint timer overlay */}
       <SprintOverlay
         state={sprint.state}
@@ -568,6 +581,14 @@ const Quests = () => {
           )}
 
           {/* Gentle nudge when no scan today */}
+          {/* Emergency Quest Banner */}
+          {emergency.hasActiveEmergency && emergency.activeEmergency && (
+            <EmergencyQuestBanner
+              quest={emergency.activeEmergency}
+              onCompleteObjective={emergency.completeObjective}
+            />
+          )}
+
           {/* JARVIS Brain Banner */}
           <JarvisPageBanner page="quests" />
 

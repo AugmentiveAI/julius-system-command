@@ -60,6 +60,9 @@ import { buildTrainingContext } from '@/hooks/useTrainingIntelligence';
 import { getMesocycleState } from '@/utils/periodizationEngine';
 import { useJarvisBrain } from '@/contexts/JarvisBrainContext';
 import { SystemInterventionBanner } from '@/components/dashboard/SystemInterventionBanner';
+import { useEmergencyQuests } from '@/hooks/useEmergencyQuests';
+import { EmergencyQuestOverlay } from '@/components/effects/EmergencyQuestOverlay';
+import { EmergencyQuestBanner } from '@/components/quests/EmergencyQuestBanner';
 const LAST_SCAN_DATE_KEY = 'systemLastScanDate';
 const AI_SETTINGS_KEY = 'systemAISettings';
 const START_DATE_KEY = 'systemStartDate';
@@ -122,6 +125,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
     threats,
     overallThreatLevel,
   } = useJarvisBrain();
+  const emergency = useEmergencyQuests();
 
   // Auto-deploy: track which suggestions have been auto-deployed this session
   const autoDeployedRef = useRef<Set<string>>(new Set());
@@ -538,6 +542,14 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
 
   return (
     <>
+      {/* Emergency Quest Overlay */}
+      {emergency.showOverlay && emergency.activeEmergency && (
+        <EmergencyQuestOverlay
+          quest={emergency.activeEmergency}
+          show={emergency.showOverlay}
+          onAccept={emergency.acceptEmergency}
+        />
+      )}
       <FlashOverlay show={showFlashEffect} />
       <LevelUpOverlay show={levelUpState.show} newLevel={levelUpState.newLevel} />
       <RankUpOverlay show={rankUpState.show} newRank={rankUpState.rank} onDone={() => setRankUpState({ show: false, rank: '' })} />
@@ -628,6 +640,14 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
         />
 
         <div className="mx-auto max-w-md space-y-5 px-4 mt-2">
+          {/* Emergency Quest Banner */}
+          {emergency.hasActiveEmergency && emergency.activeEmergency && (
+            <EmergencyQuestBanner
+              quest={emergency.activeEmergency}
+              onCompleteObjective={emergency.completeObjective}
+            />
+          )}
+
           {/* 0. System Interventions (JARVIS) */}
           {highestPriority && (
             <SystemInterventionBanner

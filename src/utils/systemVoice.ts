@@ -40,7 +40,11 @@ export type SystemContext =
   | 'pillarMissedSilent'
   | 'pillarShieldUsed'
   | 'pillarShieldBroken'
-  | 'pillarStreakMilestone';
+  | 'pillarStreakMilestone'
+  | 'emergencyTriggered'
+  | 'emergencyCompleted'
+  | 'emergencyFailed'
+  | 'surgeTriggered';
 
 interface VoiceData {
   level?: number;
@@ -380,6 +384,38 @@ const MESSAGES: Record<SystemContext, string[]> = {
     'Every pillar. [streak] consecutive days. [goal] is no longer a dream — it is a trajectory.',
     'Milestone: [streak] days. The shadows acknowledge this consistency.',
   ],
+
+  emergencyTriggered: [
+    'Emergency protocol activated. Threat level critical.',
+    'EMERGENCY PROTOCOL: [title]. Execute immediately.',
+    'Critical threshold crossed. Emergency quest deployed.',
+    'The System intervenes. Emergency quest active. Failure has consequences.',
+    'Threat detected. Emergency protocol engaged. Time is running.',
+  ],
+
+  emergencyCompleted: [
+    'Emergency resolved. Threat neutralized. +[xp] XP.',
+    'Emergency quest complete. The System acknowledges swift action. +[xp] XP.',
+    'Threat neutralized. Resume normal operations. +[xp] XP.',
+    'Crisis averted. The hunter proves capable under pressure. +[xp] XP.',
+    'Emergency cleared. The System records this response time. +[xp] XP.',
+  ],
+
+  emergencyFailed: [
+    'Emergency failed. Penalty applied. Learn from this.',
+    'The System gave you a chance. You did not act. Consequence delivered.',
+    'Emergency quest expired. The System does not forget failure.',
+    'Time ran out. The threat was real. The penalty is real.',
+    'Failed. The person you said you would become would not have let this happen.',
+  ],
+
+  surgeTriggered: [
+    'Surge detected. Opportunity window open.',
+    'SURGE: Momentum captured. Optional quest available.',
+    'The System sees your momentum. Capitalize on it.',
+    'You are performing. The System offers more. Accept the surge.',
+    'Opportunity detected. The hunter who seizes this grows stronger.',
+  ],
 };
 
 // ── Main Export ───────────────────────────────────────────────────────
@@ -431,6 +467,10 @@ const TOAST_TITLES: Partial<Record<SystemContext, string>> = {
   pillarShieldUsed: '🛡️ Shield Activated',
   pillarShieldBroken: '🛡️ Shield Depleted',
   pillarStreakMilestone: '🏛️ Pillar Streak Milestone',
+  emergencyTriggered: '🚨 EMERGENCY PROTOCOL',
+  emergencyCompleted: '✅ Emergency Resolved',
+  emergencyFailed: '❌ Emergency Failed',
+  surgeTriggered: '⚡ SURGE DETECTED',
 };
 
 export function getSystemToast(context: SystemContext, data: VoiceData = {}): SystemToast {
