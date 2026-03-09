@@ -148,8 +148,8 @@ export function useSystemIntelligenceAI() {
 
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
-      // Fetch recent completions, shadow army, dungeons, and training logs from DB in parallel
-      const [completionsRes, shadowsRes, dungeonsRes, trainingRes] = await Promise.all([
+      // Fetch recent completions, shadow army, dungeons, training logs, and inventory from DB in parallel
+      const [completionsRes, shadowsRes, dungeonsRes, trainingRes, inventoryRes] = await Promise.all([
         supabase
           .from('quest_history')
           .select('quest_title, xp_earned, type, completed_at')
@@ -172,6 +172,11 @@ export function useSystemIntelligenceAI() {
           .eq('user_id', user.id)
           .gte('completed_at', thirtyDaysAgo)
           .order('completed_at', { ascending: false })) as any,
+        supabase
+          .from('inventory')
+          .select('data')
+          .eq('user_id', user.id)
+          .maybeSingle(),
       ]);
 
       playerData.recentCompletions = (completionsRes.data || []).map((c: any) => ({
