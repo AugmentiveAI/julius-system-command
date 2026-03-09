@@ -391,6 +391,13 @@ export function DungeonPanel({ onXPGained }: DungeonPanelProps) {
           )}
         </div>
       )}
+      <KeyRequiredModal
+        open={keyModal.open}
+        onClose={() => setKeyModal(prev => ({ ...prev, open: false }))}
+        dungeonTitle={keyModal.title}
+        keyName={keyModal.keyName}
+        ownedKeys={keyModal.owned}
+      />
     </div>
   );
 }
