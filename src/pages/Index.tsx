@@ -132,6 +132,9 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
     overallThreatLevel,
   } = useJarvisBrain();
   const emergency = useEmergencyQuests();
+  const aarReview = useAfterActionReview();
+  const { newLoopDetected, clearNewLoopAlert } = useNarrativeLoops();
+  const { cornerstone, todayHonored } = useCornerstone();
 
   // Auto-deploy: track which suggestions have been auto-deployed this session
   const autoDeployedRef = useRef<Set<string>>(new Set());
