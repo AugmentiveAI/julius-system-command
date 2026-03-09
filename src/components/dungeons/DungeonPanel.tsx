@@ -301,16 +301,21 @@ export function DungeonPanel({ onXPGained }: DungeonPanelProps) {
           ) : (
             <>
               {/* Active Dungeons */}
-              {activeDungeons.map(d => (
+              {activeDungeons.map(d => {
+                const keyType = getKeyType(d.dungeon_type);
+                return (
                 <DungeonCard
                   key={d.id}
                   dungeon={d}
-                  onEnter={() => enterDungeon(d.id)}
+                  onEnter={() => handleEnterDungeon(d)}
                   onCompleteObjective={(objId) => handleCompleteObjective(d.id, objId)}
                   onAbandon={() => { if (confirm('Abandon this dungeon? You will lose all progress.')) abandonDungeon(d.id); }}
                   onClaimXP={() => handleClaimXP(d)}
+                  keyRequired={keyType}
+                  hasKey={keyType ? hasKey(keyType) : true}
                 />
-              ))}
+                );
+              })}
 
               {/* Recently completed */}
               {completedDungeons.slice(0, 2).map(d => (
