@@ -11,6 +11,8 @@ import {
 } from '@/components/ui/popover';
 import { SystemNotificationPanel } from '@/components/notifications/SystemNotificationPanel';
 import { SystemNotification } from '@/hooks/useSystemNotifications';
+import { ThreatIndicator } from '@/components/dashboard/ThreatIndicator';
+import { Threat, ThreatLevel } from '@/types/threat';
 
 const MODE_CONFIG: Record<string, { dot: string; label: string }> = {
   push: { dot: 'bg-green-400 shadow-[0_0_8px_hsl(142_76%_36%/0.6)]', label: 'PUSH' },
