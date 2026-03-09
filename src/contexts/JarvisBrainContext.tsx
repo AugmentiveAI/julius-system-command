@@ -220,12 +220,16 @@ export function JarvisBrainProvider({ children }: { children: ReactNode }) {
     anticipation,
     intelligenceLoading,
     generateIntelligence,
+    threats,
+    overallThreatLevel,
+    hasCriticalThreat,
   }), [
     allInterventions, highestPriority, hasIntervention, dismissIntervention, refresh,
     getInterventionsForPage, getHighestForPage,
     geneticState, sprintsToday, logSprint, logColdExposure, logMagnesium,
     fatigueAccumulation, workoutCompleted,
     intelligence, anticipation, intelligenceLoading, generateIntelligence,
+    threats, overallThreatLevel, hasCriticalThreat,
   ]);
 
   return (

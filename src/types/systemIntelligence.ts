@@ -63,6 +63,17 @@ export interface Anticipation {
   strategic: AnticipationStrategic;
 }
 
+export interface SystemIntelligenceThreat {
+  overallLevel: string;
+  primaryThreat?: {
+    category: string;
+    title: string;
+    metric: string;
+    recommendation: string;
+  };
+  threatCount: number;
+}
+
 export interface SystemIntelligence {
   dailyBrief: string;
   strategicAnalysis: string;
@@ -74,4 +85,5 @@ export interface SystemIntelligence {
   patternAlert?: string | null;
   systemConfidence: number;
   generatedAt: string;
+  threatAssessment?: SystemIntelligenceThreat | null;
 }
