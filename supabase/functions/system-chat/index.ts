@@ -224,6 +224,7 @@ serve(async (req) => {
       dungeonsCleared: sanitizeNum(rawCtx.dungeonsCleared),
       training: rawCtx.training,
       activeInterventions: Array.isArray(rawCtx.activeInterventions) ? rawCtx.activeInterventions.slice(0, 10) : [],
+      threats: rawCtx.threats && typeof rawCtx.threats === 'object' ? rawCtx.threats : null,
     } : null;
 
     // Generate proactive opener if this is the start of a conversation
