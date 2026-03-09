@@ -1,85 +1,55 @@
 
 
-# Phase 1: Threat Assessment System
+# Penalty Dungeon System
 
 ## Overview
+When a player has 2+ consecutive zero-completion days, a mandatory "Penalty Dungeon" automatically spawns. It's a timed quest with a threatening UI — complete it or suffer permanent stat reduction. This mirrors Jinwoo's brutal penalty quests that are unavoidable and terrifying.
 
-Build a dedicated Threat Assessment engine that runs alongside the existing intervention system, providing a persistent threat-level indicator on the dashboard. Threats are distinct from interventions — they represent ongoing risk states rather than one-time nudges.
+## How It Works
 
-## Architecture
+1. **Trigger**: On day transition, if `player.penalty.consecutiveZeroDays >= 2`, a penalty dungeon auto-creates in the database with `dungeon_type: 'penalty'` and a 4-hour time limit.
+2. **Blocking UI**: A full-screen `PenaltyDungeonOverlay` appears that cannot be dismissed. It shows a countdown timer, the penalty quest objectives, and the stat that will be reduced on failure. The overlay pulses red/black with a "PENALTY QUEST" header.
+3. **Completion**: Player checks off 3 simple but mandatory objectives (e.g., "Complete 2 quests within 4 hours", "Log a cold exposure or training session", "Complete a 30-minute sprint"). Completing all objectives clears the penalty dungeon and resets `consecutiveZeroDays`.
+4. **Failure**: If the timer expires or the player doesn't complete all objectives, the lowest stat is permanently reduced by 3 points and a system notification is logged. The overlay shows a "PENALTY APPLIED" cinematic before closing.
 
-```text
-threatEngine.ts          ← Pure logic: threat rules + evaluation
-  ↓
-useThreatAssessment.ts   ← Hook: gathers context, runs engine every 60s
-  ↓
-ThreatIndicator.tsx      ← TopBar component: color-coded dot + expandable list
-  ↓
-JarvisBrainContext.tsx   ← Exposes threats to system chat + intelligence
-  ↓
-system-chat/index.ts     ← Receives threats in playerContext
-system-intelligence/     ← Receives threats in player data
-```
+## Technical Plan
 
-## Files to Create
+### 1. Extend Dungeon Types
+- Add `'penalty'` to `DungeonType` in `src/types/dungeon.ts`
+- Add a `PENALTY_DUNGEON_TEMPLATE` constant with 3 objectives and 240-minute time limit
 
-### 1. `src/types/threat.ts`
-- `ThreatCategory`: streak, fatigue, pipeline, genetic, momentum, stat_decay, deadline, penalty
-- `ThreatLevel`: nominal, elevated, high, critical
-- `Threat` interface: id, category, level, title, description, metric, recommendation, detectedAt, expiresAt
-- `ThreatAssessment` interface: overallLevel, threats[], lastUpdated
-- `ThreatContext` interface: extends existing InterventionContext with additional fields (consecutiveZeroDays, penaltyDungeonActive, penaltyTimeRemaining, daysSinceLastOutreach, questsCompletedLast3Days, daysToExitDeadline, currentMRR, targetMRR, deepWorkCompletedToday, attemptingHighCognitionTask)
+### 2. Create `usePenaltyDungeon` Hook (`src/hooks/usePenaltyDungeon.ts`)
+- Checks `player.penalty.consecutiveZeroDays >= 2` on mount and visibility changes
+- Queries dungeons table for any active/available penalty dungeon for today
+- If none exists and penalty threshold met, auto-creates one via Supabase insert
+- Exposes: `activePenalty`, `completeObjective`, `timeRemaining`, `isExpired`, `isPenaltyActive`
+- On expiry: calls a callback to apply stat reduction and log notification
 
-### 2. `src/utils/threatEngine.ts`
-- Threat rules as defined in the prompt (streak_warning, streak_critical, fatigue_elevated, fatigue_high, pipeline_warning, pipeline_critical, genetic_crash_active, genetic_peak_wasted, momentum_stall, penalty_imminent, penalty_active, deadline_approaching)
-- `evaluateThreats(ctx: ThreatContext): Threat[]` — runs all rules, returns active threats
-- `getOverallLevel(threats: Threat[]): ThreatLevel` — returns highest level
-- Level priority: critical > high > elevated > nominal
+### 3. Create `PenaltyDungeonOverlay` Component (`src/components/effects/PenaltyDungeonOverlay.tsx`)
+- Full-screen overlay with `z-[100]` (above everything)
+- Red/black pulsing background with "PENALTY QUEST" title
+- Countdown timer (hours:minutes:seconds)
+- 3 objective checkboxes
+- Shows which stat will be reduced on failure
+- Cannot be dismissed — only completing all objectives or timer expiry closes it
+- On failure: shows a brief "PENALTY APPLIED" screen with stat reduction amount before fading
 
-### 3. `src/hooks/useThreatAssessment.ts`
-- Gathers context from usePlayer, useProtocolQuests, useTrainingLog, useGeneticState, usePenaltyDungeon
-- Reads localStorage for quest history (last 3 days completions), pipeline data
-- Runs `evaluateThreats` every 60 seconds
-- Returns: assessment, overallLevel, threats, hasCriticalThreat, hasAnyThreat, getThreatsByCategory
+### 4. Wire into `Index.tsx`
+- Import `usePenaltyDungeon` with player penalty state
+- Render `PenaltyDungeonOverlay` when `isPenaltyActive` is true
+- On completion: add XP, log notification ("Penalty Quest Survived"), reset penalty state
+- On failure: reduce lowest stat by 3, log notification ("Penalty Applied — stat reduced"), flash overlay
 
-### 4. `src/components/dashboard/ThreatIndicator.tsx`
-- Popover-based component (matches existing TopBar pattern with Popover)
-- Button shows: color-coded dot (green/yellow/orange/red) + "NOMINAL"/"ELEVATED"/"HIGH"/"CRITICAL" label
-- Dot pulses: none for nominal, slow for elevated, medium for high, fast for critical with glow
-- Popover content: lists all active threats with category icon, title, metric, recommendation
-- Empty state when nominal: "All systems nominal."
+### 5. Connect to Existing Systems
+- When penalty objectives include "complete a quest", listen to `useProtocolQuests` completions
+- When objectives include "complete training", listen to `useWorkout` completion
+- Auto-mark penalty objectives as the player completes real quests during the penalty window
 
-## Files to Modify
+## Files Changed
+- `src/types/dungeon.ts` — add `'penalty'` type + template
+- `src/hooks/usePenaltyDungeon.ts` — new hook
+- `src/components/effects/PenaltyDungeonOverlay.tsx` — new overlay component
+- `src/pages/Index.tsx` — wire penalty dungeon into dashboard
 
-### 5. `src/components/dashboard/TopBar.tsx`
-- Import and render `<ThreatIndicator />` in the right-side controls, before the notification panel
-
-### 6. `src/contexts/JarvisBrainContext.tsx`
-- Add `useThreatAssessment` to the provider
-- Expose `threats`, `overallThreatLevel`, `hasCriticalThreat` on the context
-- Build threat context using the same shared state already gathered
-
-### 7. `src/hooks/useSystemChat.ts`
-- Extend `PlayerContext` interface to include `threats` object (overall level + active threat summaries)
-- Pass threat data into `buildContext()` calls
-
-### 8. `src/components/chat/SystemChatPanel.tsx`
-- Update the context builder to include threats from JarvisBrain
-
-### 9. `supabase/functions/system-chat/index.ts`
-- Add threats to the context injection section of the system prompt so JARVIS references active threats
-
-### 10. `supabase/functions/system-intelligence/index.ts`
-- Add threat assessment data to the player data payload sent to the AI
-- Include threatAssessment in the expected output schema
-
-### 11. `src/types/systemIntelligence.ts`
-- Add `threatAssessment` optional field to `SystemIntelligence` interface
-
-## Key Design Decisions
-
-- Threats run client-side (like interventions) for instant feedback — no edge function needed for evaluation
-- Some context fields (daysSinceLastOutreach, MRR targets) will initially default to safe values since pipeline/revenue tracking isn't fully built yet — the rules simply won't trigger until that data exists
-- Threats are NOT dismissible (unlike interventions) — they persist as long as the condition is true
-- The threat indicator replaces the mode dot's position or sits adjacent to it in the TopBar
+No database migration needed — the existing `dungeons` table already supports custom types, objectives, and time limits.
 

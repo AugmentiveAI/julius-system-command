@@ -11,6 +11,8 @@ import {
 } from '@/components/ui/popover';
 import { SystemNotificationPanel } from '@/components/notifications/SystemNotificationPanel';
 import { SystemNotification } from '@/hooks/useSystemNotifications';
+import { ThreatIndicator } from '@/components/dashboard/ThreatIndicator';
+import { Threat, ThreatLevel } from '@/types/threat';
 
 const MODE_CONFIG: Record<string, { dot: string; label: string }> = {
   push: { dot: 'bg-green-400 shadow-[0_0_8px_hsl(142_76%_36%/0.6)]', label: 'PUSH' },
@@ -32,9 +34,11 @@ interface TopBarProps {
   unreadCount?: number;
   onNotificationsOpen?: () => void;
   onNotificationsClear?: () => void;
+  threatLevel?: ThreatLevel;
+  threats?: Threat[];
 }
 
-export const TopBar = ({ systemRecommendation, onForceRefresh, notifications = [], unreadCount = 0, onNotificationsOpen, onNotificationsClear }: TopBarProps) => {
+export const TopBar = ({ systemRecommendation, onForceRefresh, notifications = [], unreadCount = 0, onNotificationsOpen, onNotificationsClear, threatLevel = 'nominal', threats = [] }: TopBarProps) => {
   const { geneticState, sprintsToday } = useGeneticState();
   const { active: focusActive, toggle: toggleFocus } = useFocusModeContext();
   const dayNumber = getDayNumber();
@@ -90,6 +94,7 @@ export const TopBar = ({ systemRecommendation, onForceRefresh, notifications = [
 
       {/* Right: Focus toggle + Sprint counter + Day */}
       <div className="flex items-center gap-2">
+        <ThreatIndicator overallLevel={threatLevel} threats={threats} />
         <SystemNotificationPanel
           notifications={notifications}
           unreadCount={unreadCount}

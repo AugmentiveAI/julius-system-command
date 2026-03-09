@@ -8,10 +8,12 @@ import { useWorkout } from '@/hooks/useWorkout';
 import { useTrainingLog } from '@/hooks/useTrainingLog';
 import { useShadowArmy } from '@/hooks/useShadowArmy';
 import { useSystemIntelligenceAI } from '@/hooks/useSystemIntelligenceAI';
+import { useThreatAssessment } from '@/hooks/useThreatAssessment';
 import { InterventionContext, SystemIntervention, InterventionType } from '@/utils/interventionEngine';
 import { getSystemDate } from '@/utils/dayCycleEngine';
 import { GeneticState } from '@/utils/geneticEngine';
 import { Anticipation, SystemIntelligence } from '@/types/systemIntelligence';
+import { Threat, ThreatLevel } from '@/types/threat';
 
 // ── Page-specific intervention filters ──────────────────────────────
 
@@ -74,6 +76,11 @@ interface JarvisBrainState {
   anticipation: Anticipation | null;
   intelligenceLoading: boolean;
   generateIntelligence: () => void;
+
+  // Threat Assessment
+  threats: Threat[];
+  overallThreatLevel: ThreatLevel;
+  hasCriticalThreat: boolean;
 }
 
 const JarvisBrainCtx = createContext<JarvisBrainState | null>(null);
@@ -100,6 +107,7 @@ export function JarvisBrainProvider({ children }: { children: ReactNode }) {
   const { shadows } = useShadowArmy();
   const { geneticState, sprintsToday, logSprint, logColdExposure, logMagnesium } = useGeneticState();
   const { intelligence, loading: intelligenceLoading, generate: generateIntelligence } = useSystemIntelligenceAI();
+  const { threats, overallLevel: overallThreatLevel, hasCriticalThreat } = useThreatAssessment();
   const anticipation = intelligence?.anticipation ?? null;
 
   // Build intervention context from all shared state
@@ -212,12 +220,16 @@ export function JarvisBrainProvider({ children }: { children: ReactNode }) {
     anticipation,
     intelligenceLoading,
     generateIntelligence,
+    threats,
+    overallThreatLevel,
+    hasCriticalThreat,
   }), [
     allInterventions, highestPriority, hasIntervention, dismissIntervention, refresh,
     getInterventionsForPage, getHighestForPage,
     geneticState, sprintsToday, logSprint, logColdExposure, logMagnesium,
     fatigueAccumulation, workoutCompleted,
     intelligence, anticipation, intelligenceLoading, generateIntelligence,
+    threats, overallThreatLevel, hasCriticalThreat,
   ]);
 
   return (
