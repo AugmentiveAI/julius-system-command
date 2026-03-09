@@ -65,6 +65,11 @@ serve(async (req) => {
       dayType: sanitizeStr(rawCtx.dayType, 30),
     } : {};
 
+    // Sanitize shadow fields before any prompt interpolation
+    const safeName = sanitizeStr(shadow.name, 100);
+    const safeDesc = sanitizeStr(shadow.description, 300);
+    const safeCat = sanitizeStr(shadow.category, 50);
+
     const isScout = isScoutShadow(shadow);
 
     // ─── Pre-fetch live intel for scout shadows via Groq ───
@@ -73,7 +78,7 @@ serve(async (req) => {
       try {
         const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
         if (GROQ_API_KEY) {
-          const scoutTopic = shadow.description || shadow.name;
+          const scoutTopic = safeDesc || safeName;
           const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -139,16 +144,18 @@ PLAYER CONTEXT:
 - Level: ${playerContext?.level || 1}
 - Current capabilities: ${JSON.stringify(playerContext?.stats || {})}`;
 
-    const scoutUserPrompt = `RECONNAISSANCE MISSION: "${shadow.name}"
-Target Domain: ${shadow.description || shadow.name}
-Power Level: ${shadow.power_level || 1} (higher = deeper, more advanced intel)
+    const safePower = sanitizeNum(shadow.power_level, 1, 1, 10);
+
+    const scoutUserPrompt = `RECONNAISSANCE MISSION: "${safeName}"
+Target Domain: ${safeDesc || safeName}
+Power Level: ${safePower} (higher = deeper, more advanced intel)
 ${liveIntelBlock}
 
 Execute full reconnaissance. Integrate the live intelligence feed above into your report. Use the scout_report tool to deliver your findings.
 
-${shadow.power_level >= 3 ? 'ENHANCED RECON: Include competitor analysis, market sizing estimates, and emerging 2026 disruptors.' : ''}
-${shadow.power_level >= 5 ? 'DEEP RECON: Include contrarian insights that go AGAINST conventional wisdom, plus second-order effects most people miss.' : ''}
-${shadow.power_level >= 7 ? 'ELITE RECON: Include predictive analysis — what will the landscape look like in 6-12 months based on current signals?' : ''}`;
+${safePower >= 3 ? 'ENHANCED RECON: Include competitor analysis, market sizing estimates, and emerging 2026 disruptors.' : ''}
+${safePower >= 5 ? 'DEEP RECON: Include contrarian insights that go AGAINST conventional wisdom, plus second-order effects most people miss.' : ''}
+${safePower >= 7 ? 'ELITE RECON: Include predictive analysis — what will the landscape look like in 6-12 months based on current signals?' : ''}`;
 
     // ─── STANDARD MODE: Content/protocol/framework generation ───
     const standardSystemPrompt = `You are THE SYSTEM's Shadow Activation Engine. When a player activates a shadow, you generate immediately actionable content tailored to that shadow's purpose and the player's context.
@@ -175,16 +182,16 @@ PLAYER CONTEXT:
 - Time of day: ${playerContext?.currentTime || 'unknown'}
 - Energy/Day type: ${playerContext?.dayType || 'work'}`;
 
-    const standardUserPrompt = `ACTIVATE SHADOW: "${shadow.name}"
-Category: ${shadow.category}
-Description: ${shadow.description || 'No description'}
-Power Level: ${shadow.power_level || 1}
-Activation Count: ${shadow.activationCount || 0}
+    const standardUserPrompt = `ACTIVATE SHADOW: "${safeName}"
+Category: ${safeCat}
+Description: ${safeDesc || 'No description'}
+Power Level: ${safePower}
+Activation Count: ${sanitizeNum(shadow.activationCount, 0, 0, 9999)}
 
-Generate actionable content for this shadow activation using the activate_shadow tool. Scale the depth and sophistication based on power level ${shadow.power_level || 1}/10.
+Generate actionable content for this shadow activation using the activate_shadow tool. Scale the depth and sophistication based on power level ${safePower}/10.
 
-${shadow.power_level >= 3 ? 'This shadow has been leveled up — generate MORE advanced and nuanced content than a level 1 shadow would produce.' : ''}
-${shadow.power_level >= 5 ? 'This is a HIGH POWER shadow — generate expert-tier content with advanced techniques and compound strategies.' : ''}`;
+${safePower >= 3 ? 'This shadow has been leveled up — generate MORE advanced and nuanced content than a level 1 shadow would produce.' : ''}
+${safePower >= 5 ? 'This is a HIGH POWER shadow — generate expert-tier content with advanced techniques and compound strategies.' : ''}`;
 
     // Choose tools based on mode
     const tools = isScout ? [
