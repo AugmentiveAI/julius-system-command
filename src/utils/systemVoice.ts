@@ -421,6 +421,46 @@ const MESSAGES: Record<SystemContext, string[]> = {
     'You are performing. The System offers more. Accept the surge.',
     'Opportunity detected. The hunter who seizes this grows stronger.',
   ],
+
+  dailyDebrief: [
+    'Daily Debrief: [grade]-Rank. The System has assessed your performance.',
+    'Day reviewed. Grade: [grade]. The data does not lie.',
+    'Debrief complete. [grade]-Rank day. Tomorrow demands more.',
+    'Assessment logged. [grade]-Rank. The System sees all.',
+    'Daily debrief compiled. Grade: [grade]. Trajectory updated.',
+  ],
+
+  weeklyDebrief: [
+    'Weekly assessment complete. Grade: [grade]. The System recalibrates.',
+    '[grade]-Rank week. The trajectory has been updated.',
+    'Seven days analyzed. [grade]-Rank. The System demands improvement.',
+    'Weekly debrief: [grade]. The shadows review your progress.',
+    'Week concluded. [grade]-Rank performance recorded permanently.',
+  ],
+
+  patternDetected: [
+    'PATTERN DETECTED: The System sees what you cannot.',
+    'Behavioral loop identified. The System adapts.',
+    'A pattern has emerged from your data. Acknowledged.',
+    'Loop detected. The System records this for future calibration.',
+    'The data reveals a repeating pattern. The System takes note.',
+  ],
+
+  cornerstoneProtected: [
+    'Cornerstone protected. The foundation holds.',
+    'Keystone behavior complete. Trajectory secured.',
+    'The cornerstone stands. Today has a high probability of success.',
+    'Foundation behavior executed. The System predicts a strong day.',
+    'Cornerstone honored. The data favors you today.',
+  ],
+
+  cornerstoneAtRisk: [
+    'CORNERSTONE AT RISK. Your keystone behavior is unprotected.',
+    'Warning: Cornerstone not yet completed. History predicts a low-output day.',
+    'The foundation cracks. Complete the cornerstone or accept diminished returns.',
+    'Your most predictive behavior is missing today. The System warns.',
+    'Cornerstone unprotected. The data predicts what follows.',
+  ],
 };
 
 // ── Main Export ───────────────────────────────────────────────────────
