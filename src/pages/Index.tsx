@@ -119,6 +119,8 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
     highestPriority,
     dismissIntervention,
     logColdExposure,
+    threats,
+    overallThreatLevel,
   } = useJarvisBrain();
 
   // Auto-deploy: track which suggestions have been auto-deployed this session
