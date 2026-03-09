@@ -202,6 +202,19 @@ ACTIVE DUNGEONS (Boss Fights, Instant Dungeons, S-Rank Gates):
 ${JSON.stringify(playerData.activeDungeons || [], null, 1)}
 Note: Factor shadow army AND dungeon progress into trajectory forecasting. Reference genetic modifiers when recommending dungeon strategies.
 
+UNLOCKED SKILLS (Behavioral abilities acquired through performance):
+${JSON.stringify(playerData.unlockedSkills || [], null, 1)}
+
+INVENTORY (Business assets & resources):
+${JSON.stringify(playerData.inventory || {}, null, 1)}
+
+CROSS-REFERENCE ANALYSIS:
+- Compare shadow army categories against inventory assets — identify gaps where shadows exist but no matching inventory items, and vice versa.
+- Factor unlocked skills' passive effects into strategic recommendations (e.g., if "Morning Dominion" is unlocked, emphasize peak-window exploitation).
+- Recommend shadows that would fill inventory gaps (e.g., missing templates → suggest a template-creation shadow).
+- When suggesting dungeons, consider which skills would level up and which inventory items would be created upon completion.
+- Treat Shadows + Skills + Inventory as a unified power portfolio — strategic advice should reference all three systems together.
+
 TRAINING MODULE DATA (Last 30 days):
 ${playerData.training ? `- Sessions Logged: ${playerData.training.totalSessions}
 - Total Volume: ${playerData.training.totalVolume} lbs
