@@ -270,6 +270,7 @@ CURRENT PLAYER STATE:
 - Dungeons Cleared: ${playerContext.dungeonsCleared}
 ${trainingBlock}
 ${interventionBlock}
+${threatBlock}
 ${marketIntel}` : marketIntel;
 
     // If we have a proactive opener, inject it as context
