@@ -209,11 +209,13 @@ interface DungeonPanelProps {
 
 export function DungeonPanel({ onXPGained }: DungeonPanelProps) {
   const { activeDungeons, completedDungeons, loading, getAvailableTemplates, createDungeon, enterDungeon, completeObjective, abandonDungeon } = useDungeons();
+  const { hasKey, useKey } = useStore();
   const [expanded, setExpanded] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [templates, setTemplates] = useState<DungeonTemplate[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
   const [claimedIds, setClaimedIds] = useState<Set<string>>(new Set());
+  const [keyModal, setKeyModal] = useState<{ open: boolean; title: string; keyName: string; owned: number }>({ open: false, title: '', keyName: '', owned: 0 });
 
   const handleShowTemplates = async () => {
     if (showTemplates) { setShowTemplates(false); return; }
