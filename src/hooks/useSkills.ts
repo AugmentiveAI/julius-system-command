@@ -71,6 +71,11 @@ export function useSkills(ctx: SkillCheckContext) {
         const def = SKILL_DEFINITIONS.find(d => d.id === skill.id);
         if (!def) return skill;
         if (checkCondition(def.unlockCondition, ctx)) {
+          // Only show overlay if this is a genuinely new unlock (not already saved)
+          const savedSkills = loadSkills();
+          const savedSkill = savedSkills.find(s => s.id === skill.id);
+          if (savedSkill?.unlocked) return { ...skill, unlocked: true, level: savedSkill.level };
+          
           changed = true;
           const unlocked = { ...skill, unlocked: true, level: 1, unlockedAt: new Date().toISOString() };
           setNewlyUnlocked(unlocked);
