@@ -347,6 +347,10 @@ export function JarvisBrainProvider({ children }: { children: ReactNode }) {
     jarvisAnticipations,
     activeAnticipations,
     generateProactiveMessage,
+    activitySummary,
+    recentActivities,
+    calendarContext,
+    nextCalendarEvent,
   }), [
     allInterventions, highestPriority, hasIntervention, dismissIntervention, refresh,
     getInterventionsForPage, getHighestForPage,
