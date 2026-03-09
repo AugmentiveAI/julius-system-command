@@ -140,6 +140,12 @@ export function JarvisBrainProvider({ children }: { children: ReactNode }) {
   const { threats, overallLevel: overallThreatLevel, hasCriticalThreat } = useThreatAssessment();
   const anticipation = intelligence?.anticipation ?? null;
 
+  // ── Capture layer hooks ───────────────────────────────────────
+  const { todaySummary: activitySummary, getRecentActivities } = useActivityLog();
+  const { getJarvisContext: getCalendarContext, nextEvent: nextCalendarEvent } = useCalendarContext();
+  const recentActivities = useMemo(() => getRecentActivities(5), [getRecentActivities]);
+  const calendarContext = useMemo(() => getCalendarContext(), [getCalendarContext]);
+
   // ── NEW hooks ──────────────────────────────────────────────────
   const { learning, getPrediction, isGoodTimeFor, getInsights } = useUserLearning();
 
