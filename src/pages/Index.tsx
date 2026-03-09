@@ -61,6 +61,7 @@ import { getMesocycleState } from '@/utils/periodizationEngine';
 import { useJarvisBrain } from '@/contexts/JarvisBrainContext';
 import { SystemInterventionBanner } from '@/components/dashboard/SystemInterventionBanner';
 import { useEmergencyQuests } from '@/hooks/useEmergencyQuests';
+import { ActiveBoostsBar } from '@/components/dashboard/ActiveBoostsBar';
 import { EmergencyQuestOverlay } from '@/components/effects/EmergencyQuestOverlay';
 import { EmergencyQuestBanner } from '@/components/quests/EmergencyQuestBanner';
 import { CornerstoneAlert } from '@/components/warnings/CornerstoneAlert';
@@ -651,6 +652,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
           threats={threats}
         />
 
+        <ActiveBoostsBar />
         <div className="mx-auto max-w-md space-y-5 px-4 mt-2">
           {/* Emergency Quest Banner */}
           {emergency.hasActiveEmergency && emergency.activeEmergency && (

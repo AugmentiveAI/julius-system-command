@@ -32,6 +32,7 @@ import More from "./pages/More";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import SystemAnalytics from "./pages/SystemAnalytics";
+import Store from "./pages/Store";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 
@@ -159,6 +160,7 @@ const AppContent = () => {
         <Route path="/more" element={<ProtectedRoute><More /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
         <Route path="/system-analytics" element={<ProtectedRoute><SystemAnalytics /></ProtectedRoute>} />
+        <Route path="/store" element={<ProtectedRoute><Store /></ProtectedRoute>} />
         <Route path="/auth" element={<AuthRoute />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="*" element={<NotFound />} />

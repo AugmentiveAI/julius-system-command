@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dna, Backpack, Pill, BarChart3, Settings, Info, ChevronRight, RotateCcw, Calendar, Trash2 } from 'lucide-react';
+import { Dna, Backpack, Pill, BarChart3, Settings, Info, ChevronRight, RotateCcw, Calendar, Trash2, Store } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { JULIUS_GENETICS, GeneticTrait } from '@/types/genetics';
@@ -301,6 +301,7 @@ const More = () => {
 
         <MenuItem icon={Dna} label="Genetic Profile" onClick={() => setActiveSection('genetics')} />
         <MenuItem icon={Backpack} label="Inventory" onClick={() => setActiveSection('inventory')} />
+        <MenuItem icon={Store} label="System Store" isLink to="/store" />
         <MenuItem icon={Pill} label="Supplement Protocol" onClick={() => setActiveSection('supplements')} />
         <MenuItem icon={BarChart3} label="System Analytics" isLink to="/system-analytics" />
         <MenuItem icon={Settings} label="Settings" isLink to="/settings" />

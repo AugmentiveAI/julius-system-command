@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Skull, Timer, Crown, ChevronDown, ChevronUp, Plus, Swords, Lock, CheckCircle2, XCircle, Play, Zap } from 'lucide-react';
+import { Skull, Timer, Crown, ChevronDown, ChevronUp, Plus, Swords, Lock, CheckCircle2, XCircle, Play, Zap, Key } from 'lucide-react';
 import { Dungeon, DungeonTemplate, DungeonObjective, DungeonType, GeneticModifier } from '@/types/dungeon';
 import { useDungeons } from '@/hooks/useDungeons';
+import { useStore } from '@/hooks/useStore';
+import { KeyRequiredModal } from '@/components/dungeons/KeyRequiredModal';
 
 const TYPE_CONFIG: Record<DungeonType, { icon: typeof Skull; label: string; color: string; borderColor: string }> = {
   boss_fight: { icon: Skull, label: 'BOSS FIGHT', color: 'text-red-400', borderColor: 'border-red-400/30' },
@@ -57,12 +59,16 @@ function DungeonCard({
   onCompleteObjective,
   onAbandon,
   onClaimXP,
+  keyRequired,
+  hasKey,
 }: {
   dungeon: Dungeon;
   onEnter: () => void;
   onCompleteObjective: (objectiveId: string) => void;
   onAbandon: () => void;
   onClaimXP: () => void;
+  keyRequired?: string | null;
+  hasKey?: boolean;
 }) {
   const [detailOpen, setDetailOpen] = useState(dungeon.status === 'active');
   const config = TYPE_CONFIG[dungeon.dungeon_type];
@@ -158,10 +164,18 @@ function DungeonCard({
               {dungeon.status === 'available' && (
                 <button
                   onClick={onEnter}
-                  className="flex items-center gap-1 rounded-md border border-primary/50 bg-primary/10 px-3 py-1.5 font-mono text-[10px] text-primary transition-all hover:bg-primary/20"
+                  disabled={keyRequired && !hasKey}
+                  className={`flex items-center gap-1 rounded-md border px-3 py-1.5 font-mono text-[10px] transition-all ${
+                    keyRequired && !hasKey
+                      ? 'border-muted text-muted-foreground cursor-not-allowed'
+                      : 'border-primary/50 bg-primary/10 text-primary hover:bg-primary/20'
+                  }`}
                 >
-                  <Play className="h-3 w-3" />
-                  ENTER
+                  {keyRequired && !hasKey ? (
+                    <><Key className="h-3 w-3" /> KEY REQUIRED</>
+                  ) : (
+                    <><Play className="h-3 w-3" /> ENTER</>
+                  )}
                 </button>
               )}
               {isCompleted && (
@@ -195,11 +209,13 @@ interface DungeonPanelProps {
 
 export function DungeonPanel({ onXPGained }: DungeonPanelProps) {
   const { activeDungeons, completedDungeons, loading, getAvailableTemplates, createDungeon, enterDungeon, completeObjective, abandonDungeon } = useDungeons();
+  const { hasKey, useKey } = useStore();
   const [expanded, setExpanded] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [templates, setTemplates] = useState<DungeonTemplate[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
   const [claimedIds, setClaimedIds] = useState<Set<string>>(new Set());
+  const [keyModal, setKeyModal] = useState<{ open: boolean; title: string; keyName: string; owned: number }>({ open: false, title: '', keyName: '', owned: 0 });
 
   const handleShowTemplates = async () => {
     if (showTemplates) { setShowTemplates(false); return; }
@@ -213,6 +229,30 @@ export function DungeonPanel({ onXPGained }: DungeonPanelProps) {
   const handleCreateDungeon = async (template: DungeonTemplate) => {
     await createDungeon(template);
     setShowTemplates(false);
+  };
+
+  const getKeyType = (dungeonType: string): 'boss_key' | 's_rank_key' | null => {
+    if (dungeonType === 'boss_fight') return 'boss_key';
+    if (dungeonType === 's_rank_gate') return 's_rank_key';
+    return null;
+  };
+
+  const getKeyName = (keyType: string): string => {
+    if (keyType === 'boss_key') return 'Boss Gate Key';
+    if (keyType === 's_rank_key') return 'S-Rank Gate Key';
+    return 'Key';
+  };
+
+  const handleEnterDungeon = (dungeon: Dungeon) => {
+    const keyType = getKeyType(dungeon.dungeon_type);
+    if (keyType) {
+      if (!hasKey(keyType)) {
+        setKeyModal({ open: true, title: dungeon.title, keyName: getKeyName(keyType), owned: 0 });
+        return;
+      }
+      useKey(keyType);
+    }
+    enterDungeon(dungeon.id);
   };
 
   const handleCompleteObjective = async (dungeonId: string, objectiveId: string) => {
@@ -261,16 +301,21 @@ export function DungeonPanel({ onXPGained }: DungeonPanelProps) {
           ) : (
             <>
               {/* Active Dungeons */}
-              {activeDungeons.map(d => (
+              {activeDungeons.map(d => {
+                const keyType = getKeyType(d.dungeon_type);
+                return (
                 <DungeonCard
                   key={d.id}
                   dungeon={d}
-                  onEnter={() => enterDungeon(d.id)}
+                  onEnter={() => handleEnterDungeon(d)}
                   onCompleteObjective={(objId) => handleCompleteObjective(d.id, objId)}
                   onAbandon={() => { if (confirm('Abandon this dungeon? You will lose all progress.')) abandonDungeon(d.id); }}
                   onClaimXP={() => handleClaimXP(d)}
+                  keyRequired={keyType}
+                  hasKey={keyType ? hasKey(keyType) : true}
                 />
-              ))}
+                );
+              })}
 
               {/* Recently completed */}
               {completedDungeons.slice(0, 2).map(d => (
@@ -346,6 +391,13 @@ export function DungeonPanel({ onXPGained }: DungeonPanelProps) {
           )}
         </div>
       )}
+      <KeyRequiredModal
+        open={keyModal.open}
+        onClose={() => setKeyModal(prev => ({ ...prev, open: false }))}
+        dungeonTitle={keyModal.title}
+        keyName={keyModal.keyName}
+        ownedKeys={keyModal.owned}
+      />
     </div>
   );
 }
