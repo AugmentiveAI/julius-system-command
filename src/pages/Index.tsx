@@ -362,7 +362,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
 
     // Loop detected
     if (newLoopDetected) {
-      msgs.push({ id: 'loop', text: `Pattern detected: ${newLoopDetected.description}. ${newLoopDetected.breakCondition}`, priority: 'warning' });
+      msgs.push({ id: 'loop', text: `Pattern detected: ${newLoopDetected.pattern}. ${newLoopDetected.breakStrategy || 'Analyze and adapt.'}`, priority: 'warning' });
     }
 
     // Penalty
