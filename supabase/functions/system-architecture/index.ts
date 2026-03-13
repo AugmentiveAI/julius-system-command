@@ -1,0 +1,403 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+const architecture = {
+  "project": "The System — Personal Gamification Command Center",
+  "version": "3.0.0 — JARVIS Brain Evolution",
+  "lastUpdated": "2026-03-13",
+  "stack": {
+    "frontend": "React 18 + Vite + TypeScript",
+    "styling": "Tailwind CSS + shadcn/ui",
+    "state": "React Context + localStorage + Supabase sync",
+    "routing": "react-router-dom v6",
+    "backend": "Lovable Cloud (Supabase)",
+    "ai": "Lovable AI Gateway (Gemini, GPT) + Groq (Llama 3.3 70B)",
+    "pwa": "vite-plugin-pwa + Workbox"
+  },
+  "pages": {
+    "Auth.tsx": "Login/signup with email auth",
+    "Index.tsx": "Main dashboard — player profile, stats, system intelligence, quests snapshot",
+    "Quests.tsx": "Quest management — protocol quests, pillar quests, shadow quests, AI quests, time blocks",
+    "Training.tsx": "Workout tracker — exercise logging, RPE, rest timer, mesocycle, fatigue, readiness",
+    "Progress.tsx": "Analytics — history, AAR, weekly summaries, behavioral patterns, shadow intel, loops",
+    "Store.tsx": "Item shop — spend currency on boosts, consumables, cosmetics",
+    "More.tsx": "Overflow menu — settings, shadow army, dungeons, inventory, focus mode",
+    "Settings.tsx": "User preferences and profile management",
+    "SystemAnalytics.tsx": "Deep system analytics and trajectory forecasting",
+    "ResetPassword.tsx": "Password reset flow",
+    "NotFound.tsx": "404 page"
+  },
+  "contexts": {
+    "AuthContext.tsx": "Supabase auth session management, user state",
+    "JarvisBrainContext.tsx": "Unified JARVIS intelligence — user learning, shadow intel, synthesis, anticipation, proactive messaging",
+    "DayCycleContext.tsx": "Day/night cycle engine — time-based UI and quest theming",
+    "FocusModeContext.tsx": "Focus mode state — distraction-free overlay toggle",
+    "HistoryContext.tsx": "Quest and activity history tracking",
+    "SystemCommsContext.tsx": "System-wide communication banner and notification dispatch"
+  },
+  "hooks": {
+    "intelligence": {
+      "useUserLearning.ts": "Behavioral pattern analysis — peak hours, avoidance patterns, energy mapping, streak analysis, goal patterns",
+      "useJarvisSynthesis.ts": "Connects shadow findings to user patterns — generates synthesized insights with priority ranking",
+      "useJarvisAnticipation.ts": "Predictive engine — anticipates peak windows, crash hours, deadlines, and surfaces preparation alerts",
+      "useSystemIntelligenceAI.ts": "AI-powered system intelligence via edge function",
+      "useSystemStrategy.ts": "Strategic recommendations engine",
+      "useThreatAssessment.ts": "Threat level calculation and monitoring",
+      "useTrajectoryData.ts": "Progress trajectory forecasting",
+      "useSystemInterventions.ts": "Automated intervention triggers based on player state",
+      "useSystemChat.ts": "JARVIS chat interface with AI-powered responses",
+      "useSystemComms.ts": "System communication dispatch",
+      "useSystemNotifications.ts": "Notification management and delivery"
+    },
+    "player": {
+      "usePlayer.ts": "Player state management — level, XP, stats, streaks",
+      "usePlayerSync.ts": "Syncs player state to Supabase",
+      "useDailyXP.ts": "Daily XP tracking and cap management",
+      "useSkills.ts": "Skill tree and unlock progression",
+      "useCurrency.ts": "Currency (Essence/Shards) management",
+      "useInventory.ts": "Inventory item management",
+      "useInventorySync.ts": "Syncs inventory to Supabase",
+      "useGeneticState.ts": "Genetic phase tracking (chronotype, energy cycles)",
+      "useCaffeine.ts": "Caffeine intake tracking and energy correlation"
+    },
+    "quests": {
+      "useProtocolQuests.ts": "Daily protocol quest generation and completion",
+      "usePillarQuests.ts": "Life pillar quest system (health, wealth, relationships, growth)",
+      "usePillarStreak.ts": "Pillar-specific streak tracking",
+      "useShadowQuest.ts": "Shadow quest generation from defeated content",
+      "useAIQuests.ts": "AI-generated adaptive quests via edge function",
+      "useEmergencyQuests.ts": "Emergency quest triggers for critical situations",
+      "usePreCommitment.ts": "Pre-commitment contracts for quest accountability"
+    },
+    "shadows": {
+      "useShadowArmy.ts": "Shadow army management — extraction, evolution, research agents, findings, templates",
+      "useLootDrops.ts": "Loot drop system on quest completion"
+    },
+    "training": {
+      "useWorkout.ts": "Active workout session management",
+      "useTrainingLog.ts": "Training history logging to Supabase",
+      "useTrainingIntelligence.ts": "AI-powered training recommendations",
+      "useRestTimer.ts": "Rest period timer between sets",
+      "useSprintTimer.ts": "Sprint/focus timer for timed work blocks"
+    },
+    "systems": {
+      "useDungeons.ts": "Dungeon instance management",
+      "usePenaltyDungeon.ts": "Penalty dungeon triggers for missed commitments",
+      "useAfterActionReview.ts": "Post-day AAR generation via AI",
+      "useHistory.ts": "Activity history aggregation",
+      "useHistorySync.ts": "Syncs history to Supabase",
+      "useStore.ts": "Store item purchasing logic",
+      "useFocusMode.ts": "Focus mode toggle and timer",
+      "useCornerstone.ts": "Cornerstone habit tracking",
+      "useNarrativeLoops.ts": "Behavioral loop detection",
+      "usePersuasion.ts": "Persuasion engine for motivation optimization",
+      "useWeeklyPlanning.ts": "Weekly planning and review system",
+      "useDayCycle.ts": "Day/night cycle hook",
+      "useLocalDataMigration.ts": "localStorage to Supabase migration utility",
+      "useActivityLog.ts": "Activity logging and productivity tracking",
+      "useCalendarContext.ts": "Calendar awareness and free time detection"
+    }
+  },
+  "components": {
+    "dashboard": {
+      "TopBar.tsx": "App header with notifications and settings",
+      "PlayerProfile.tsx": "Player avatar, level, title, XP bar",
+      "StatusWindow.tsx": "Solo Leveling-style status window with stats",
+      "StatsRadarChart.tsx": "Radar chart of player stats",
+      "DailyXPBar.tsx": "Daily XP progress toward cap",
+      "CurrencyDisplay.tsx": "Essence and Shard currency display",
+      "StreakCounter.tsx": "Current streak with fire animation",
+      "TodaySnapshot.tsx": "Today's quest completion summary",
+      "SystemBrief.tsx": "Daily system briefing from JARVIS",
+      "SystemMessage.tsx": "Single system message display",
+      "DashboardMessage.tsx": "Dashboard-specific JARVIS message",
+      "SystemIntelligencePanel.tsx": "AI-powered intelligence dashboard with predictions and challenges",
+      "SystemPredictions.tsx": "Predictive analytics display",
+      "SystemWarnings.tsx": "Active warning indicators",
+      "SystemInterventionBanner.tsx": "Intervention alert banner",
+      "TrajectoryForecaster.tsx": "Goal trajectory visualization",
+      "ThreatIndicator.tsx": "Threat level gauge",
+      "ShadowMonarchBar.tsx": "Shadow army power bar",
+      "ActiveBoostsBar.tsx": "Active boost/buff indicators",
+      "CornerstoneCard.tsx": "Cornerstone habit card",
+      "CurrentStateCard.tsx": "Current player state summary",
+      "ResistanceCard.tsx": "Resistance/difficulty indicator",
+      "PenaltyBanner.tsx": "Active penalty warning",
+      "ProgressRing.tsx": "Circular progress indicator",
+      "QuickActions.tsx": "Quick action buttons",
+      "DashboardActions.tsx": "Dashboard action menu"
+    },
+    "quests": {
+      "QuestCard.tsx": "Base quest card component",
+      "ProtocolQuestCard.tsx": "Daily protocol quest with completion tracking",
+      "CalibratedQuestCard.tsx": "Difficulty-calibrated quest display",
+      "CalibrationBanner.tsx": "Quest calibration status banner",
+      "CalibrationDetails.tsx": "Detailed calibration metrics",
+      "ShadowQuestCard.tsx": "Shadow-generated quest card",
+      "ShadowQuestNotification.tsx": "New shadow quest alert",
+      "EmergencyQuestBanner.tsx": "Emergency quest alert banner",
+      "PillarConfirmation.tsx": "Pillar quest completion confirmation",
+      "PreCommitmentBanner.tsx": "Pre-commitment contract display",
+      "PreCommitmentModal.tsx": "Pre-commitment creation modal",
+      "QuestsHeader.tsx": "Quests page header with filters",
+      "SprintOverlay.tsx": "Sprint timer overlay during focused work",
+      "TimeBlockSection.tsx": "Time-blocked quest sections"
+    },
+    "training": {
+      "ExerciseProgressCard.tsx": "Individual exercise tracking card",
+      "RPESlider.tsx": "Rate of Perceived Exertion slider",
+      "RestTimer.tsx": "Rest period countdown timer",
+      "FatigueGauge.tsx": "Cumulative fatigue indicator",
+      "MesocycleProgress.tsx": "Training mesocycle progress tracker",
+      "ReadinessCheckModal.tsx": "Pre-workout readiness assessment",
+      "SessionSummaryModal.tsx": "Post-workout session summary",
+      "DeloadBanner.tsx": "Deload week notification"
+    },
+    "shadows": {
+      "ShadowArmyPanel.tsx": "Shadow army roster and management",
+      "ShadowIntelPanel.tsx": "Shadow research findings viewer"
+    },
+    "effects": {
+      "LevelUpOverlay.tsx": "Level up celebration animation",
+      "RankUpOverlay.tsx": "Rank promotion cinematic",
+      "AriseOverlay.tsx": "Shadow extraction Arise animation",
+      "LootDropToast.tsx": "Loot drop notification toast",
+      "LootCinematicReveal.tsx": "Rare loot cinematic reveal",
+      "SkillUnlockOverlay.tsx": "Skill unlock animation",
+      "FlashOverlay.tsx": "Screen flash effect",
+      "EmergencyQuestOverlay.tsx": "Emergency quest dramatic entrance",
+      "LoopDetectedOverlay.tsx": "Behavioral loop detection warning",
+      "PenaltyDungeonOverlay.tsx": "Penalty dungeon entrance cinematic"
+    },
+    "capture": {
+      "CaptureFAB.tsx": "Floating action button for quick capture",
+      "CaptureModal.tsx": "Tabbed capture interface — text, voice, quick entry",
+      "QuickEntry.tsx": "Shorthand prefix-based quick entry system",
+      "VoiceCapture.tsx": "Voice-to-structured-data capture via AI"
+    },
+    "jarvis": { "JarvisPageBanner.tsx": "Context-aware JARVIS intelligence banner" },
+    "chat": { "SystemChatPanel.tsx": "Full JARVIS chat interface" },
+    "comms": { "SystemCommsBanner.tsx": "System-wide communication banner" },
+    "notifications": { "SystemNotificationPanel.tsx": "Notification center panel" },
+    "dungeons": {
+      "DungeonPanel.tsx": "Dungeon instance viewer and runner",
+      "KeyRequiredModal.tsx": "Dungeon key requirement modal"
+    },
+    "aar": {
+      "AARModal.tsx": "After Action Review modal with AI analysis",
+      "WeeklyAARModal.tsx": "Weekly AAR summary modal"
+    },
+    "progress": {
+      "AARHistoryCard.tsx": "AAR history entry card",
+      "LoopsPanel.tsx": "Behavioral loop detection panel"
+    },
+    "history": {
+      "DayGroup.tsx": "Day-grouped history entries",
+      "WeeklySummaryCard.tsx": "Weekly summary statistics card"
+    },
+    "inventory": {
+      "CounterCard.tsx": "Counter-type inventory item",
+      "CurrencyCard.tsx": "Currency display card",
+      "ListCard.tsx": "List-type inventory item"
+    },
+    "store": {
+      "StoreItemCard.tsx": "Store item with rarity and purchase",
+      "ItemDetailModal.tsx": "Item detail and purchase confirmation"
+    },
+    "milestones": {
+      "MainQuestCard.tsx": "Main quest/milestone tracker",
+      "MilestonesHeader.tsx": "Milestones section header"
+    },
+    "onboarding": {
+      "AwakeningSequence.tsx": "First-time user cinematic onboarding",
+      "SystemBriefing.tsx": "System introduction briefing",
+      "GoalCapture.tsx": "Initial goal setting capture",
+      "DataMigrationDialog.tsx": "Data migration prompt dialog"
+    },
+    "planning": { "WeeklyPlanningModal.tsx": "Weekly planning session modal" },
+    "focus": {
+      "FocusFAB.tsx": "Focus mode floating action button",
+      "FocusModeOverlay.tsx": "Full-screen focus mode overlay"
+    },
+    "biometrics": { "SupplementChecklist.tsx": "Daily supplement tracking checklist" },
+    "genetic": { "GeneticHUD.tsx": "Genetic phase heads-up display" },
+    "warnings": {
+      "CornerstoneAlert.tsx": "Cornerstone habit warning",
+      "GeneticWarning.tsx": "Genetic phase mismatch warning"
+    },
+    "navigation": { "BottomNav.tsx": "Bottom navigation bar (mobile-first)" }
+  },
+  "types": {
+    "activity.ts": "Activity logging, energy levels, calendar events, parsed voice input",
+    "learning.ts": "UserLearning — execution patterns, avoidance patterns, energy mapping, streaks, goals, response patterns, derived insights",
+    "player.ts": "Player state, stats, level, XP",
+    "playerState.ts": "Extended player state with penalties and modifiers",
+    "quest.ts": "Base quest interface",
+    "quests.ts": "Quest variants and quest state",
+    "questDifficulty.ts": "Quest difficulty calibration types",
+    "pillarQuests.ts": "Pillar quest types",
+    "shadowArmy.ts": "Shadow types with research config, findings, sources, and evolution",
+    "training.ts": "Training session, exercise, and workout types",
+    "dungeon.ts": "Dungeon instance and objective types",
+    "penaltyDungeon.ts": "Penalty dungeon trigger types",
+    "emergencyQuest.ts": "Emergency quest types",
+    "currency.ts": "Currency types",
+    "inventory.ts": "Inventory item types",
+    "store.ts": "Store item and purchase types",
+    "loot.ts": "Loot drop and rarity types",
+    "skills.ts": "Skill tree and unlock types",
+    "xp.ts": "XP calculation types",
+    "genetics.ts": "Genetic phase and chronotype types",
+    "history.ts": "History entry and aggregation types",
+    "afterActionReview.ts": "AAR data types",
+    "mainQuest.ts": "Main quest/milestone types",
+    "cornerstone.ts": "Cornerstone habit types",
+    "narrativeLoop.ts": "Behavioral loop detection types",
+    "overload.ts": "Overload/burnout detection types",
+    "persuasionEngine.ts": "Persuasion and motivation types",
+    "systemIntelligence.ts": "System intelligence and prediction types",
+    "threat.ts": "Threat assessment types"
+  },
+  "utils": {
+    "aiModelRouter.ts": "Routes AI requests to optimal model based on task",
+    "aiQuestGenerator.ts": "Generates AI-powered adaptive quests",
+    "cornerstoneEngine.ts": "Cornerstone habit evaluation engine",
+    "currencyEngine.ts": "Currency earn/spend calculation engine",
+    "dayCycleEngine.ts": "Day/night cycle time calculations",
+    "emergencyQuestEngine.ts": "Emergency quest trigger evaluation",
+    "geneticEngine.ts": "Genetic phase calculation engine",
+    "haptics.ts": "Haptic feedback utility",
+    "interventionEngine.ts": "System intervention trigger engine",
+    "jarvisQuestReorder.ts": "AI-powered quest priority reordering",
+    "loopDetector.ts": "Behavioral loop pattern detection",
+    "lootEngine.ts": "Loot drop calculation and rarity engine",
+    "muscleRecovery.ts": "Muscle recovery time estimation",
+    "overloadEngine.ts": "Burnout/overload detection engine",
+    "periodizationEngine.ts": "Training periodization calculator",
+    "persuasionEngine.ts": "Persuasion technique selection engine",
+    "persuasionOptimizer.ts": "Persuasion effectiveness optimizer",
+    "questCalibration.ts": "Quest difficulty calibration algorithm",
+    "resistanceTracker.ts": "User resistance pattern tracker",
+    "revenueImpact.ts": "Revenue/business goal impact calculator",
+    "shadowQuests.ts": "Shadow quest generation from content",
+    "systemIntelligence.ts": "System intelligence score calculation",
+    "systemVoice.ts": "JARVIS voice/tone generation",
+    "threatEngine.ts": "Threat level calculation engine",
+    "trainingIntelligence.ts": "Training recommendation engine",
+    "trainingPrescription.ts": "Workout prescription generator",
+    "weeklyRhythm.ts": "Weekly rhythm and planning engine",
+    "workoutSwap.ts": "Workout swap suggestion engine"
+  },
+  "data": {
+    "dailyProtocol.ts": "Daily protocol quest definitions",
+    "lootTable.ts": "Loot drop tables with rarity weights",
+    "pillarQuests.ts": "Pillar quest templates by category",
+    "shadowTemplates.ts": "6 shadow research agent templates",
+    "storeItems.ts": "Store item catalog with prices and effects",
+    "workouts.ts": "Workout templates and exercise definitions"
+  },
+  "edgeFunctions": {
+    "ai-quest-proxy": "AI quest generation proxy",
+    "generate-aar": "After Action Review generation via AI",
+    "parse-voice-input": "Voice/text to structured data via AI",
+    "shadow-activate": "Shadow activation and content generation",
+    "shadow-research": "Autonomous shadow research agent",
+    "system-architecture": "Serves this JSON — the complete system architecture reference",
+    "system-chat": "JARVIS chat AI responses with full player context",
+    "system-intelligence": "System intelligence analysis and predictions",
+    "training-intelligence": "AI-powered training recommendations",
+    "web-intel": "Dual-model intelligence gathering"
+  },
+  "database": {
+    "tables": {
+      "profiles": "User profiles — display name, title, goal",
+      "player_state": "Player stats — level, XP, streak, stats JSON, penalties",
+      "quest_history": "Completed quest log with XP and categories",
+      "chat_messages": "JARVIS chat conversation history",
+      "shadow_army": "Shadow soldiers — name, category, power, status, metadata",
+      "training_log": "Training session log — exercises, volume, fatigue, genetic phase",
+      "dungeons": "Dungeon instances — objectives, rewards, time limits",
+      "inventory": "Player inventory JSON blob",
+      "system_notifications": "System notification queue",
+      "user_roles": "Role-based access control (admin/moderator/user)"
+    },
+    "functions": { "has_role": "Security definer function for role checks" },
+    "enums": { "app_role": ["admin", "moderator", "user"] }
+  },
+  "intelligenceSystems": {
+    "userLearning": {
+      "description": "Behavioral pattern analysis engine that learns from quest history",
+      "capabilities": ["Peak hour detection", "Avoidance pattern recognition", "Energy mapping", "Streak analysis", "Goal pattern tracking", "Response pattern learning"],
+      "storage": "localStorage (jarvisUserLearning)",
+      "refreshRate": "Daily auto-analysis"
+    },
+    "shadowResearch": {
+      "description": "Autonomous research agents that monitor external sources",
+      "capabilities": ["Source monitoring — Twitter, YouTube, Reddit, websites", "Content analysis via AI — relevance and actionability scoring", "Finding synthesis — connects findings to user goals", "Priority filtering", "Usefulness tracking"],
+      "templates": ["Business Mentor Intel", "Automation Scout", "Industry Watcher", "Cold Outreach Intel", "Fitness Optimizer", "Content Trends"]
+    },
+    "synthesis": {
+      "description": "Connects shadow research findings to user behavioral patterns",
+      "capabilities": ["Cross-referencing findings with avoidance patterns", "Linking business intel to revenue goals", "Pattern-based insight generation", "Priority-ranked insight delivery"]
+    },
+    "anticipation": {
+      "description": "Predictive engine that surfaces information before user needs it",
+      "capabilities": ["Peak performance window prediction", "Energy crash prevention alerts", "Deadline proximity warnings", "Preparation suggestions"],
+      "refreshRate": "Every 30 minutes"
+    },
+    "proactiveMessaging": {
+      "description": "Unified message generation from all intelligence sources",
+      "priority": ["1. Active anticipations (time-sensitive)", "2. High-priority synthesized insights (score >= 7)", "3. Unread shadow findings", "4. Pattern-based nudges"]
+    }
+  },
+  "captureLayer": {
+    "description": "Unified input system for logging activities, tasks, and notes",
+    "capabilities": ["Quick text entry with shorthand prefixes (!, +, #, @, *, ?)", "Voice-to-structured-data via AI parsing", "Activity logging with energy levels and categories", "Calendar awareness and free time detection"],
+    "prefixes": { "!": "task", "+": "done", "#": "note", "@": "time", "*": "idea", "?": "question" }
+  },
+  "gamificationSystems": {
+    "xp": "Experience points with daily caps and level progression",
+    "currency": "Dual currency — Essence (common) and Shards (rare)",
+    "streaks": "Daily streak tracking with cold streak penalties",
+    "loot": "RNG loot drops on quest completion with rarity tiers",
+    "skills": "Skill tree with unlock progression",
+    "shadows": "Solo Leveling-inspired shadow army — extract, evolve, deploy as research agents",
+    "dungeons": "Timed challenge dungeons with objectives and XP rewards",
+    "penalties": "Penalty dungeons for missed commitments",
+    "store": "Item shop for boosts, consumables, and cosmetics",
+    "ranks": "Rank progression system (E through S)",
+    "cornerstones": "Core habit tracking with streak protection",
+    "focus": "Focus mode with sprint timer",
+    "emergencyQuests": "High-stakes emergency quests for critical situations"
+  },
+  "fileCount": {
+    "pages": 11,
+    "components": 79,
+    "hooks": 51,
+    "types": 29,
+    "utils": 28,
+    "contexts": 6,
+    "data": 6,
+    "edgeFunctions": 10,
+    "databaseTables": 10,
+    "totalSourceFiles": "230+"
+  }
+};
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  return new Response(JSON.stringify(architecture, null, 2), {
+    headers: {
+      ...corsHeaders,
+      'Content-Type': 'application/json',
+      'Cache-Control': 'public, max-age=3600',
+    },
+  });
+});
