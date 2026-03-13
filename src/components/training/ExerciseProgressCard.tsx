@@ -65,6 +65,16 @@ export function ExerciseProgressCard({
   const allDone = completedSets >= exercise.sets;
   const hasProgression = overload && overload.progression !== 'first-session' && overload.progression !== 'hold';
 
+  // Exercise contraindication warning
+  const exerciseWarning = useMemo((): ExerciseFlag | null => {
+    try {
+      const raw = localStorage.getItem('systemPhysicalState');
+      if (!raw) return null;
+      const ps = JSON.parse(raw);
+      return getExerciseWarning(exercise.name, ps.romLeftKnee ?? 90, ps.romRightKnee ?? 90, ps.rehabPhase ?? 'strength');
+    } catch { return null; }
+  }, [exercise.name]);
+
   // PR proximity check
   const isPRAttempt = useMemo(() => {
     if (!personalRecord || !usesWeight) return false;
