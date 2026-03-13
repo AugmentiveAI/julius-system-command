@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -27,29 +27,33 @@ import { useLocalDataMigration } from "@/hooks/useLocalDataMigration";
 import { DataMigrationDialog } from "@/components/onboarding/DataMigrationDialog";
 import { supabase } from "@/integrations/supabase/client";
 import Index from "./pages/Index";
-import Quests from "./pages/Quests";
-import Training from "./pages/Training";
-import Progress from "./pages/Progress";
-import More from "./pages/More";
-import Settings from "./pages/Settings";
-import NotFound from "./pages/NotFound";
-import SystemAnalytics from "./pages/SystemAnalytics";
-import Store from "./pages/Store";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
+import NotFound from "./pages/NotFound";
+
+// Lazy-load heavy pages
+const Quests = lazy(() => import('./pages/Quests'));
+const Training = lazy(() => import('./pages/Training'));
+const Progress = lazy(() => import('./pages/Progress'));
+const More = lazy(() => import('./pages/More'));
+const Settings = lazy(() => import('./pages/Settings'));
+const SystemAnalytics = lazy(() => import('./pages/SystemAnalytics'));
+const Store = lazy(() => import('./pages/Store'));
 
 const queryClient = new QueryClient();
+
+const PageFallback = () => (
+  <div className="min-h-[100dvh] bg-background flex items-center justify-center">
+    <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+  </div>
+);
 
 /** Renders children only if authenticated, otherwise redirects to /auth */
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="min-h-[100dvh] bg-background flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <PageFallback />;
   }
 
   if (!session) {
@@ -61,7 +65,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 const AppContent = () => {
   const { user } = useAuth();
-  // null = still checking, true = show, false = skip
   const [showAwakening, setShowAwakening] = useState<boolean | null>(null);
   const [showGoalCapture, setShowGoalCapture] = useState(false);
   const [showBriefing, setShowBriefing] = useState(false);
@@ -72,7 +75,6 @@ const AppContent = () => {
   } = usePreCommitment();
   const { showMigration, migrating, summary, acceptMigration, skipMigration } = useLocalDataMigration();
 
-  // Check DB for existing player data to decide whether to show onboarding
   useEffect(() => {
     if (!user) {
       setShowAwakening(null);
@@ -92,15 +94,12 @@ const AppContent = () => {
         if (cancelled) return;
 
         if (data && data.total_xp > 0) {
-          // Existing player with progress — skip onboarding
           setShowAwakening(false);
         } else {
-          // New player or zero XP — check if they've already seen awakening locally
           const activated = localStorage.getItem('systemActivated') === 'true';
           setShowAwakening(!activated);
         }
       } catch {
-        // Fallback to localStorage check on error
         const activated = localStorage.getItem('systemActivated') === 'true';
         setShowAwakening(!activated);
       }
@@ -154,19 +153,21 @@ const AppContent = () => {
           onDismiss={handleDismiss}
         />
       )}
-      <Routes>
-        <Route path="/" element={<ErrorBoundary><ProtectedRoute><Index forceFirstScan={triggerScan} onScanTriggered={() => setTriggerScan(false)} /></ProtectedRoute></ErrorBoundary>} />
-        <Route path="/quests" element={<ErrorBoundary><ProtectedRoute><Quests /></ProtectedRoute></ErrorBoundary>} />
-        <Route path="/training" element={<ErrorBoundary><ProtectedRoute><Training /></ProtectedRoute></ErrorBoundary>} />
-        <Route path="/progress" element={<ErrorBoundary><ProtectedRoute><Progress /></ProtectedRoute></ErrorBoundary>} />
-        <Route path="/more" element={<ErrorBoundary><ProtectedRoute><More /></ProtectedRoute></ErrorBoundary>} />
-        <Route path="/settings" element={<ErrorBoundary><ProtectedRoute><Settings /></ProtectedRoute></ErrorBoundary>} />
-        <Route path="/system-analytics" element={<ErrorBoundary><ProtectedRoute><SystemAnalytics /></ProtectedRoute></ErrorBoundary>} />
-        <Route path="/store" element={<ErrorBoundary><ProtectedRoute><Store /></ProtectedRoute></ErrorBoundary>} />
-        <Route path="/auth" element={<ErrorBoundary><AuthRoute /></ErrorBoundary>} />
-        <Route path="/reset-password" element={<ErrorBoundary><ResetPassword /></ErrorBoundary>} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+      <Suspense fallback={<PageFallback />}>
+        <Routes>
+          <Route path="/" element={<ErrorBoundary><ProtectedRoute><Index forceFirstScan={triggerScan} onScanTriggered={() => setTriggerScan(false)} /></ProtectedRoute></ErrorBoundary>} />
+          <Route path="/quests" element={<ErrorBoundary><ProtectedRoute><Quests /></ProtectedRoute></ErrorBoundary>} />
+          <Route path="/training" element={<ErrorBoundary><ProtectedRoute><Training /></ProtectedRoute></ErrorBoundary>} />
+          <Route path="/progress" element={<ErrorBoundary><ProtectedRoute><Progress /></ProtectedRoute></ErrorBoundary>} />
+          <Route path="/more" element={<ErrorBoundary><ProtectedRoute><More /></ProtectedRoute></ErrorBoundary>} />
+          <Route path="/settings" element={<ErrorBoundary><ProtectedRoute><Settings /></ProtectedRoute></ErrorBoundary>} />
+          <Route path="/system-analytics" element={<ErrorBoundary><ProtectedRoute><SystemAnalytics /></ProtectedRoute></ErrorBoundary>} />
+          <Route path="/store" element={<ErrorBoundary><ProtectedRoute><Store /></ProtectedRoute></ErrorBoundary>} />
+          <Route path="/auth" element={<ErrorBoundary><AuthRoute /></ErrorBoundary>} />
+          <Route path="/reset-password" element={<ErrorBoundary><ResetPassword /></ErrorBoundary>} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
     </>
   );
 };
