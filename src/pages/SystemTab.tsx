@@ -149,10 +149,10 @@ const SystemTab = () => {
           <ActiveBoostsBar />
           <div className="grid gap-3 grid-cols-2">
             {storeItems.map(item => (
-              <StoreItemCard key={item.id} item={item} onSelect={() => setDetailItem(item)} owned={getOwnedQuantity(item.id)} canAfford={canAffordItem(item)} />
+              <StoreItemCard key={item.id} item={item} onTap={() => setDetailItem(item)} owned={getOwnedQuantity(item.id)} canAfford={canAffordItem(item.id)} onPurchase={() => purchaseItem(item.id)} />
             ))}
           </div>
-          <ItemDetailModal item={detailItem} onClose={() => setDetailItem(null)} onPurchase={(id) => purchaseItem(id)} onUse={(id) => useItem(id)} canAfford={detailItem ? canAffordItem(detailItem) : false} ownedQty={detailItem ? getOwnedQuantity(detailItem.id) : 0} />
+          <ItemDetailModal item={detailItem} onClose={() => setDetailItem(null)} onPurchase={() => detailItem && purchaseItem(detailItem.id)} onUse={() => detailItem && useItem(detailItem.id)} canAfford={detailItem ? canAffordItem(detailItem.id) : false} owned={detailItem ? getOwnedQuantity(detailItem.id) : 0} open={!!detailItem} />
         </div>
         <BottomNav />
       </div>

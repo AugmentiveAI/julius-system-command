@@ -79,7 +79,7 @@ const Intel = () => {
           </CollapsibleTrigger>
           <CollapsibleContent>
             <div className="pb-4">
-              <TrajectoryForecaster />
+              <TrajectoryForecaster intelligence={null} />
             </div>
           </CollapsibleContent>
         </Collapsible>
