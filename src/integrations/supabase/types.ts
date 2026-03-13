@@ -230,6 +230,27 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limits: {
+        Row: {
+          call_count: number | null
+          function_name: string
+          user_id: string
+          window_start: string | null
+        }
+        Insert: {
+          call_count?: number | null
+          function_name: string
+          user_id: string
+          window_start?: string | null
+        }
+        Update: {
+          call_count?: number | null
+          function_name?: string
+          user_id?: string
+          window_start?: string | null
+        }
+        Relationships: []
+      }
       shadow_army: {
         Row: {
           category: string
