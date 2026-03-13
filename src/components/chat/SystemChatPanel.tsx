@@ -157,7 +157,7 @@ export function SystemChatPanel({ buildContext }: SystemChatPanelProps) {
 
               {isStreaming && messages[messages.length - 1]?.role !== 'assistant' && (
                 <div className="font-mono text-xs text-muted-foreground/60">
-                  > SYSTEM: <span className="animate-pulse">▊</span>
+                  {'> SYSTEM: '}<span className="animate-pulse">▊</span>
                 </div>
               )}
             </div>
