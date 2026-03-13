@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
+import { useTickerEffect } from '@/contexts/TickerContext';
 import { Threat, ThreatAssessment, ThreatCategory, ThreatContext, ThreatLevel } from '@/types/threat';
 import { evaluateThreats, getOverallLevel } from '@/utils/threatEngine';
 import { usePlayer } from '@/hooks/usePlayer';
