@@ -293,7 +293,7 @@ const Training = () => {
 
         <DeloadBanner decision={deloadDecision} />
 
-        {/* JARVIS Brain Banner */}
+        {/* THE SYSTEM Banner */}
         <JarvisPageBanner page="training" />
 
         {calibrated.geneticAlert && (
