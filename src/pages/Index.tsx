@@ -516,21 +516,6 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
     catch { return false; }
   }, []);
 
-  // Chat context builder
-  const buildChatContext = useCallback(() => {
-    const stored = localStorage.getItem(START_DATE_KEY);
-    const todayStr = getSystemDate();
-    let dn = 1;
-    if (stored) { dn = Math.max(1, Math.round((new Date(todayStr + 'T12:00:00').getTime() - new Date(stored + 'T12:00:00').getTime()) / (1000 * 60 * 60 * 24)) + 1); }
-    return {
-      level: player.level, currentXP: player.currentXP, xpToNextLevel: player.xpToNextLevel, totalXP: player.totalXP ?? 0,
-      streak: player.streak, coldStreak: player.coldStreak ?? 0, stats: player.stats, goal: player.goal || null,
-      dayNumber: dn, systemMode: systemRec,
-      questsCompletedToday: completedMissions, questsTotalToday: totalMissions,
-      shadowCount: shadows.length, dungeonsCleared: completedDungeons.length,
-      training: buildTrainingContext({ recentLogs, personalRecords, fatigueAccumulation, mesocycleWeek: getMesocycleState().currentWeek, mesocycleLength: getMesocycleState().totalWeeks, todayWorkoutType, prescribedIntensity: workoutPrescription?.prescribedIntensity ?? null, trainingLevel: wTrainingLevel, sessionsLogged: wSessionsLogged }),
-    };
-  }, [player, systemRec, completedMissions, totalMissions, shadows.length, completedDungeons.length, recentLogs, personalRecords, fatigueAccumulation, todayWorkoutType, workoutPrescription, wTrainingLevel, wSessionsLogged]);
 
   // Focus mode handlers
   const handleFocusComplete = useCallback(() => {
