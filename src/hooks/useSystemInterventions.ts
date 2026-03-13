@@ -77,11 +77,9 @@ export function useSystemInterventions({ buildContext, enabled = true }: UseSyst
     }
   }, [enabled]);
 
-  // Check on mount + interval
-  useEffect(() => {
+  // Check on mount + shared ticker
+  useTickerEffect(() => {
     evaluate();
-    const interval = setInterval(evaluate, CHECK_INTERVAL_MS);
-    return () => clearInterval(interval);
   }, [evaluate]);
 
   // Also check on visibility change

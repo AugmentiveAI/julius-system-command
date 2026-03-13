@@ -97,22 +97,16 @@ export function useThreatAssessment() {
     };
   }, [player, quests, fatigueAccumulation, geneticState, sprintsToday]);
 
-  // Run assessment every 60 seconds
-  useEffect(() => {
-    const assess = () => {
-      const ctx = buildContext();
-      const threats = evaluateThreats(ctx);
-      const overallLevel = getOverallLevel(threats);
-      setAssessment({
-        overallLevel,
-        threats,
-        lastUpdated: new Date().toISOString(),
-      });
-    };
-
-    assess();
-    const interval = setInterval(assess, 60_000);
-    return () => clearInterval(interval);
+  // Run assessment every 60 seconds via shared ticker
+  useTickerEffect(() => {
+    const ctx = buildContext();
+    const threats = evaluateThreats(ctx);
+    const overallLevel = getOverallLevel(threats);
+    setAssessment({
+      overallLevel,
+      threats,
+      lastUpdated: new Date().toISOString(),
+    });
   }, [buildContext]);
 
   const threats = assessment?.threats ?? [];

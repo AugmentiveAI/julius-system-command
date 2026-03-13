@@ -277,6 +277,7 @@ const App = () => (
         </HistoryProvider>
       </AuthProvider>
     </TooltipProvider>
+    </TickerProvider>
   </QueryClientProvider>
 );
 

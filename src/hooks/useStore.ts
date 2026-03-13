@@ -38,19 +38,16 @@ export function useStore() {
     localStorage.setItem(BOOSTS_KEY, JSON.stringify(activeBoosts));
   }, [activeBoosts]);
 
-  // Expire boosts
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const now = new Date();
-      setActiveBoosts(prev => {
-        const filtered = prev.filter(b => new Date(b.expiresAt) > now);
-        if (filtered.length !== prev.length) {
-          localStorage.setItem(BOOSTS_KEY, JSON.stringify(filtered));
-        }
-        return filtered;
-      });
-    }, 60000);
-    return () => clearInterval(interval);
+  // Expire boosts via shared ticker
+  useTickerEffect(() => {
+    const now = new Date();
+    setActiveBoosts(prev => {
+      const filtered = prev.filter(b => new Date(b.expiresAt) > now);
+      if (filtered.length !== prev.length) {
+        localStorage.setItem(BOOSTS_KEY, JSON.stringify(filtered));
+      }
+      return filtered;
+    });
   }, []);
 
   const purchaseItem = useCallback((itemId: string): boolean => {
