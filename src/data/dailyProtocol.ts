@@ -1,6 +1,49 @@
 import { ProtocolQuest } from '@/types/quests';
 
 export const DAILY_PROTOCOL: ProtocolQuest[] = [
+  // REHAB QUESTS (Morning — non-optional until phase progression)
+  {
+    id: 'rehab-vmo',
+    title: 'VMO Activation Protocol',
+    stat: 'discipline',
+    xp: 30,
+    timeBlock: 'morning',
+    completed: false,
+    isProtocol: true,
+    isRehab: true,
+    requiredUntilPhase: 'power',
+    geneticBonus: {
+      bonusXp: 10,
+      reason: 'Muscle fiber activation advantage',
+    },
+  },
+  {
+    id: 'rehab-mobility',
+    title: 'Knee Mobility Work',
+    stat: 'discipline',
+    xp: 25,
+    timeBlock: 'morning',
+    completed: false,
+    isProtocol: true,
+    isRehab: true,
+    requiredUntilPhase: 'performance',
+  },
+  {
+    id: 'rehab-hip',
+    title: 'Hip & Glute Activation',
+    stat: 'discipline',
+    xp: 35,
+    timeBlock: 'morning',
+    completed: false,
+    isProtocol: true,
+    isRehab: true,
+    requiredUntilPhase: 'power',
+    geneticBonus: {
+      bonusXp: 15,
+      reason: 'Fast-twitch fiber recruitment',
+    },
+  },
+
   // MORNING QUESTS (5am-10am)
   {
     id: 'cold-exposure',

@@ -10,6 +10,9 @@ export interface ProtocolQuest {
   timeBlock: QuestTimeBlock;
   completed: boolean;
   isProtocol?: boolean;
+  isRehab?: boolean;
+  requiredUntilPhase?: 'mobility' | 'strength' | 'power' | 'performance';
+  frequency?: 'daily' | 'weekly';
   geneticBonus?: {
     bonusXp: number;
     reason: string;

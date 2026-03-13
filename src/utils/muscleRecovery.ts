@@ -111,7 +111,7 @@ export function getFullRecoveryReport(now: Date = new Date()): MuscleRecoveryRep
       };
     }
 
-    const baseRecovery = RECOVERY_HOURS[mg];
+    const baseRecovery = getAdjustedRecoveryHours(RECOVERY_HOURS[mg], PLAYER_AGE);
     // Adjust recovery time by intensity
     const intensityMultiplier = entry.intensity === 'heavy' ? 1.0 : entry.intensity === 'moderate' ? 0.7 : 0.4;
     const requiredHours = baseRecovery * intensityMultiplier;
