@@ -28,6 +28,7 @@ import { MesocycleProgress } from '@/components/training/MesocycleProgress';
 import { FatigueGauge } from '@/components/training/FatigueGauge';
 import { ExerciseProgressCard, ExerciseTrackingData, ExerciseSetData } from '@/components/training/ExerciseProgressCard';
 import { RestTimer } from '@/components/training/RestTimer';
+import { RomTracker } from '@/components/training/RomTracker';
 
 const WORKOUT_ICONS: Partial<Record<WorkoutType, React.ElementType>> = {
   'push-hypertrophy': Dumbbell,
@@ -286,6 +287,9 @@ const Training = () => {
           <MesocycleProgress mesocycle={mesocycle} />
           <FatigueGauge accumulation={fatigueAccumulation} />
         </div>
+
+        {/* ROM Recovery Tracker */}
+        <RomTracker />
 
         <DeloadBanner decision={deloadDecision} />
 

@@ -173,6 +173,10 @@ export type Database = {
           display_name: string
           goal: string | null
           id: string
+          rehab_log: Json | null
+          rehab_phase: string | null
+          rom_left_knee: number | null
+          rom_right_knee: number | null
           title: string
           updated_at: string
           user_id: string
@@ -182,6 +186,10 @@ export type Database = {
           display_name?: string
           goal?: string | null
           id?: string
+          rehab_log?: Json | null
+          rehab_phase?: string | null
+          rom_left_knee?: number | null
+          rom_right_knee?: number | null
           title?: string
           updated_at?: string
           user_id: string
@@ -191,6 +199,10 @@ export type Database = {
           display_name?: string
           goal?: string | null
           id?: string
+          rehab_log?: Json | null
+          rehab_phase?: string | null
+          rom_left_knee?: number | null
+          rom_right_knee?: number | null
           title?: string
           updated_at?: string
           user_id?: string

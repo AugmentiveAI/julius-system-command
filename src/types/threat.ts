@@ -6,7 +6,8 @@ export type ThreatCategory =
   | 'momentum'
   | 'stat_decay'
   | 'deadline'
-  | 'penalty';
+  | 'penalty'
+  | 'cardiovascular';
 
 export type ThreatLevel = 'nominal' | 'elevated' | 'high' | 'critical';
 

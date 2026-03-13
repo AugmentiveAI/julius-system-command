@@ -10,28 +10,64 @@ interface ProtocolQuestState {
 
 const PROTOCOL_QUESTS_STORAGE_KEY = 'the-system-protocol-quests';
 
+function getRehabPhase(): string {
+  try {
+    const raw = localStorage.getItem('systemPhysicalState');
+    if (raw) return JSON.parse(raw).rehabPhase || 'strength';
+  } catch { /* ignore */ }
+  return 'strength';
+}
+
+const PHASE_ORDER = ['mobility', 'strength', 'power', 'performance'];
+
+function shouldShowRehabQuest(quest: ProtocolQuest, currentPhase: string): boolean {
+  if (!quest.isRehab || !quest.requiredUntilPhase) return true;
+  const currentIdx = PHASE_ORDER.indexOf(currentPhase);
+  const requiredIdx = PHASE_ORDER.indexOf(quest.requiredUntilPhase);
+  return currentIdx < requiredIdx;
+}
+
+function isSundayEvening(): boolean {
+  const now = new Date();
+  return now.getDay() === 0 && now.getHours() >= 17;
+}
+
 function loadProtocolQuests(): ProtocolQuestState {
   const today = getSystemDate();
+  const rehabPhase = getRehabPhase();
+
+  // Filter protocol based on rehab phase and frequency
+  const filteredProtocol = DAILY_PROTOCOL.filter(q => {
+    if (!shouldShowRehabQuest(q, rehabPhase)) return false;
+    if (q.frequency === 'weekly' && !isSundayEvening()) return false;
+    return true;
+  });
 
   try {
     const stored = localStorage.getItem(PROTOCOL_QUESTS_STORAGE_KEY);
     if (stored) {
       const state: ProtocolQuestState = JSON.parse(stored);
-      // Reset quests if it's a new day
       if (state.lastResetDate !== today) {
         return {
-          quests: DAILY_PROTOCOL.map(q => ({ ...q, completed: false })),
+          quests: filteredProtocol.map(q => ({ ...q, completed: false })),
           lastResetDate: today,
         };
       }
-      return state;
+      // Merge: keep completion state for existing quests, add new ones
+      return {
+        ...state,
+        quests: filteredProtocol.map(q => {
+          const existing = state.quests.find(sq => sq.id === q.id);
+          return existing ? { ...q, completed: existing.completed } : { ...q, completed: false };
+        }),
+      };
     }
   } catch (e) {
     console.error('Failed to load protocol quest data:', e);
   }
 
   return {
-    quests: DAILY_PROTOCOL.map(q => ({ ...q, completed: false })),
+    quests: filteredProtocol.map(q => ({ ...q, completed: false })),
     lastResetDate: today,
   };
 }
@@ -48,10 +84,16 @@ export function useProtocolQuests() {
   useEffect(() => {
     const checkReset = () => {
       const today = getSystemDate();
+      const rehabPhase = getRehabPhase();
+      const filteredProtocol = DAILY_PROTOCOL.filter(q => {
+        if (!shouldShowRehabQuest(q, rehabPhase)) return false;
+        if (q.frequency === 'weekly' && !isSundayEvening()) return false;
+        return true;
+      });
       setState(prev => {
         if (prev.lastResetDate !== today) {
           return {
-            quests: DAILY_PROTOCOL.map(q => ({ ...q, completed: false })),
+            quests: filteredProtocol.map(q => ({ ...q, completed: false })),
             lastResetDate: today,
           };
         }

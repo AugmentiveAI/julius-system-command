@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
-import { Check, TrendingUp, Trophy, ChevronDown, ChevronUp } from 'lucide-react';
+import { Check, TrendingUp, Trophy, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import { RPESlider } from './RPESlider';
 import { Exercise } from '@/types/training';
 import { OverloadPrescription } from '@/types/overload';
 import { PersonalRecord } from '@/hooks/useTrainingLog';
+import { getExerciseWarning, ExerciseFlag } from '@/utils/exerciseContraindications';
 
 export interface ExerciseSetData {
   setNumber: number;
@@ -63,6 +64,16 @@ export function ExerciseProgressCard({
   const completedSets = trackingData?.sets.filter(s => s.completed).length ?? 0;
   const allDone = completedSets >= exercise.sets;
   const hasProgression = overload && overload.progression !== 'first-session' && overload.progression !== 'hold';
+
+  // Exercise contraindication warning
+  const exerciseWarning = useMemo((): ExerciseFlag | null => {
+    try {
+      const raw = localStorage.getItem('systemPhysicalState');
+      if (!raw) return null;
+      const ps = JSON.parse(raw);
+      return getExerciseWarning(exercise.name, ps.romLeftKnee ?? 90, ps.romRightKnee ?? 90, ps.rehabPhase ?? 'strength');
+    } catch { return null; }
+  }, [exercise.name]);
 
   // PR proximity check
   const isPRAttempt = useMemo(() => {
@@ -139,6 +150,15 @@ export function ExerciseProgressCard({
             </span>
           )}
         </div>
+
+        {/* Contraindication warning */}
+        {exerciseWarning && !allDone && (
+          <div className="flex items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-500/5 px-2 py-1">
+            <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0" />
+            <span className="font-mono text-[9px] text-amber-400">{exerciseWarning.reason}</span>
+            <span className="font-mono text-[8px] text-muted-foreground ml-auto shrink-0">Unlocks: {exerciseWarning.unlocksAt}</span>
+          </div>
+        )}
 
         {/* Sets progress + chevron */}
         <div className="flex items-center gap-2 shrink-0">

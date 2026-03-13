@@ -75,6 +75,26 @@ export function useThreatAssessment() {
       }
     } catch { /* ignore */ }
 
+    // Days since last cardio for cardiovascular threat
+    let daysSinceLastCardio = 0;
+    try {
+      const raw = localStorage.getItem('systemCalibratedCompletions');
+      if (raw) {
+        const history = JSON.parse(raw);
+        const cardioEntries = history.filter((c: any) =>
+          c.category === 'body' || c.questId?.includes('cardio') || c.questId?.includes('peloton')
+        );
+        if (cardioEntries.length > 0) {
+          const last = cardioEntries.sort((a: any, b: any) =>
+            new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
+          )[0];
+          daysSinceLastCardio = Math.floor((Date.now() - new Date(last.completedAt).getTime()) / (1000 * 60 * 60 * 24));
+        } else {
+          daysSinceLastCardio = 7; // No cardio found — trigger warning
+        }
+      }
+    } catch { /* ignore */ }
+
     return {
       currentHour: hour,
       questsCompletedToday: completedToday,
@@ -89,12 +109,13 @@ export function useThreatAssessment() {
       daysSinceLastOutreach,
       questsCompletedLast3Days,
       deepWorkCompletedToday,
-      attemptingHighCognitionTask: false, // Can't detect this passively
-      daysToExitDeadline: 999, // Safe default — won't trigger until deadline tracking built
+      attemptingHighCognitionTask: false,
+      daysToExitDeadline: 999,
       currentMRR: 0,
       targetMRR: 10000,
       sprintsToday,
-    };
+      daysSinceLastCardio,
+    } as ThreatContext & { daysSinceLastCardio: number };
   }, [player, quests, fatigueAccumulation, geneticState, sprintsToday]);
 
   // Run assessment every 60 seconds via shared ticker

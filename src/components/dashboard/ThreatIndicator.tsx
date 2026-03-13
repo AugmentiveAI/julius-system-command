@@ -34,6 +34,7 @@ const CATEGORY_ICONS: Record<ThreatCategory, typeof Shield> = {
   stat_decay: AlertTriangle,
   deadline: Clock,
   penalty: Skull,
+  cardiovascular: Flame,
 };
 
 const LEVEL_BADGE_COLORS: Record<ThreatLevel, string> = {

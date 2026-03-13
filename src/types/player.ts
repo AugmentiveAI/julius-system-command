@@ -1,3 +1,32 @@
+// ── Physical Recovery Types ──────────────────────────────────────────
+
+export interface RomEntry {
+  date: string;
+  leftKnee: number;
+  rightKnee: number;
+  notes?: string;
+}
+
+export type RehabPhase = 'mobility' | 'strength' | 'power' | 'performance';
+
+export interface PhysicalState {
+  romLeftKnee: number;      // 0-100, current % range of motion
+  romRightKnee: number;     // 0-100
+  rehabPhase: RehabPhase;   // progression phases
+  lastRomUpdate: string;    // ISO date
+  rehabLog: RomEntry[];
+}
+
+export const INITIAL_PHYSICAL_STATE: PhysicalState = {
+  romLeftKnee: 90,
+  romRightKnee: 90,
+  rehabPhase: 'strength',
+  lastRomUpdate: new Date().toISOString(),
+  rehabLog: [],
+};
+
+// ── Player Stats & Core Types ───────────────────────────────────────
+
 export interface PlayerStats {
   sales: number;
   systems: number;
