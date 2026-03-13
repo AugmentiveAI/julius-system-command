@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -154,16 +155,16 @@ const AppContent = () => {
         />
       )}
       <Routes>
-        <Route path="/" element={<ProtectedRoute><Index forceFirstScan={triggerScan} onScanTriggered={() => setTriggerScan(false)} /></ProtectedRoute>} />
-        <Route path="/quests" element={<ProtectedRoute><Quests /></ProtectedRoute>} />
-        <Route path="/training" element={<ProtectedRoute><Training /></ProtectedRoute>} />
-        <Route path="/progress" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
-        <Route path="/more" element={<ProtectedRoute><More /></ProtectedRoute>} />
-        <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-        <Route path="/system-analytics" element={<ProtectedRoute><SystemAnalytics /></ProtectedRoute>} />
-        <Route path="/store" element={<ProtectedRoute><Store /></ProtectedRoute>} />
-        <Route path="/auth" element={<AuthRoute />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/" element={<ErrorBoundary><ProtectedRoute><Index forceFirstScan={triggerScan} onScanTriggered={() => setTriggerScan(false)} /></ProtectedRoute></ErrorBoundary>} />
+        <Route path="/quests" element={<ErrorBoundary><ProtectedRoute><Quests /></ProtectedRoute></ErrorBoundary>} />
+        <Route path="/training" element={<ErrorBoundary><ProtectedRoute><Training /></ProtectedRoute></ErrorBoundary>} />
+        <Route path="/progress" element={<ErrorBoundary><ProtectedRoute><Progress /></ProtectedRoute></ErrorBoundary>} />
+        <Route path="/more" element={<ErrorBoundary><ProtectedRoute><More /></ProtectedRoute></ErrorBoundary>} />
+        <Route path="/settings" element={<ErrorBoundary><ProtectedRoute><Settings /></ProtectedRoute></ErrorBoundary>} />
+        <Route path="/system-analytics" element={<ErrorBoundary><ProtectedRoute><SystemAnalytics /></ProtectedRoute></ErrorBoundary>} />
+        <Route path="/store" element={<ErrorBoundary><ProtectedRoute><Store /></ProtectedRoute></ErrorBoundary>} />
+        <Route path="/auth" element={<ErrorBoundary><AuthRoute /></ErrorBoundary>} />
+        <Route path="/reset-password" element={<ErrorBoundary><ResetPassword /></ErrorBoundary>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>

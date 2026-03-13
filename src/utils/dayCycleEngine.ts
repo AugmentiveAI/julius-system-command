@@ -5,7 +5,7 @@
 
 // ── Timezone Helpers ─────────────────────────────────────────────────
 
-const TIMEZONE = 'America/Los_Angeles';
+const TIMEZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 /** Returns current date as YYYY-MM-DD in Pacific Time */
 export function getSystemDate(): string {
