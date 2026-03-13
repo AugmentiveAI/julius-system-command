@@ -261,6 +261,7 @@ const getDayDataFallback = () => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
+    <TickerProvider>
     <TooltipProvider>
       <AuthProvider>
         <HistoryProvider>
