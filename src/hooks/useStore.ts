@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTickerEffect } from '@/contexts/TickerContext';
 import { StoreItem, OwnedItem, ActiveBoost } from '@/types/store';
 import { STORE_ITEMS } from '@/data/storeItems';
 import { useCurrency } from '@/hooks/useCurrency';
