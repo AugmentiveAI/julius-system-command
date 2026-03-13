@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
-import { Check, TrendingUp, Trophy, ChevronDown, ChevronUp } from 'lucide-react';
+import { Check, TrendingUp, Trophy, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import { RPESlider } from './RPESlider';
 import { Exercise } from '@/types/training';
 import { OverloadPrescription } from '@/types/overload';
 import { PersonalRecord } from '@/hooks/useTrainingLog';
+import { getExerciseWarning, ExerciseFlag } from '@/utils/exerciseContraindications';
 
 export interface ExerciseSetData {
   setNumber: number;
