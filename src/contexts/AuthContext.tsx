@@ -1,56 +1,10 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { setStorageScope, clearScopedStorage, storageKey } from '@/utils/scopedStorage';
 
-// All localStorage keys used by the system
-const SYSTEM_STORAGE_KEYS = [
-  'the-system-player',
-  'the-system-quests',
-  'the-system-protocol-quests',
-  'the-system-main-quests',
-  'the-system-history',
-  'the-system-daily-xp',
-  'the-system-pillar-quests',
-  'the-system-pillar-streaks',
-  'the-system-workout',
-  'the-system-caffeine',
-  'the-system-inventory',
-  'systemActivated',
-  'systemStartDate',
-  'systemStateHistory',
-  'systemLastScanDate',
-  'systemDayCycle',
-  'systemGeneticHUD',
-  'systemSprintTimer',
-  'systemFocusMode',
-  'systemFocusModeActive',
-  'systemPreCommitment',
-  'systemPreCommitTriggerDate',
-  'systemCalibratedCompletions',
-  'systemCompletionHistory',
-  'systemResistanceData',
-  'systemPersuasionProfile',
-  'systemPersuasionOutcomes',
-  'systemPersuasionOptimizer',
-  'systemShadowQuest',
-  'systemCommsState',
-  'systemWeeklyPlan',
-  'systemWeeklyPlanDismissed',
-  'systemResistancePrevScore',
-  'systemMuscleRecovery',
-  'systemAISettings',
-  'systemAIQuests',
-];
-
-function clearSystemStorage() {
-  SYSTEM_STORAGE_KEYS.forEach(key => localStorage.removeItem(key));
-  // Also clear any per-user migration flags
-  Object.keys(localStorage).forEach(key => {
-    if (key.startsWith('the-system-migrated-')) {
-      localStorage.removeItem(key);
-    }
-  });
-}
+// Re-export storageKey for convenience
+export { storageKey };
 
 interface AuthContextType {
   session: Session | null;
@@ -78,14 +32,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         setLoading(false);
 
-        // Clear local state on sign-out to prevent stale data leaking
         if (event === 'SIGNED_OUT') {
-          clearSystemStorage();
+          clearScopedStorage();
+          setStorageScope(null);
+        } else if (session?.user) {
+          setStorageScope(session.user.id);
         }
       }
     );
 
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setStorageScope(session.user.id);
+      }
       setSession(session);
       setLoading(false);
     });
