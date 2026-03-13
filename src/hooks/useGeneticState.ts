@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTickerEffect } from '@/contexts/TickerContext';
 import { getGeneticState, GeneticState } from '@/utils/geneticEngine';
 import { getSystemDate } from '@/utils/dayCycleEngine';
 
