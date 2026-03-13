@@ -10,6 +10,31 @@ import {
 
 const RECOVERY_KEY = 'systemMuscleRecovery';
 
+// ── Age-Adjusted Recovery ────────────────────────────────────────────
+
+const AGE_RECOVERY_MULTIPLIER = {
+  under30: 1.0,
+  thirties: 1.15,
+  forties: 1.3,   // Julius — 30% longer recovery needed
+  fifties: 1.5,
+} as const;
+
+export type AgeGroup = keyof typeof AGE_RECOVERY_MULTIPLIER;
+
+export function getAgeGroup(age: number): AgeGroup {
+  if (age < 30) return 'under30';
+  if (age < 40) return 'thirties';
+  if (age < 50) return 'forties';
+  return 'fifties';
+}
+
+export function getAdjustedRecoveryHours(baseHours: number, age: number): number {
+  return Math.round(baseHours * AGE_RECOVERY_MULTIPLIER[getAgeGroup(age)]);
+}
+
+// Julius's age constant
+export const PLAYER_AGE = 41;
+
 // ── Recovery Status ──────────────────────────────────────────────────
 
 export type RecoveryStatus = 'fresh' | 'recovered' | 'partial' | 'sore';
