@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useTickerEffect } from '@/contexts/TickerContext';
 import {
   SystemIntervention,
   InterventionContext,
