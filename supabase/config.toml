@@ -23,3 +23,9 @@ verify_jwt = false
 
 [functions.shadow-research]
 verify_jwt = false
+
+[functions.generate-aar]
+verify_jwt = false
+
+[functions.parse-voice-input]
+verify_jwt = false

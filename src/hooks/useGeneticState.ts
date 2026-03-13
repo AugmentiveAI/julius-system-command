@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTickerEffect } from '@/contexts/TickerContext';
 import { getGeneticState, GeneticState } from '@/utils/geneticEngine';
 import { getSystemDate } from '@/utils/dayCycleEngine';
 
@@ -50,25 +51,19 @@ export function useGeneticState() {
     )
   );
 
-  // Refresh genetic state every minute for real-time COMT phase transitions
-  useEffect(() => {
-    const refresh = () => {
-      const data = loadHUDData();
-      setHudData(data);
-      setGeneticState(
-        getGeneticState(
-          new Date(),
-          data.lastColdExposure ? new Date(data.lastColdExposure) : null,
-          data.lastMagnesium ? new Date(data.lastMagnesium) : null,
-          data.sprintsToday,
-          data.stressLevel,
-        )
-      );
-    };
-
-    refresh();
-    const interval = setInterval(refresh, 60_000);
-    return () => clearInterval(interval);
+  // Refresh genetic state every minute via shared ticker
+  useTickerEffect(() => {
+    const data = loadHUDData();
+    setHudData(data);
+    setGeneticState(
+      getGeneticState(
+        new Date(),
+        data.lastColdExposure ? new Date(data.lastColdExposure) : null,
+        data.lastMagnesium ? new Date(data.lastMagnesium) : null,
+        data.sprintsToday,
+        data.stressLevel,
+      )
+    );
   }, []);
 
   // Listen for storage events from other tabs / quest completions
