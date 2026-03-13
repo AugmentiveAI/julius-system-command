@@ -31,14 +31,10 @@ import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
-// Lazy-load heavy pages
-const Quests = lazy(() => import('./pages/Quests'));
+// Lazy-load pages
 const Training = lazy(() => import('./pages/Training'));
-const Progress = lazy(() => import('./pages/Progress'));
-const More = lazy(() => import('./pages/More'));
-const Settings = lazy(() => import('./pages/Settings'));
-const SystemAnalytics = lazy(() => import('./pages/SystemAnalytics'));
-const Store = lazy(() => import('./pages/Store'));
+const Intel = lazy(() => import('./pages/Intel'));
+const SystemTab = lazy(() => import('./pages/SystemTab'));
 
 const queryClient = new QueryClient();
 
@@ -48,18 +44,10 @@ const PageFallback = () => (
   </div>
 );
 
-/** Renders children only if authenticated, otherwise redirects to /auth */
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth();
-
-  if (loading) {
-    return <PageFallback />;
-  }
-
-  if (!session) {
-    return <Navigate to="/auth" replace />;
-  }
-
+  if (loading) return <PageFallback />;
+  if (!session) return <Navigate to="/auth" replace />;
   return <>{children}</>;
 }
 
@@ -76,95 +64,53 @@ const AppContent = () => {
   const { showMigration, migrating, summary, acceptMigration, skipMigration } = useLocalDataMigration();
 
   useEffect(() => {
-    if (!user) {
-      setShowAwakening(null);
-      return;
-    }
-
+    if (!user) { setShowAwakening(null); return; }
     let cancelled = false;
-
     const checkOnboarding = async () => {
       try {
-        const { data } = await supabase
-          .from('player_state')
-          .select('total_xp')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
+        const { data } = await supabase.from('player_state').select('total_xp').eq('user_id', user.id).maybeSingle();
         if (cancelled) return;
-
-        if (data && data.total_xp > 0) {
-          setShowAwakening(false);
-        } else {
-          const activated = localStorage.getItem('systemActivated') === 'true';
-          setShowAwakening(!activated);
-        }
-      } catch {
-        const activated = localStorage.getItem('systemActivated') === 'true';
-        setShowAwakening(!activated);
-      }
+        if (data && data.total_xp > 0) setShowAwakening(false);
+        else setShowAwakening(localStorage.getItem('systemActivated') !== 'true');
+      } catch { setShowAwakening(localStorage.getItem('systemActivated') !== 'true'); }
     };
-
     checkOnboarding();
     return () => { cancelled = true; };
   }, [user]);
 
-  const handleAwakeningComplete = () => {
-    setShowAwakening(false);
-    setShowGoalCapture(true);
-  };
-
+  const handleAwakeningComplete = () => { setShowAwakening(false); setShowGoalCapture(true); };
   const handleGoalSubmit = (goal: string) => {
-    try {
-      const raw = localStorage.getItem('the-system-player');
-      const player = raw ? JSON.parse(raw) : {};
-      player.goal = goal;
-      localStorage.setItem('the-system-player', JSON.stringify(player));
-    } catch { /* ignore */ }
-    setShowGoalCapture(false);
-    setShowBriefing(true);
+    try { const raw = localStorage.getItem('the-system-player'); const p = raw ? JSON.parse(raw) : {}; p.goal = goal; localStorage.setItem('the-system-player', JSON.stringify(p)); } catch {}
+    setShowGoalCapture(false); setShowBriefing(true);
   };
-
-  const handleBriefingComplete = () => {
-    setShowBriefing(false);
-    setTriggerScan(true);
-  };
+  const handleBriefingComplete = () => { setShowBriefing(false); setTriggerScan(true); };
 
   return (
     <>
       <Toaster />
       <Sonner />
-      <DataMigrationDialog
-        open={showMigration}
-        migrating={migrating}
-        summary={summary}
-        onAccept={acceptMigration}
-        onSkip={skipMigration}
-      />
+      <DataMigrationDialog open={showMigration} migrating={migrating} summary={summary} onAccept={acceptMigration} onSkip={skipMigration} />
       {showAwakening === true && <AwakeningSequence onComplete={handleAwakeningComplete} />}
       {showGoalCapture && <GoalCapture onSubmit={handleGoalSubmit} />}
       {showBriefing && <SystemBriefing onComplete={handleBriefingComplete} />}
       {showModal && commitment && (
-        <PreCommitmentModal
-          commitment={commitment}
-          isRecovery={isRecovery}
-          onAccept={handleAccept}
-          onRequestAlternative={handleRequestAlternative}
-          onDismiss={handleDismiss}
-        />
+        <PreCommitmentModal commitment={commitment} isRecovery={isRecovery} onAccept={handleAccept} onRequestAlternative={handleRequestAlternative} onDismiss={handleDismiss} />
       )}
       <Suspense fallback={<PageFallback />}>
         <Routes>
           <Route path="/" element={<ErrorBoundary><ProtectedRoute><Index forceFirstScan={triggerScan} onScanTriggered={() => setTriggerScan(false)} /></ProtectedRoute></ErrorBoundary>} />
-          <Route path="/quests" element={<ErrorBoundary><ProtectedRoute><Quests /></ProtectedRoute></ErrorBoundary>} />
           <Route path="/training" element={<ErrorBoundary><ProtectedRoute><Training /></ProtectedRoute></ErrorBoundary>} />
-          <Route path="/progress" element={<ErrorBoundary><ProtectedRoute><Progress /></ProtectedRoute></ErrorBoundary>} />
-          <Route path="/more" element={<ErrorBoundary><ProtectedRoute><More /></ProtectedRoute></ErrorBoundary>} />
-          <Route path="/settings" element={<ErrorBoundary><ProtectedRoute><Settings /></ProtectedRoute></ErrorBoundary>} />
-          <Route path="/system-analytics" element={<ErrorBoundary><ProtectedRoute><SystemAnalytics /></ProtectedRoute></ErrorBoundary>} />
-          <Route path="/store" element={<ErrorBoundary><ProtectedRoute><Store /></ProtectedRoute></ErrorBoundary>} />
+          <Route path="/intel" element={<ErrorBoundary><ProtectedRoute><Intel /></ProtectedRoute></ErrorBoundary>} />
+          <Route path="/system" element={<ErrorBoundary><ProtectedRoute><SystemTab /></ProtectedRoute></ErrorBoundary>} />
           <Route path="/auth" element={<ErrorBoundary><AuthRoute /></ErrorBoundary>} />
           <Route path="/reset-password" element={<ErrorBoundary><ResetPassword /></ErrorBoundary>} />
+          {/* Legacy redirects */}
+          <Route path="/quests" element={<Navigate to="/" replace />} />
+          <Route path="/progress" element={<Navigate to="/intel" replace />} />
+          <Route path="/more" element={<Navigate to="/system" replace />} />
+          <Route path="/settings" element={<Navigate to="/system" replace />} />
+          <Route path="/system-analytics" element={<Navigate to="/intel" replace />} />
+          <Route path="/store" element={<Navigate to="/system" replace />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
@@ -172,7 +118,6 @@ const AppContent = () => {
   );
 };
 
-/** Redirect authenticated users away from /auth */
 function AuthRoute() {
   const { session, loading } = useAuth();
   if (loading) return null;
@@ -185,41 +130,18 @@ const AppWithFAB = () => {
   const { geneticState, sprintsToday } = useGeneticState();
 
   let systemRec: string | null = null;
-  try {
-    const raw = localStorage.getItem('systemStateHistory');
-    if (raw) {
-      const history = JSON.parse(raw);
-      if (history.length > 0) systemRec = history[history.length - 1].systemRecommendation || null;
-    }
-  } catch { /* ignore */ }
+  try { const raw = localStorage.getItem('systemStateHistory'); if (raw) { const h = JSON.parse(raw); if (h.length > 0) systemRec = h[h.length - 1].systemRecommendation || null; } } catch {}
 
   let isSprintActive = false;
-  try {
-    const raw = localStorage.getItem('systemSprintTimer');
-    if (raw) {
-      const data = JSON.parse(raw);
-      isSprintActive = data.phase === 'sprinting' || data.phase === 'break' || data.phase === 'extended-break';
-    }
-  } catch { /* ignore */ }
+  try { const raw = localStorage.getItem('systemSprintTimer'); if (raw) { const d = JSON.parse(raw); isSprintActive = ['sprinting', 'break', 'extended-break'].includes(d.phase); } } catch {}
 
   let trainingCompleted = false;
-  try {
-    const raw = localStorage.getItem('the-system-workout');
-    if (raw) {
-      const data = JSON.parse(raw);
-      trainingCompleted = data.workoutCompleted === true;
-    }
-  } catch { /* ignore */ }
+  try { const raw = localStorage.getItem('the-system-workout'); if (raw) trainingCompleted = JSON.parse(raw).workoutCompleted === true; } catch {}
 
   const comms = useSystemComms({
-    comtPhase: geneticState.comtPhase,
-    sprintsToday,
-    systemRec,
-    consecutiveCompleted: 0,
-    consecutiveSkipped: 0,
-    trainingCompleted,
-    isFocusMode: focusActive,
-    isSprintActive,
+    comtPhase: geneticState.comtPhase, sprintsToday, systemRec,
+    consecutiveCompleted: 0, consecutiveSkipped: 0, trainingCompleted,
+    isFocusMode: focusActive, isSprintActive,
   });
 
   return (
@@ -237,28 +159,13 @@ const getDayDataFallback = () => {
     const protocol = protocolRaw ? JSON.parse(protocolRaw) : { quests: [] };
     const quests = protocol.quests || [];
     const completed = quests.filter((q: any) => q.completed).length;
-    const totalXP = quests
-      .filter((q: any) => q.completed)
-      .reduce((sum: number, q: any) => sum + (q.xp || 0) + (q.geneticBonus?.bonusXp || 0), 0);
-
-    const stateRaw = localStorage.getItem('systemStateHistory');
+    const totalXP = quests.filter((q: any) => q.completed).reduce((sum: number, q: any) => sum + (q.xp || 0) + (q.geneticBonus?.bonusXp || 0), 0);
     let mode = 'steady';
-    if (stateRaw) {
-      const history = JSON.parse(stateRaw);
-      if (history.length > 0) mode = history[history.length - 1].systemRecommendation || 'steady';
-    }
-
-    const sprintRaw = localStorage.getItem('systemSprintTimer');
+    try { const raw = localStorage.getItem('systemStateHistory'); if (raw) { const h = JSON.parse(raw); if (h.length > 0) mode = h[h.length - 1].systemRecommendation || 'steady'; } } catch {}
     let sprints = 0;
-    if (sprintRaw) {
-      const data = JSON.parse(sprintRaw);
-      sprints = data.currentSprint ? data.currentSprint - 1 : 0;
-    }
-
+    try { const raw = localStorage.getItem('systemSprintTimer'); if (raw) { const d = JSON.parse(raw); sprints = d.currentSprint ? d.currentSprint - 1 : 0; } } catch {}
     return { questsCompleted: completed, questsTotal: quests.length, xpEarned: totalXP, mode, sprintsCompleted: sprints };
-  } catch {
-    return { questsCompleted: 0, questsTotal: 0, xpEarned: 0, mode: 'steady', sprintsCompleted: 0 };
-  }
+  } catch { return { questsCompleted: 0, questsTotal: 0, xpEarned: 0, mode: 'steady', sprintsCompleted: 0 }; }
 };
 
 const App = () => (
