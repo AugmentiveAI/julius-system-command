@@ -1,31 +1,10 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { TopBar } from '@/components/dashboard/TopBar';
-import { SystemIntelligencePanel, SystemIntelligenceLoading } from '@/components/dashboard/SystemIntelligencePanel';
-import { ShadowArmyPanel } from '@/components/shadows/ShadowArmyPanel';
-import { DungeonPanel } from '@/components/dungeons/DungeonPanel';
-import { useSystemIntelligenceAI } from '@/hooks/useSystemIntelligenceAI';
-import { DashboardMessage } from '@/components/dashboard/DashboardMessage';
-import { ProgressRing } from '@/components/dashboard/ProgressRing';
-import { TodaySnapshot } from '@/components/dashboard/TodaySnapshot';
-import { DashboardActions } from '@/components/dashboard/DashboardActions';
-import { PenaltyBanner } from '@/components/dashboard/PenaltyBanner';
-import StateCheck from '@/components/StateCheck';
-import { FlashOverlay } from '@/components/effects/FlashOverlay';
-import { LevelUpOverlay } from '@/components/effects/LevelUpOverlay';
-import { AriseOverlay } from '@/components/effects/AriseOverlay';
-import { RankUpOverlay } from '@/components/effects/RankUpOverlay';
-import { SkillUnlockOverlay } from '@/components/effects/SkillUnlockOverlay';
-import { PenaltyDungeonOverlay } from '@/components/effects/PenaltyDungeonOverlay';
-import { StatusWindow } from '@/components/dashboard/StatusWindow';
-import { GeneticWarning } from '@/components/warnings/GeneticWarning';
+import { StatusStrip } from '@/components/dashboard/StatusStrip';
+import { SystemMessageCard, SystemMessage } from '@/components/dashboard/SystemMessageCard';
+import { MissionCard } from '@/components/quests/MissionCard';
 import { BottomNav } from '@/components/navigation/BottomNav';
-import { WeeklyPlanningModal } from '@/components/planning/WeeklyPlanningModal';
-import { FocusModeOverlay } from '@/components/focus/FocusModeOverlay';
-import { useFocusModeContext } from '@/contexts/FocusModeContext';
-import { useFocusMode } from '@/hooks/useFocusMode';
 import { usePlayer } from '@/hooks/usePlayer';
-import { useCaffeine } from '@/hooks/useCaffeine';
 import { useProtocolQuests } from '@/hooks/useProtocolQuests';
 import { useWorkout } from '@/hooks/useWorkout';
 import { useDailyXP } from '@/hooks/useDailyXP';
@@ -33,72 +12,121 @@ import { useGeneticState } from '@/hooks/useGeneticState';
 import { useToast } from '@/hooks/use-toast';
 import { useSystemStrategy } from '@/hooks/useSystemStrategy';
 import { getSystemToast } from '@/utils/systemVoice';
-import { useWeeklyPlanning } from '@/hooks/useWeeklyPlanning';
-import { calibrateQuests, CalibratedQuest } from '@/utils/questCalibration';
-import { usePersuasion } from '@/hooks/usePersuasion';
-import { loadCachedResistance } from '@/utils/resistanceTracker';
-import { PlayerStateCheck } from '@/types/playerState';
-import { useLootDrops } from '@/hooks/useLootDrops';
-import { LootDropToast } from '@/components/effects/LootDropToast';
-import { LootCinematicReveal } from '@/components/effects/LootCinematicReveal';
+import { useCaffeine } from '@/hooks/useCaffeine';
 import { usePillarQuests } from '@/hooks/usePillarQuests';
 import { usePillarStreak } from '@/hooks/usePillarStreak';
 import { useSystemNotifications } from '@/hooks/useSystemNotifications';
 import { useShadowArmy } from '@/hooks/useShadowArmy';
 import { useDungeons } from '@/hooks/useDungeons';
-import { SuggestedShadow, SuggestedDungeon } from '@/types/systemIntelligence';
-import { SystemChatPanel } from '@/components/chat/SystemChatPanel';
-import { ShadowCategory } from '@/types/shadowArmy';
-import { DungeonObjective } from '@/types/dungeon';
-import { useSkills } from '@/hooks/useSkills';
-import { usePenaltyDungeon } from '@/hooks/usePenaltyDungeon';
-import { getRankForLevel } from '@/types/skills';
-import { getSystemDate } from '@/utils/dayCycleEngine';
-import { loadAIQuests, isAIEnabled } from '@/utils/aiQuestGenerator';
-import { useTrainingLog } from '@/hooks/useTrainingLog';
-import { buildTrainingContext } from '@/hooks/useTrainingIntelligence';
-import { getMesocycleState } from '@/utils/periodizationEngine';
 import { useJarvisBrain } from '@/contexts/JarvisBrainContext';
-import { SystemInterventionBanner } from '@/components/dashboard/SystemInterventionBanner';
 import { useEmergencyQuests } from '@/hooks/useEmergencyQuests';
-import { ActiveBoostsBar } from '@/components/dashboard/ActiveBoostsBar';
-import { EmergencyQuestOverlay } from '@/components/effects/EmergencyQuestOverlay';
-import { EmergencyQuestBanner } from '@/components/quests/EmergencyQuestBanner';
-import { CornerstoneAlert } from '@/components/warnings/CornerstoneAlert';
-import { LoopDetectedOverlay } from '@/components/effects/LoopDetectedOverlay';
-import { AARModal } from '@/components/aar/AARModal';
 import { useAfterActionReview } from '@/hooks/useAfterActionReview';
 import { useNarrativeLoops } from '@/hooks/useNarrativeLoops';
 import { useCornerstone } from '@/hooks/useCornerstone';
+import { useHistoryContext } from '@/contexts/HistoryContext';
+import { useLootDrops } from '@/hooks/useLootDrops';
+import { usePersuasion, recordCompletion } from '@/hooks/usePersuasion';
+import { useShadowQuest } from '@/hooks/useShadowQuest';
+import { useSystemIntelligenceAI } from '@/hooks/useSystemIntelligenceAI';
+import { useSkills } from '@/hooks/useSkills';
+import { usePenaltyDungeon } from '@/hooks/usePenaltyDungeon';
+import { usePreCommitment } from '@/hooks/usePreCommitment';
+import { useWeeklyPlanning } from '@/hooks/useWeeklyPlanning';
+import { useFocusModeContext } from '@/contexts/FocusModeContext';
+import { useFocusMode } from '@/hooks/useFocusMode';
+import { useTrainingLog } from '@/hooks/useTrainingLog';
+import { calibrateQuests, CalibratedQuest, QuestCompletionRecord } from '@/utils/questCalibration';
+import { loadCachedResistance } from '@/utils/resistanceTracker';
+import { PlayerStateCheck } from '@/types/playerState';
+import { getSystemDate } from '@/utils/dayCycleEngine';
+import { loadAIQuests, isAIEnabled } from '@/utils/aiQuestGenerator';
+import { getRankForLevel } from '@/types/skills';
+import { ShadowCategory } from '@/types/shadowArmy';
+import { DungeonObjective } from '@/types/dungeon';
+import { SuggestedShadow, SuggestedDungeon } from '@/types/systemIntelligence';
+import { LevelUpOverlay } from '@/components/effects/LevelUpOverlay';
+import { AriseOverlay } from '@/components/effects/AriseOverlay';
+import { RankUpOverlay } from '@/components/effects/RankUpOverlay';
+import { LootDropToast } from '@/components/effects/LootDropToast';
+import { LootCinematicReveal } from '@/components/effects/LootCinematicReveal';
+import { FocusModeOverlay } from '@/components/focus/FocusModeOverlay';
+import StateCheck from '@/components/StateCheck';
+import { StatusWindow } from '@/components/dashboard/StatusWindow';
+import { PenaltyDungeonOverlay } from '@/components/effects/PenaltyDungeonOverlay';
+import { EmergencyQuestBanner } from '@/components/quests/EmergencyQuestBanner';
+import { AARModal } from '@/components/aar/AARModal';
+import { WeeklyPlanningModal } from '@/components/planning/WeeklyPlanningModal';
+import { ActiveBoostsBar } from '@/components/dashboard/ActiveBoostsBar';
+import { SystemChatPanel } from '@/components/chat/SystemChatPanel';
+import { useJarvisBrainOptional } from '@/contexts/JarvisBrainContext';
+import { reorderQuestsWithJarvis } from '@/utils/jarvisQuestReorder';
+import { QuestTimeBlock } from '@/types/quests';
+import { buildTrainingContext } from '@/hooks/useTrainingIntelligence';
+import { getMesocycleState } from '@/utils/periodizationEngine';
 import CaptureFAB from '@/components/capture/CaptureFAB';
+
+// TODO: Phase2-IP-rebrand — "Shadow Monarch", "Hunter" terminology, rank aesthetic
+
 const LAST_SCAN_DATE_KEY = 'systemLastScanDate';
-const AI_SETTINGS_KEY = 'systemAISettings';
+const STATE_HISTORY_KEY = 'systemStateHistory';
+const CALIBRATED_COMPLETIONS_KEY = 'systemCalibratedCompletions';
 const START_DATE_KEY = 'systemStartDate';
 
-function isAutoDeployEnabled(): boolean {
-  try {
-    const settings = JSON.parse(localStorage.getItem(AI_SETTINGS_KEY) || '{}');
-    return settings.autoDeploy === true;
-  } catch { return false; }
-}
-
 function needsDailyScan(): boolean {
-  const today = getSystemDate();
-  return localStorage.getItem(LAST_SCAN_DATE_KEY) !== today;
+  return localStorage.getItem(LAST_SCAN_DATE_KEY) !== getSystemDate();
 }
-
 function markScanDone() {
   localStorage.setItem(LAST_SCAN_DATE_KEY, getSystemDate());
 }
 
-/** Build a concise one-line daily message from strategy data */
-function buildDailyOneLiner(brief: string): string {
-  // Take just the first sentence of the daily brief
-  const firstSentence = brief.split(/[.!]/).filter(Boolean)[0]?.trim();
-  if (firstSentence && firstSentence.length <= 80) return firstSentence + '.';
-  // Fallback: truncate
-  if (firstSentence) return firstSentence.slice(0, 77) + '...';
-  return 'The System awaits. Begin your quests.';
+function getLatestTodayCheck(): PlayerStateCheck | null {
+  try {
+    const stored = localStorage.getItem(STATE_HISTORY_KEY);
+    if (!stored) return null;
+    const checks: PlayerStateCheck[] = JSON.parse(stored);
+    const today = getSystemDate();
+    const todayChecks = checks.filter(c =>
+      new Date(c.timestamp).toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' }) === today
+    );
+    return todayChecks.length > 0 ? todayChecks[todayChecks.length - 1] : null;
+  } catch { return null; }
+}
+
+function getStateHistory(): PlayerStateCheck[] {
+  try {
+    const stored = localStorage.getItem(STATE_HISTORY_KEY);
+    if (!stored) return [];
+    const checks: PlayerStateCheck[] = JSON.parse(stored);
+    const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
+    return checks.filter(c => new Date(c.timestamp) >= weekAgo);
+  } catch { return []; }
+}
+
+function getCompletionHistory(): QuestCompletionRecord[] {
+  try {
+    const stored = localStorage.getItem(CALIBRATED_COMPLETIONS_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch { return []; }
+}
+
+function saveCompletionRecord(record: QuestCompletionRecord) {
+  try {
+    const history = getCompletionHistory();
+    history.push(record);
+    localStorage.setItem(CALIBRATED_COMPLETIONS_KEY, JSON.stringify(history.slice(-200)));
+  } catch { /* ignore */ }
+}
+
+function assignTimeBlock(quest: CalibratedQuest): QuestTimeBlock {
+  if (quest.isBreak) return 'morning';
+  switch (quest.stat) {
+    case 'discipline': return quest.id.includes('walk') || quest.id.includes('cold') ? 'morning' : 'evening';
+    case 'systems': return quest.id.includes('second-wind') ? 'evening' : 'morning';
+    case 'sales': case 'network': return 'midday';
+    case 'wealth': return 'evening';
+    case 'creative': return 'afternoon';
+    default: return 'afternoon';
+  }
 }
 
 interface IndexProps {
@@ -108,14 +136,14 @@ interface IndexProps {
 
 const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
   const { player, penaltyLevel, showFlashEffect, dismissPenaltyBanner, levelUpState, setGoal, addXP, reduceStat, resetPenaltyDays } = usePlayer();
-  const { logCaffeine, hasLoggedAfter10am, warningDismissed, dismissWarning, logs } = useCaffeine();
+  const { logCaffeine, hasLoggedAfter10am, warningDismissed, dismissWarning } = useCaffeine();
   const { toggleQuest, setQuestCompleted, quests } = useProtocolQuests();
   const { workout, workoutCompleted, prescription: workoutPrescription, trainingLevel: wTrainingLevel, sessionsLogged: wSessionsLogged, todayWorkoutType } = useWorkout();
   const { recentLogs, personalRecords, fatigueAccumulation } = useTrainingLog();
   const { toast } = useToast();
   const { strategy, dayNumber, playerTitle } = useSystemStrategy();
-  const { intelligence, loading: aiLoading, error: aiError, generate: generateIntelligence } = useSystemIntelligenceAI();
-  const { } = useGeneticState(); // genetic state now via JarvisBrain
+  const { intelligence, loading: aiLoading, generate: generateIntelligence } = useSystemIntelligenceAI();
+  const { } = useGeneticState();
   const weekly = useWeeklyPlanning();
   const focusMode = useFocusModeContext();
   const pillar = usePillarQuests();
@@ -123,8 +151,9 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
   const { notifications, unreadCount, addNotification, markAllRead, clearAll: clearNotifications } = useSystemNotifications();
   const { shadows, addShadow: _addShadow } = useShadowArmy();
   const { completedDungeons, createDungeon: _createDungeon } = useDungeons();
+  const { addCompletion } = useHistoryContext();
+  const { todayCommitment, resolveCommitment } = usePreCommitment();
 
-  // ── Intervention Engine (JARVIS) — from shared brain context ──────
   const {
     allInterventions: activeInterventions,
     highestPriority,
@@ -137,229 +166,288 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
   const aarReview = useAfterActionReview();
   const { newLoopDetected, clearNewLoopAlert } = useNarrativeLoops();
   const { cornerstone, todayHonored } = useCornerstone();
+  const jarvis = useJarvisBrainOptional();
 
-  // Auto-deploy: track which suggestions have been auto-deployed this session
   const autoDeployedRef = useRef<Set<string>>(new Set());
 
-  // Auto-deploy shadows & dungeons when intelligence loads and toggle is on
+  // Auto-deploy shadows & dungeons
   useEffect(() => {
-    if (!intelligence || !isAutoDeployEnabled()) return;
+    if (!intelligence) return;
+    const isAutoDeployEnabled = (() => {
+      try { return JSON.parse(localStorage.getItem('systemAISettings') || '{}').autoDeploy === true; } catch { return false; }
+    })();
+    if (!isAutoDeployEnabled) return;
 
-    const deployShadows = async () => {
+    (async () => {
       for (const shadow of intelligence.suggestedShadows || []) {
         const key = `shadow:${shadow.name}`;
         if (autoDeployedRef.current.has(key)) continue;
         autoDeployedRef.current.add(key);
-
         const result = await _addShadow(shadow.name, shadow.category as ShadowCategory, shadow.description);
         if (result?.data) {
           setAriseState({ show: true, name: shadow.name });
-          addNotification('shadow_extracted', 'Shadow Auto-Deployed', `"${shadow.name}" extracted by System Intelligence: ${shadow.reasoning}`, { shadowName: shadow.name, autoDeploy: true });
+          addNotification('shadow_extracted', 'Shadow Auto-Deployed', `"${shadow.name}" extracted by System Intelligence.`, { shadowName: shadow.name });
         }
       }
-    };
-
-    const deployDungeons = async () => {
       for (const dungeon of intelligence.suggestedDungeons || []) {
         const key = `dungeon:${dungeon.title}`;
         if (autoDeployedRef.current.has(key)) continue;
         autoDeployedRef.current.add(key);
-
-        const objectives: DungeonObjective[] = dungeon.objectives.map((title, i) => ({
-          id: `obj-${i}`,
-          title,
-          completed: false,
-        }));
-        const timeLimitMinutes = dungeon.type === 'instant_dungeon' ? 45 : null;
-        const expiresAt = dungeon.type === 'boss_fight'
-          ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-          : timeLimitMinutes
-            ? new Date(Date.now() + timeLimitMinutes * 60 * 1000).toISOString()
-            : null;
-
+        const objectives: DungeonObjective[] = dungeon.objectives.map((title, i) => ({ id: `obj-${i}`, title, completed: false }));
         const { data: userData } = await supabase.auth.getUser();
         if (!userData.user) return;
-
-        const { data } = await supabase
-          .from('dungeons')
-          .insert({
-            user_id: userData.user.id,
-            dungeon_type: dungeon.type,
-            title: dungeon.title,
-            description: dungeon.description,
-            difficulty: dungeon.difficulty,
-            xp_reward: dungeon.xpReward,
-            time_limit_minutes: timeLimitMinutes,
-            objectives: objectives as any,
-            status: 'available',
-            expires_at: expiresAt,
-          })
-          .select()
-          .single();
-
-        if (data) {
-          addNotification('dungeon_cleared', 'Dungeon Auto-Deployed', `"${dungeon.title}" materialized by System Intelligence.`, { dungeonTitle: dungeon.title, autoDeploy: true });
-        }
+        await supabase.from('dungeons').insert({
+          user_id: userData.user.id,
+          dungeon_type: dungeon.type,
+          title: dungeon.title,
+          description: dungeon.description,
+          difficulty: dungeon.difficulty,
+          xp_reward: dungeon.xpReward,
+          objectives: objectives as any,
+          status: 'available',
+        });
       }
-    };
-
-    deployShadows();
-    deployDungeons();
+    })();
   }, [intelligence]);
 
-  // Skills system
   const skillCtx = useMemo(() => ({
-    player,
-    shadowCount: shadows.length,
-    dungeonClears: completedDungeons.length,
-    pillarStreak: pillarStreak.streak,
+    player, shadowCount: shadows.length, dungeonClears: completedDungeons.length, pillarStreak: pillarStreak.streak,
   }), [player, shadows.length, completedDungeons.length, pillarStreak.streak]);
   const { unlockedSkills, newlyUnlocked, dismissNewSkill } = useSkills(skillCtx);
 
-  // Penalty dungeon system
   const penaltyDungeon = usePenaltyDungeon({
-    player,
-    onStatReduction: reduceStat,
-    onXPGained: addXP,
-    onPenaltyCleared: resetPenaltyDays,
-    addNotification,
+    player, onStatReduction: reduceStat, onXPGained: addXP, onPenaltyCleared: resetPenaltyDays, addNotification,
   });
 
-  // ARISE overlay state
-  const [ariseState, setAriseState] = useState<{ show: boolean; name: string }>({ show: false, name: '' });
-  // Status Window state
+  const [ariseState, setAriseState] = useState({ show: false, name: '' });
   const [statusWindowOpen, setStatusWindowOpen] = useState(false);
-  // Rank system
-  const [rankUpState, setRankUpState] = useState<{ show: boolean; rank: string }>({ show: false, rank: '' });
+  const [rankUpState, setRankUpState] = useState({ show: false, rank: '' });
   const prevRankRef = useRef(player.title);
-  // Detect if pillars were missed yesterday (for dimming + silent brief)
-  const pillarsMissedYesterday = useMemo(() => {
-    if (pillarStreak.streak > 0) return false; // streak is alive
-    if (pillarStreak.hasCompletedToday) return false;
-    // If lastCompletedDate exists but isn't today or yesterday, pillars were missed
-    return !pillarStreak.hasCompletedToday && pillarStreak.streak === 0;
-  }, [pillarStreak]);
-
-  const pillarArcs = useMemo(() => [
-    { pillar: 'mind' as const, completed: pillar.quests.filter(q => q.pillar === 'mind').every(q => pillar.isCompleted(q.id)) },
-    { pillar: 'body' as const, completed: pillar.quests.filter(q => q.pillar === 'body').every(q => pillar.isCompleted(q.id)) },
-    { pillar: 'skill' as const, completed: pillar.quests.filter(q => q.pillar === 'skill').every(q => pillar.isCompleted(q.id)) },
-  ], [pillar]);
-
-  const [goalInput, setGoalInput] = useState('');
-  const [goalDismissed, setGoalDismissed] = useState(false);
-
   const [scanOpen, setScanOpen] = useState(false);
   const autoScanRef = useRef(false);
+  const [todayCheck, setTodayCheck] = useState<PlayerStateCheck | null>(getLatestTodayCheck);
 
   const dailyXP = useDailyXP({
-    quests,
-    workoutCompleted,
-    workoutXP: workout.xp,
-    coldStreakDays: player.coldStreak ?? 0,
+    quests, workoutCompleted, workoutXP: workout.xp, coldStreakDays: player.coldStreak ?? 0,
   });
 
-  // Determine system recommendation from latest state
-  const latestStateRaw = localStorage.getItem('systemStateHistory');
+  // State check data
+  const latestStateRaw = localStorage.getItem(STATE_HISTORY_KEY);
   let systemRec: 'push' | 'steady' | 'recover' = 'steady';
   let latestCheck: PlayerStateCheck | null = null;
   try {
     if (latestStateRaw) {
       const history: PlayerStateCheck[] = JSON.parse(latestStateRaw);
-      if (history.length > 0) {
-        systemRec = history[history.length - 1].systemRecommendation || 'steady';
-        latestCheck = history[history.length - 1];
-      }
+      if (history.length > 0) { systemRec = history[history.length - 1].systemRecommendation || 'steady'; latestCheck = history[history.length - 1]; }
     }
   } catch { /* ignore */ }
 
-  // Calibrated quests for focus mode
-  const calibration = useMemo(() => {
-    if (!latestCheck) return null;
-    try {
-      const stateHistory: PlayerStateCheck[] = JSON.parse(localStorage.getItem('systemStateHistory') || '[]');
-      const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
-      const recentHistory = stateHistory.filter(c => new Date(c.timestamp) >= weekAgo);
-      const completionHistory = JSON.parse(localStorage.getItem('systemCalibratedCompletions') || '[]');
-      return calibrateQuests(latestCheck, recentHistory, completionHistory, new Date());
-    } catch { return null; }
-  }, [latestCheck]);
+  const activeCheck = todayCheck || latestCheck;
 
-  const [completedCalibratedIds] = useState<Set<string>>(() => {
+  // Calibration
+  const calibration = useMemo(() => {
+    if (!activeCheck) return null;
+    return calibrateQuests(activeCheck, getStateHistory(), getCompletionHistory(), new Date());
+  }, [activeCheck]);
+
+  const [completedCalibratedIds, setCompletedCalibratedIds] = useState<Set<string>>(() => {
     try {
       const today = getSystemDate();
-      const history = JSON.parse(localStorage.getItem('systemCalibratedCompletions') || '[]');
-      return new Set(history.filter((c: any) => c.completedAt?.startsWith(today)).map((c: any) => c.questId));
+      return new Set(getCompletionHistory().filter(c => c.completedAt.startsWith(today)).map(c => c.questId));
     } catch { return new Set<string>(); }
   });
 
   const resistanceData = useMemo(() => loadCachedResistance(), []);
-  const persuasionMap = usePersuasion(calibration?.recommendedQuests ?? [], latestCheck, resistanceData);
+  const persuasionMap = usePersuasion(calibration?.recommendedQuests ?? [], activeCheck ?? null, resistanceData);
 
-  // Pre-commitment
+  const shadowMode = activeCheck?.systemRecommendation === 'recover' ? 'recovery' as const : activeCheck?.systemRecommendation ?? null;
+  const {
+    shadowQuest, isRevealed: shadowRevealed,
+    onCalibratedQuestCompleted, completeShadow,
+  } = useShadowQuest(shadowMode, resistanceData);
+
+  // Focus mode
   const preCommitmentRaw = localStorage.getItem('systemPreCommitment');
   let preCommittedId: string | null = null;
   try {
-    if (preCommitmentRaw) {
-      const pc = JSON.parse(preCommitmentRaw);
-      if (pc.date === getSystemDate() && pc.accepted) {
-        preCommittedId = pc.questId;
-      }
-    }
+    if (preCommitmentRaw) { const pc = JSON.parse(preCommitmentRaw); if (pc.date === getSystemDate() && pc.accepted) preCommittedId = pc.questId; }
   } catch { /* ignore */ }
 
-  const focus = useFocusMode(
-    calibration?.recommendedQuests ?? [],
-    completedCalibratedIds,
-    quests,
-    preCommittedId,
-  );
-
+  const focus = useFocusMode(calibration?.recommendedQuests ?? [], completedCalibratedIds, quests, preCommittedId);
   const { pendingDrop, rollForLoot, clearPendingDrop } = useLootDrops();
 
-  // Handle focus mode quest completion
-  const handleFocusComplete = useCallback(() => {
-    if (!focus.currentQuest) return;
-    const q = focus.currentQuest;
-    // Toggle in protocol quests if it's a protocol quest
-    const protocolQuest = quests.find(pq => pq.id === q.id);
-    if (protocolQuest && !protocolQuest.completed) {
-      const xp = protocolQuest.xp + (protocolQuest.geneticBonus?.bonusXp || 0);
-      addXP(xp);
-      toggleQuest(q.id);
+  // Reorder quests with JARVIS brain
+  const allMissions = useMemo(() => {
+    const missions: Array<{
+      id: string; title: string; xp: number; completed: boolean;
+      type: 'protocol' | 'calibrated' | 'pillar' | 'shadow' | 'emergency';
+      badge?: { label: string; color: string } | null;
+      borderGlow?: string | null;
+      persuasionMessage?: string | null;
+      description?: string; timeBlock?: string;
+    }> = [];
+
+    // Protocol quests
+    quests.forEach(q => {
+      const totalXp = q.xp + (q.geneticBonus?.bonusXp || 0);
+      missions.push({
+        id: q.id, title: q.title, xp: totalXp, completed: q.completed,
+        type: 'protocol',
+        badge: q.isRehab ? { label: 'RECOVERY', color: 'text-green-400 border-green-500/30 bg-green-500/10' } : null,
+        timeBlock: q.timeBlock,
+      });
+    });
+
+    // Calibrated quests
+    if (calibration) {
+      const anticipation = jarvis?.anticipation ?? null;
+      const geneticPhase = jarvis?.geneticState?.comtPhase ?? null;
+      const reordered = reorderQuestsWithJarvis(calibration.recommendedQuests, anticipation, geneticPhase);
+      reordered.forEach(q => {
+        const persuasion = persuasionMap.get(q.id);
+        missions.push({
+          id: q.id, title: q.title, xp: q.adjustedXP, completed: completedCalibratedIds.has(q.id),
+          type: 'calibrated',
+          persuasionMessage: persuasion?.message ?? null,
+          timeBlock: assignTimeBlock(q),
+        });
+      });
     }
-    focus.completeCurrentQuest();
 
-    // Roll for loot drop
-    const stat = protocolQuest?.stat ?? 'discipline';
-    rollForLoot(stat, player.streak);
-  }, [focus, quests, toggleQuest, addXP, rollForLoot, player.streak]);
+    // Pillar quests
+    pillar.quests.forEach(q => {
+      const pillarColor = q.pillar === 'mind' ? 'text-blue-400 border-blue-500/30 bg-blue-500/10'
+        : q.pillar === 'body' ? 'text-green-400 border-green-500/30 bg-green-500/10'
+        : 'text-purple-400 border-purple-500/30 bg-purple-500/10';
+      missions.push({
+        id: `pillar-${q.id}`, title: q.title, xp: q.xp, completed: pillar.isCompleted(q.id),
+        type: 'pillar',
+        badge: { label: q.pillar.toUpperCase(), color: pillarColor },
+      });
+    });
 
-  const handleFocusSkip = useCallback(() => {
-    focus.skipCurrentQuest();
-  }, [focus]);
-
-  const handleFocusExit = useCallback(() => {
-    focusMode.deactivate();
-  }, [focusMode]);
-
-  const handleFocusCompleteQuest = useCallback((questId: string) => {
-    // Also toggle protocol quest if applicable
-    const protocolQuest = quests.find(pq => pq.id === questId);
-    if (protocolQuest && !protocolQuest.completed) {
-      toggleQuest(questId);
+    // Shadow quest
+    if (shadowQuest && shadowRevealed) {
+      missions.push({
+        id: shadowQuest.id, title: shadowQuest.title, xp: shadowQuest.rewardXP,
+        completed: shadowQuest.completed, type: 'shadow',
+        badge: { label: 'SHADOW INTEL', color: 'text-secondary border-secondary/30 bg-secondary/10' },
+      });
     }
-  }, [quests, toggleQuest]);
 
-  // Force first scan after awakening sequence
+    return missions;
+  }, [quests, calibration, pillar, shadowQuest, shadowRevealed, completedCalibratedIds, persuasionMap, jarvis]);
+
+  // Build system messages for the card
+  const systemMessages = useMemo<SystemMessage[]>(() => {
+    const msgs: SystemMessage[] = [];
+
+    // Highest priority intervention
+    if (highestPriority) {
+      msgs.push({ id: 'intervention', text: highestPriority.message, priority: highestPriority.priority === 'critical' ? 'critical' : highestPriority.priority === 'high' ? 'warning' : 'insight' });
+    }
+
+    // Cornerstone alert
+    if (cornerstone && !todayHonored) {
+      msgs.push({ id: 'cornerstone', text: `Cornerstone unprotected: "${cornerstone.behavior}". History predicts low-output day.`, priority: 'warning' });
+    }
+
+    // Intelligence daily brief
+    if (intelligence?.dailyBrief) {
+      msgs.push({ id: 'brief', text: intelligence.dailyBrief, priority: 'insight' });
+    } else {
+      const firstSentence = strategy.dailyBrief.split(/[.!]/).filter(Boolean)[0]?.trim();
+      if (firstSentence) msgs.push({ id: 'brief', text: firstSentence + '.', priority: 'insight' });
+    }
+
+    // Loop detected
+    if (newLoopDetected) {
+      msgs.push({ id: 'loop', text: `Pattern detected: ${newLoopDetected.description}. ${newLoopDetected.breakCondition}`, priority: 'warning' });
+    }
+
+    // Penalty
+    if (penaltyLevel >= 2) {
+      msgs.push({ id: 'penalty', text: `Penalty level ${penaltyLevel}. Zero-day streak active. Complete any mission to halt decay.`, priority: 'critical' });
+    }
+
+    if (msgs.length === 0) {
+      msgs.push({ id: 'default', text: 'THE SYSTEM awaits. Begin your missions.', priority: 'insight' });
+    }
+
+    return msgs;
+  }, [highestPriority, cornerstone, todayHonored, intelligence, strategy, newLoopDetected, penaltyLevel]);
+
+  // Handlers
+  const handleMissionToggle = useCallback((id: string) => {
+    // Check which type it is
+    const protocolQuest = quests.find(q => q.id === id);
+    if (protocolQuest) {
+      if (!protocolQuest.completed) {
+        const xp = protocolQuest.xp + (protocolQuest.geneticBonus?.bonusXp || 0);
+        addCompletion({ questId: id, questTitle: protocolQuest.title, xpEarned: xp, completedAt: new Date().toISOString(), type: 'daily' });
+        addXP(xp);
+        rollForLoot(protocolQuest.stat, player.streak);
+      }
+      toggleQuest(id);
+      return;
+    }
+
+    if (id.startsWith('pillar-')) {
+      const pillarId = id.replace('pillar-', '');
+      const pq = pillar.quests.find(q => q.id === pillarId);
+      if (pq && !pillar.isCompleted(pillarId)) {
+        addCompletion({ questId: pq.id, questTitle: pq.title, xpEarned: pq.xp, completedAt: new Date().toISOString(), type: 'daily' });
+        addXP(pq.xp);
+        rollForLoot(pq.stat, player.streak);
+      }
+      pillar.toggleQuest(pillarId);
+
+      // Check pillar mastery
+      const wasCompleted = pillar.isCompleted(pillarId);
+      if (!wasCompleted) {
+        const othersDone = pillar.quests.filter(q => q.id !== pillarId).every(q => pillar.isCompleted(q.id));
+        if (othersDone && !pillarStreak.hasCompletedToday) {
+          const bonus = pillarStreak.recordAllPillarsComplete();
+          if (bonus > 0) { addXP(bonus); toast(getSystemToast('pillarMastery', { goal: player.goal ?? '' })); }
+        }
+      }
+      return;
+    }
+
+    if (shadowQuest && id === shadowQuest.id && !shadowQuest.completed && !shadowQuest.expired) {
+      completeShadow();
+      addCompletion({ questId: id, questTitle: shadowQuest.title, xpEarned: shadowQuest.rewardXP, completedAt: new Date().toISOString(), type: 'daily' });
+      return;
+    }
+
+    // Calibrated quest
+    if (calibration) {
+      const quest = calibration.recommendedQuests.find(q => q.id === id);
+      if (quest) {
+        setCompletedCalibratedIds(prev => {
+          const next = new Set(prev);
+          if (next.has(id)) { next.delete(id); }
+          else {
+            next.add(id);
+            saveCompletionRecord({ questId: id, completedAt: new Date().toISOString(), stat: quest.stat });
+            addCompletion({ questId: id, questTitle: quest.title, xpEarned: quest.adjustedXP, completedAt: new Date().toISOString(), type: 'daily' });
+            addXP(quest.adjustedXP);
+            const persuasion = persuasionMap.get(id);
+            recordCompletion(persuasion?.technique ?? null);
+            onCalibratedQuestCompleted();
+            rollForLoot(quest.stat, player.streak);
+          }
+          return next;
+        });
+      }
+    }
+  }, [quests, toggleQuest, addXP, addCompletion, pillar, pillarStreak, shadowQuest, completeShadow, calibration, persuasionMap, rollForLoot, player, onCalibratedQuestCompleted, toast]);
+
+  // Auto-scan
   useEffect(() => {
-    if (forceFirstScan) {
-      setScanOpen(true);
-      onScanTriggered?.();
-    }
+    if (forceFirstScan) { setScanOpen(true); onScanTriggered?.(); }
   }, [forceFirstScan, onScanTriggered]);
 
-  // Auto-trigger scan on first daily load or when returning from background
   useEffect(() => {
     const checkScan = () => {
       if (needsDailyScan() && !forceFirstScan) {
@@ -367,208 +455,106 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
         setTimeout(() => setScanOpen(true), 800);
       }
     };
-
-    if (!autoScanRef.current) {
-      autoScanRef.current = true;
-      checkScan();
-    }
-
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible') checkScan();
-    };
+    if (!autoScanRef.current) { autoScanRef.current = true; checkScan(); }
+    const handleVisibility = () => { if (document.visibilityState === 'visible') checkScan(); };
     document.addEventListener('visibilitychange', handleVisibility);
     return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, [toast, forceFirstScan]);
 
   const handleScanClose = useCallback((open: boolean) => {
     setScanOpen(open);
-    if (!open) markScanDone();
+    if (!open) { markScanDone(); setTodayCheck(getLatestTodayCheck()); }
   }, []);
 
-  // --- Cross-system sync effects ---
-  const syncedRef = useRef({ workout: false, caffeine: false });
-  const achievementRef = useRef({ morning: false, allDaily: false });
-
+  // Sync effects
   useEffect(() => {
-    const morningQuests = quests.filter(q => q.timeBlock === 'morning');
-    const allMorningDone = morningQuests.length > 0 && morningQuests.every(q => q.completed);
-    if (allMorningDone && !achievementRef.current.morning) {
-      achievementRef.current.morning = true;
-      toast(getSystemToast('morningProtocol'));
-    }
-    if (!allMorningDone) achievementRef.current.morning = false;
-  }, [quests, toast]);
-
-  useEffect(() => {
-    const allDone = quests.length > 0 && quests.every(q => q.completed);
-    if (allDone && !achievementRef.current.allDaily) {
-      achievementRef.current.allDaily = true;
-      toast(getSystemToast('dailyProtocol'));
-    }
-    if (!allDone) achievementRef.current.allDaily = false;
-  }, [quests, toast]);
-
-  useEffect(() => {
-    if (workoutCompleted && !syncedRef.current.workout) {
-      syncedRef.current.workout = true;
-      setQuestCompleted('scheduled-training', true);
-    }
-    if (!workoutCompleted) syncedRef.current.workout = false;
+    if (workoutCompleted) setQuestCompleted('scheduled-training', true);
   }, [workoutCompleted, setQuestCompleted]);
 
   useEffect(() => {
     if (hasLoggedAfter10am) setQuestCompleted('caffeine-cutoff', false);
   }, [hasLoggedAfter10am, setQuestCompleted]);
 
-  const handleLogCaffeine = () => {
-    logCaffeine();
-    const now = new Date();
-    const isAfter10 = now.getHours() >= 10;
-    const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    toast(getSystemToast(isAfter10 ? 'caffeineDebuff' : 'caffeineLogged', { time }));
-  };
-
-  const handleForceRefresh = useCallback(() => {
-    // Clear the daily scan flag so it re-triggers
-    localStorage.removeItem(LAST_SCAN_DATE_KEY);
-    // Reload the page to force all hooks to re-initialize with fresh date checks
-    window.location.reload();
-  }, []);
-
-  const handleLogCold = () => {
-    logColdExposure();
-    setQuestCompleted('cold-exposure', true);
-    toast({ title: '🧊 Cold Exposure Logged', description: 'The System acknowledges your discipline.' });
-  };
-
-  // Supplement quest states for the checklist
-  const supplementIds = ['morning-supplements', 'midday-supplements', 'evening-supplements'];
-  const supplementStates: Record<string, boolean> = {};
-  supplementIds.forEach(id => {
-    const q = quests.find(q => q.id === id);
-    supplementStates[id] = q?.completed ?? false;
-  });
-
-  const completedQuests = quests.filter(q => q.completed).length;
-  const oneLiner = buildDailyOneLiner(strategy.dailyBrief);
-
-  // Log level-ups to system notifications
-  const prevLevelRef = useRef(player.level);
+  // Achievement tracking
+  const achievementRef = useRef({ morning: false, allDaily: false });
   useEffect(() => {
-    if (player.level > prevLevelRef.current) {
-      addNotification('level_up', `Level ${player.level} Reached`, `You have ascended to Level ${player.level}. The System acknowledges your growth.`, { level: player.level });
-    }
-    prevLevelRef.current = player.level;
-  }, [player.level, addNotification]);
+    const morningQuests = quests.filter(q => q.timeBlock === 'morning');
+    const allMorningDone = morningQuests.length > 0 && morningQuests.every(q => q.completed);
+    if (allMorningDone && !achievementRef.current.morning) { achievementRef.current.morning = true; toast(getSystemToast('morningProtocol')); }
+    if (!allMorningDone) achievementRef.current.morning = false;
+  }, [quests, toast]);
 
-  // Log streak milestones
-  const prevStreakRef = useRef(player.streak);
+  // All missions complete check
+  const totalMissions = allMissions.length;
+  const completedMissions = allMissions.filter(m => m.completed).length;
+  const allComplete = totalMissions > 0 && completedMissions >= totalMissions;
+  const [showAllComplete, setShowAllComplete] = useState(false);
+
   useEffect(() => {
-    if (player.streak > prevStreakRef.current && [3, 7, 14, 30].includes(player.streak)) {
-      addNotification('streak_milestone', `${player.streak}-Day Streak`, `Consecutive completion streak: ${player.streak} days. Discipline compounds.`, { streak: player.streak });
+    if (allComplete && !achievementRef.current.allDaily) {
+      achievementRef.current.allDaily = true;
+      setShowAllComplete(true);
+      toast(getSystemToast('allQuestsComplete'));
+      setTimeout(() => setShowAllComplete(false), 2000);
     }
-    prevStreakRef.current = player.streak;
-  }, [player.streak, addNotification]);
+    if (!allComplete) achievementRef.current.allDaily = false;
+  }, [allComplete, toast]);
 
   // Rank-up detection
   useEffect(() => {
     const expectedRank = getRankForLevel(player.level);
     if (expectedRank !== prevRankRef.current) {
       setRankUpState({ show: true, rank: expectedRank });
-      addNotification('rank_up', `Rank: ${expectedRank}`, `You have been promoted to ${expectedRank}. Your authority grows.`, { rank: expectedRank });
+      addNotification('rank_up', `Rank: ${expectedRank}`, `Promoted to ${expectedRank}.`, { rank: expectedRank });
       prevRankRef.current = expectedRank;
     }
   }, [player.level, addNotification]);
 
-  // Log skill unlocks
-  useEffect(() => {
-    if (newlyUnlocked) {
-      addNotification('pattern_detected', `Skill Acquired: ${newlyUnlocked.name}`, `${newlyUnlocked.icon} ${newlyUnlocked.effect}`, { skillId: newlyUnlocked.id });
-    }
-  }, [newlyUnlocked, addNotification]);
+  // Active boosts
+  const hasActiveBoosts = useMemo(() => {
+    try { const inv = JSON.parse(localStorage.getItem('the-system-store-inventory') || '[]'); return inv.some((i: any) => i.activeUntil && new Date(i.activeUntil) > new Date()); }
+    catch { return false; }
+  }, []);
 
-  const currentPersuasion = focus.currentQuest
-    ? persuasionMap.get(focus.currentQuest.id) ?? null
-    : null;
-
+  // Chat context builder
   const buildChatContext = useCallback(() => {
     const stored = localStorage.getItem(START_DATE_KEY);
     const todayStr = getSystemDate();
     let dn = 1;
-    if (stored) {
-      const startMs = new Date(stored + 'T12:00:00').getTime();
-      const todayMs = new Date(todayStr + 'T12:00:00').getTime();
-      dn = Math.max(1, Math.round((todayMs - startMs) / (1000 * 60 * 60 * 24)) + 1);
-    }
-    const now = new Date();
-    const dow = now.getDay();
+    if (stored) { dn = Math.max(1, Math.round((new Date(todayStr + 'T12:00:00').getTime() - new Date(stored + 'T12:00:00').getTime()) / (1000 * 60 * 60 * 24)) + 1); }
     return {
-      level: player.level,
-      currentXP: player.currentXP,
-      xpToNextLevel: player.xpToNextLevel,
-      totalXP: player.totalXP ?? 0,
-      streak: player.streak,
-      coldStreak: player.coldStreak ?? 0,
-      stats: player.stats,
-      goal: player.goal || null,
-      dayNumber: dn,
-      systemMode: systemRec,
-      currentTime: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      dayType: dow >= 4 ? 'Sprint Day' : 'Work Day',
-      questsCompletedToday: completedQuests,
-      questsTotalToday: quests.length,
-      shadowCount: shadows.length,
-      forceMultiplier: shadows.filter(s => s.status === 'active').length > 0
-        ? +(1 + shadows.filter(s => s.status === 'active').reduce((s, sh) => s + sh.contribution_score, 0) / 100).toFixed(1)
-        : 1,
-      dungeonsCleared: completedDungeons.length,
-      activeInterventions: activeInterventions.map(i => ({
-        priority: i.priority,
-        title: i.title,
-        message: i.message,
-        type: i.type,
-      })),
-      threats: {
-        overall: overallThreatLevel,
-        active: threats.map(t => ({
-          category: t.category,
-          level: t.level,
-          title: t.title,
-          metric: t.metric,
-        })),
-      },
-      training: buildTrainingContext({
-        recentLogs,
-        personalRecords,
-        fatigueAccumulation,
-        mesocycleWeek: getMesocycleState().currentWeek,
-        mesocycleLength: getMesocycleState().totalWeeks,
-        todayWorkoutType,
-        prescribedIntensity: workoutPrescription?.prescribedIntensity ?? null,
-        trainingLevel: wTrainingLevel,
-        sessionsLogged: wSessionsLogged,
-      }),
+      level: player.level, currentXP: player.currentXP, xpToNextLevel: player.xpToNextLevel, totalXP: player.totalXP ?? 0,
+      streak: player.streak, coldStreak: player.coldStreak ?? 0, stats: player.stats, goal: player.goal || null,
+      dayNumber: dn, systemMode: systemRec,
+      questsCompletedToday: completedMissions, questsTotalToday: totalMissions,
+      shadowCount: shadows.length, dungeonsCleared: completedDungeons.length,
+      training: buildTrainingContext({ recentLogs, personalRecords, fatigueAccumulation, mesocycleWeek: getMesocycleState().currentWeek, mesocycleLength: getMesocycleState().totalWeeks, todayWorkoutType, prescribedIntensity: workoutPrescription?.prescribedIntensity ?? null, trainingLevel: wTrainingLevel, sessionsLogged: wSessionsLogged }),
     };
-  }, [player, systemRec, completedQuests, quests.length, shadows, completedDungeons.length, recentLogs, personalRecords, fatigueAccumulation, todayWorkoutType, workoutPrescription, wTrainingLevel, wSessionsLogged, activeInterventions, threats, overallThreatLevel]);
+  }, [player, systemRec, completedMissions, totalMissions, shadows.length, completedDungeons.length, recentLogs, personalRecords, fatigueAccumulation, todayWorkoutType, workoutPrescription, wTrainingLevel, wSessionsLogged]);
+
+  // Focus mode handlers
+  const handleFocusComplete = useCallback(() => {
+    if (!focus.currentQuest) return;
+    const q = focus.currentQuest;
+    const protocolQuest = quests.find(pq => pq.id === q.id);
+    if (protocolQuest && !protocolQuest.completed) { addXP(protocolQuest.xp + (protocolQuest.geneticBonus?.bonusXp || 0)); toggleQuest(q.id); }
+    focus.completeCurrentQuest();
+    rollForLoot(protocolQuest?.stat ?? 'discipline', player.streak);
+  }, [focus, quests, toggleQuest, addXP, rollForLoot, player.streak]);
+
+  const currentPersuasion = focus.currentQuest ? persuasionMap.get(focus.currentQuest.id) ?? null : null;
 
   return (
     <>
-      {/* Emergency Quest Overlay */}
-      {emergency.showOverlay && emergency.activeEmergency && (
-        <EmergencyQuestOverlay
-          quest={emergency.activeEmergency}
-          show={emergency.showOverlay}
-          onAccept={emergency.acceptEmergency}
-        />
-      )}
-      {/* Behavioral Intelligence Overlays */}
-      <LoopDetectedOverlay loop={newLoopDetected} onAcknowledge={clearNewLoopAlert} />
-      <AARModal aar={aarReview.todayAAR} open={aarReview.showDailyModal} onOpenChange={aarReview.setShowDailyModal} />
-      <FlashOverlay show={showFlashEffect} />
+      {/* Overlays — Tier 1 only */}
       <LevelUpOverlay show={levelUpState.show} newLevel={levelUpState.newLevel} />
-      <RankUpOverlay show={rankUpState.show} newRank={rankUpState.rank} onDone={() => setRankUpState({ show: false, rank: '' })} />
-      <SkillUnlockOverlay skill={newlyUnlocked} onDone={dismissNewSkill} />
       <AriseOverlay show={ariseState.show} shadowName={ariseState.name} onDone={() => setAriseState({ show: false, name: '' })} />
+      <RankUpOverlay show={rankUpState.show} newRank={rankUpState.rank} onDone={() => setRankUpState({ show: false, rank: '' })} />
+
+      {/* Tier 2 — Toast only for loot */}
+      {pendingDrop && <LootDropToast item={pendingDrop.item} show={true} onDone={clearPendingDrop} />}
+
+      {/* Penalty dungeon */}
       {penaltyDungeon.isPenaltyActive && penaltyDungeon.activePenalty && (
         <PenaltyDungeonOverlay
           dungeon={penaltyDungeon.activePenalty}
@@ -579,25 +565,11 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
           onCompleteObjective={penaltyDungeon.completeObjective}
         />
       )}
-      <StatusWindow
-        open={statusWindowOpen}
-        onOpenChange={setStatusWindowOpen}
-        player={player}
-        shadows={shadows}
-        dungeonClears={completedDungeons.length}
-        skills={unlockedSkills}
-      />
+
+      <StatusWindow open={statusWindowOpen} onOpenChange={setStatusWindowOpen} player={player} shadows={shadows} dungeonClears={completedDungeons.length} skills={unlockedSkills} />
       <StateCheck open={scanOpen} onOpenChange={handleScanClose} />
+      <AARModal aar={aarReview.todayAAR} open={aarReview.showDailyModal} onOpenChange={aarReview.setShowDailyModal} />
 
-      {/* Loot Drop Overlays */}
-      {pendingDrop && !pendingDrop.isCinematic && (
-        <LootDropToast item={pendingDrop.item} show={true} onDone={clearPendingDrop} />
-      )}
-      {pendingDrop && pendingDrop.isCinematic && (
-        <LootCinematicReveal item={pendingDrop.item} show={true} onDone={clearPendingDrop} />
-      )}
-
-      {/* Focus Mode Overlay */}
       <FocusModeOverlay
         active={focusMode.active}
         currentQuest={focus.currentQuest}
@@ -612,9 +584,9 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
         degradationLevel={focus.degradationLevel}
         sessionSkipCount={focus.sessionSkipCount}
         onComplete={handleFocusComplete}
-        onSkip={handleFocusSkip}
-        onExit={handleFocusExit}
-        onCompleteQuest={handleFocusCompleteQuest}
+        onSkip={() => focus.skipCurrentQuest()}
+        onExit={() => focusMode.deactivate()}
+        onCompleteQuest={(qid) => { const pq = quests.find(q => q.id === qid); if (pq && !pq.completed) toggleQuest(qid); }}
       />
 
       <WeeklyPlanningModal
@@ -623,237 +595,87 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
         summary={weekly.summary}
         initialPriorities={weekly.autoPriorities}
         initialAllocation={weekly.defaultAllocation}
-        onLock={(priorities, allocation) => {
-          weekly.lockPlan(priorities, allocation);
-          const totalBlocks = allocation.thursday.length + allocation.friday.length + allocation.saturday.length;
-          toast({
-            title: 'Sprint plan locked.',
-            description: `${totalBlocks} sprint blocks allocated across 3 days. Execute.`,
-            duration: 3000,
-          });
-        }}
+        onLock={(p, a) => { weekly.lockPlan(p, a); toast({ title: 'Sprint plan locked.', duration: 2000 }); }}
         onDismiss={weekly.dismiss}
         isAutoView={weekly.trigger === 'thursday-fallback' && !weekly.plan?.locked}
-        onApprove={() => {
-          weekly.autoLockPlan();
-          toast({ title: 'Auto-plan approved.', duration: 1500 });
-        }}
+        onApprove={() => { weekly.autoLockPlan(); toast({ title: 'Auto-plan approved.', duration: 1500 }); }}
       />
 
-      <div className="min-h-screen bg-background" style={{ paddingTop: 'calc(0.5rem + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}>
-        {/* 1. Top Bar */}
-        <TopBar
-          systemRecommendation={systemRec}
-          onForceRefresh={handleForceRefresh}
-          notifications={notifications}
-          unreadCount={unreadCount}
-          onNotificationsOpen={markAllRead}
-          onNotificationsClear={clearNotifications}
-          threatLevel={overallThreatLevel}
-          threats={threats}
-        />
+      <div className="min-h-screen bg-background" style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
+        {/* A. Status Strip */}
+        <StatusStrip rank={player.title} level={player.level} currentXP={player.currentXP} xpToNextLevel={player.xpToNextLevel} streak={player.streak} />
 
-        <ActiveBoostsBar />
-        <div className="mx-auto max-w-md space-y-5 px-4 mt-2">
-          {/* Emergency Quest Banner */}
+        {/* All complete flash */}
+        {showAllComplete && (
+          <div className="mx-auto max-w-md px-4 py-2">
+            <div className="rounded-lg border border-green-500/50 bg-green-500/10 p-2 text-center animate-pulse">
+              <span className="font-mono text-xs font-bold text-green-400 tracking-wider">ALL MISSIONS COMPLETE</span>
+            </div>
+          </div>
+        )}
+
+        {/* Penalty banner — persistent red */}
+        {penaltyLevel >= 2 && (
+          <div className="mx-auto max-w-md px-4 pt-1">
+            <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-2 text-center">
+              <span className="font-mono text-[10px] text-destructive tracking-wider">
+                PENALTY ACTIVE — Level {penaltyLevel}. Complete missions to halt stat decay.
+              </span>
+            </div>
+          </div>
+        )}
+
+        <div className="mx-auto max-w-md space-y-3 px-4 pt-2">
+          {/* Active boosts — only when active */}
+          {hasActiveBoosts && <ActiveBoostsBar />}
+
+          {/* Emergency quest banner */}
           {emergency.hasActiveEmergency && emergency.activeEmergency && (
-            <EmergencyQuestBanner
-              quest={emergency.activeEmergency}
-              onCompleteObjective={emergency.completeObjective}
-            />
+            <EmergencyQuestBanner quest={emergency.activeEmergency} onCompleteObjective={emergency.completeObjective} />
           )}
 
-          {/* 0. System Interventions (JARVIS) */}
-          {highestPriority && (
-            <SystemInterventionBanner
-              intervention={highestPriority}
-              totalCount={activeInterventions.length}
-              onDismiss={dismissIntervention}
-              onCallback={(cb) => {
-                if (cb === 'openWeeklyPlanning') weekly.setShowModal(true);
-                if (cb === 'dismissCaffeineWarning') dismissWarning();
-              }}
-            />
-          )}
+          {/* B. THE SYSTEM message */}
+          <SystemMessageCard messages={systemMessages} />
 
-          {/* Cornerstone Alert */}
-          {cornerstone && !todayHonored && (
-            <CornerstoneAlert cornerstone={cornerstone} todayHonored={todayHonored} />
-          )}
-
-           {/* Caffeine Warning */}
-          {hasLoggedAfter10am && !warningDismissed && (
-            <GeneticWarning
-              level="danger"
-              title="☕ Caffeine Debuff Active"
-              message="CYP1A2 slow metabolism detected. Caffeine after 10am will disrupt sleep."
-              actionRequired="No more caffeine today. Consider L-theanine for focus."
-              onDismiss={dismissWarning}
-            />
-          )}
-
-          {/* Penalty Banner */}
-          <PenaltyBanner
-            penaltyLevel={penaltyLevel}
-            onDismiss={dismissPenaltyBanner}
-            isDismissed={player.penalty.bannerDismissedForSession}
-          />
-
-          {/* Goal capture for existing users */}
-          {!player.goal && !goalDismissed && (
-            <div className="rounded-lg border border-primary/30 bg-card/80 p-4 space-y-3">
-              <p className="font-mono text-[10px] tracking-widest text-primary uppercase">System Calibration Required</p>
-              <p className="font-mono text-xs text-muted-foreground">What are you building toward? One sentence.</p>
-              <input
-                type="text"
-                value={goalInput}
-                onChange={(e) => setGoalInput(e.target.value)}
-                placeholder="e.g., Build my consultancy to $10K MRR"
-                maxLength={120}
-                className="w-full rounded-md border border-border bg-background/50 px-3 py-2 font-mono text-xs text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:outline-none"
-                onKeyDown={(e) => { if (e.key === 'Enter' && goalInput.trim()) { setGoal(goalInput.trim()); } }}
+          {/* C. Today's Missions — unified list */}
+          <div className="space-y-2">
+            {allMissions.map(mission => (
+              <MissionCard
+                key={mission.id}
+                id={mission.id}
+                title={mission.title}
+                xp={mission.xp}
+                completed={mission.completed}
+                onToggle={handleMissionToggle}
+                badge={mission.badge}
+                borderGlow={mission.borderGlow}
+                persuasionMessage={mission.persuasionMessage}
+                description={mission.description}
+                timeBlock={mission.timeBlock}
               />
-              <div className="flex gap-2">
-                <button
-                  onClick={() => { if (goalInput.trim()) setGoal(goalInput.trim()); }}
-                  disabled={!goalInput.trim()}
-                  className={`flex-1 py-2 rounded-md font-mono text-[10px] tracking-wider transition-all ${
-                    goalInput.trim() ? 'border border-primary/50 bg-primary/10 text-primary' : 'border border-border text-muted-foreground/40'
-                  }`}
-                >
-                  CONFIRM
-                </button>
-                <button
-                  onClick={() => setGoalDismissed(true)}
-                  className="py-2 px-3 rounded-md font-mono text-[10px] text-muted-foreground/50 hover:text-muted-foreground"
-                >
-                  Later
-                </button>
+            ))}
+          </div>
+
+          {/* Progress indicator */}
+          {totalMissions > 0 && (
+            <div className="pt-2">
+              <div className="h-1 rounded-full bg-muted/30 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-primary transition-all duration-500"
+                  style={{ width: `${(completedMissions / totalMissions) * 100}%` }}
+                />
               </div>
+              <p className="text-center font-mono text-[10px] text-muted-foreground mt-1.5">
+                {completedMissions} / {totalMissions} missions
+              </p>
             </div>
           )}
-
-          {/* 2. System Message — uses AI brief when available */}
-          <DashboardMessage message={
-            pillarsMissedYesterday ? '…'
-              : intelligence?.dailyBrief
-              ? intelligence.dailyBrief
-              : (() => {
-                  const ai = loadAIQuests();
-                  if (ai && isAIEnabled() && ai.generatedAt?.startsWith(getSystemDate())) {
-                    return ai.systemMessage;
-                  }
-                  return oneLiner;
-                })()
-          } />
-
-          {/* 2b. System Intelligence Panel */}
-          {aiLoading && !intelligence && <SystemIntelligenceLoading />}
-          {intelligence && (
-            <SystemIntelligencePanel
-              intelligence={intelligence}
-              loading={aiLoading}
-              error={aiError}
-              onGenerate={generateIntelligence}
-              onCompleteChallenge={(id) => {
-                const challenge = intelligence.dynamicChallenges.find(c => c.id === id);
-                if (challenge) addXP(challenge.xpReward);
-              }}
-              onAcceptShadow={async (shadow: SuggestedShadow) => {
-                const result = await _addShadow(shadow.name, shadow.category as ShadowCategory, shadow.description);
-                if (result?.data) {
-                  setAriseState({ show: true, name: shadow.name });
-                  addNotification('shadow_extracted', 'Shadow Recruited', `"${shadow.name}" extracted on System recommendation: ${shadow.reasoning}`, { shadowName: shadow.name });
-                }
-              }}
-              onAcceptDungeon={async (dungeon: SuggestedDungeon) => {
-                const objectives: DungeonObjective[] = dungeon.objectives.map((title, i) => ({
-                  id: `obj-${i}`,
-                  title,
-                  completed: false,
-                }));
-                const timeLimitMinutes = dungeon.type === 'instant_dungeon' ? 45 : null;
-                const expiresAt = dungeon.type === 'boss_fight'
-                  ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-                  : timeLimitMinutes
-                    ? new Date(Date.now() + timeLimitMinutes * 60 * 1000).toISOString()
-                    : null;
-
-                const { data: userData } = await supabase.auth.getUser();
-                if (!userData.user) return;
-
-                const { data, error: dbErr } = await supabase
-                  .from('dungeons')
-                  .insert({
-                    user_id: userData.user.id,
-                    dungeon_type: dungeon.type,
-                    title: dungeon.title,
-                    description: dungeon.description,
-                    difficulty: dungeon.difficulty,
-                    xp_reward: dungeon.xpReward,
-                    time_limit_minutes: timeLimitMinutes,
-                    objectives: objectives as any,
-                    status: 'available',
-                    expires_at: expiresAt,
-                  })
-                  .select()
-                  .single();
-
-                if (data && !dbErr) {
-                  addNotification('dungeon_cleared', 'Dungeon Gate Opened', `"${dungeon.title}" materialized. ${dungeon.reasoning}`, { dungeonTitle: dungeon.title });
-                }
-              }}
-            />
-          )}
-
-          {/* 2c. Shadow Army */}
-          <ShadowArmyPanel onShadowAdded={(name) => {
-            setAriseState({ show: true, name });
-            addNotification('shadow_extracted', 'Shadow Extracted', `"${name}" has been extracted and joined your Shadow Army.`, { shadowName: name });
-          }} />
-
-          {/* 2d. Dungeons */}
-          <DungeonPanel onXPGained={(xp) => {
-            addXP(xp);
-            addNotification('dungeon_cleared', 'Dungeon Cleared', `Dungeon completed. ${xp} XP claimed.`, { xp });
-          }} />
-
-          {/* 3. Progress Ring */}
-          <button onClick={() => setStatusWindowOpen(true)} className="w-full">
-            <ProgressRing
-              progress={strategy.shadowMonarchProgress}
-              title={playerTitle}
-              currentXP={player.currentXP}
-              xpToNextLevel={player.xpToNextLevel}
-              level={player.level}
-              pillarArcs={pillarArcs}
-              dimmed={pillarsMissedYesterday && !pillar.completedCount}
-            />
-          </button>
-
-          {/* 4. Today's Snapshot */}
-          <TodaySnapshot
-            questsCompleted={completedQuests}
-            questsTotal={quests.length}
-            xpToday={dailyXP.total}
-            streak={player.streak}
-          />
-
-          {/* 5. Quick Actions */}
-          <DashboardActions
-            onScan={() => setScanOpen(true)}
-            onCold={handleLogCold}
-            onCaffeine={handleLogCaffeine}
-            supplementStates={supplementStates}
-            onToggleSupplement={toggleQuest}
-          />
         </div>
 
         <BottomNav />
         <CaptureFAB />
       </div>
 
-      {/* System Chat Interface */}
       <SystemChatPanel buildContext={buildChatContext} />
     </>
   );
