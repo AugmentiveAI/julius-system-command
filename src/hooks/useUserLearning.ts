@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   UserLearning,
   ExecutionPatterns,
@@ -11,6 +11,7 @@ import {
 } from '@/types/learning';
 
 const STORAGE_KEY = 'jarvisUserLearning';
+const COOLDOWN_MS = 3600000; // 1 hour
 
 function daysBetween(a: Date, b: Date): number {
   return Math.abs(Math.floor((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24)));
@@ -128,11 +129,10 @@ function calculateEnergyPatterns(questHistory: any[]): EnergyPatterns {
     energyByHour[h] = (hourCounts[h] || 0) / maxCount;
   }
 
-  // Crash hours = hours with very low completion
   const crashHours = Object.entries(energyByHour)
     .filter(([, val]) => val < 0.15 && parseInt(Object.keys(energyByHour)[0]) >= 6)
     .map(([h]) => parseInt(h))
-    .filter(h => h >= 12 && h <= 18); // Afternoon crash detection
+    .filter(h => h >= 12 && h <= 18);
 
   return {
     energyByHour,
@@ -190,20 +190,32 @@ function generateInsightsFromData(
 export function useUserLearning() {
   const [learning, setLearning] = useState<UserLearning | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const lastAnalyzedAt = useRef<number>(0);
 
   // Load stored learning
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) setLearning(JSON.parse(stored));
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setLearning(parsed);
+        // Treat lastUpdated as last analysis time
+        if (parsed.lastUpdated) {
+          lastAnalyzedAt.current = new Date(parsed.lastUpdated).getTime();
+        }
+      }
     } catch { /* ignore */ }
   }, []);
 
   const analyzePatterns = useCallback(async () => {
+    // Cooldown: skip if analyzed less than 1 hour ago
+    if (Date.now() - lastAnalyzedAt.current < COOLDOWN_MS) {
+      return;
+    }
+
     setIsAnalyzing(true);
 
     try {
-      // Gather quest history from various sources
       const calibratedCompletions = JSON.parse(localStorage.getItem('systemCalibratedCompletions') || '[]');
       const historyRaw = JSON.parse(localStorage.getItem('the-system-history') || '{"completions":[]}');
       const questHistory = [...calibratedCompletions, ...(historyRaw.completions || [])];
@@ -230,6 +242,7 @@ export function useUserLearning() {
         insights,
       };
 
+      lastAnalyzedAt.current = Date.now();
       setLearning(newLearning);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newLearning));
     } catch (e) {
@@ -239,7 +252,7 @@ export function useUserLearning() {
     }
   }, [learning?.responses]);
 
-  // Auto-analyze daily
+  // Auto-analyze: once on load if data is stale (>1 hour or >1 day)
   useEffect(() => {
     const lastAnalysis = learning?.lastUpdated;
     const shouldAnalyze = !lastAnalysis || daysBetween(new Date(lastAnalysis), new Date()) >= 1;

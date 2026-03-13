@@ -46,75 +46,89 @@ const DASHBOARD_RELEVANT_TYPES: Set<InterventionType> = new Set([
   'accountability_check', 'celebration',
 ]);
 
-// ── Context type ────────────────────────────────────────────────────
+// ── Split context types ─────────────────────────────────────────────
 
-interface JarvisBrainState {
-  // All active interventions
+/** Heavy AI data — updates at most every 30 min */
+export interface JarvisIntelligenceState {
+  intelligence: SystemIntelligence | null;
+  anticipation: Anticipation | null;
+  intelligenceLoading: boolean;
+  generateIntelligence: () => void;
+
+  learning: UserLearning | null;
+  learningInsights: { strengths: string[]; growthAreas: string[]; recommendations: string[] } | null;
+  getPrediction: (type: 'energy' | 'productivity' | 'focus') => number;
+  isGoodTimeFor: (category: string) => boolean;
+
+  unreadFindings: ResearchFinding[];
+  updateFindingStatus: (id: string, status: 'read' | 'acted_on' | 'dismissed') => void;
+  suggestShadows: (goalText: string) => ShadowTemplate[];
+
+  synthesizedInsights: SynthesizedInsight[];
+  getTopInsight: () => SynthesizedInsight | null;
+  synthesize: () => SynthesizedInsight[];
+
+  jarvisAnticipations: JarvisAnticipation[];
+  activeAnticipations: JarvisAnticipation[];
+
+  generateProactiveMessage: () => ProactiveMessage | null;
+}
+
+/** Live player state — updates frequently */
+export interface JarvisLiveState {
   allInterventions: SystemIntervention[];
   highestPriority: SystemIntervention | null;
   hasIntervention: boolean;
   dismissIntervention: (id: string) => void;
   refresh: () => void;
 
-  // Page-filtered interventions
   getInterventionsForPage: (page: 'dashboard' | 'quests' | 'training') => SystemIntervention[];
   getHighestForPage: (page: 'dashboard' | 'quests' | 'training') => SystemIntervention | null;
 
-  // Genetic state (shared)
   geneticState: GeneticState;
   sprintsToday: number;
   logSprint: () => void;
   logColdExposure: () => void;
   logMagnesium: () => void;
 
-  // Shared context data
   fatigueAccumulation: number;
   workoutCompleted: boolean;
 
-  // System Intelligence + Anticipation
-  intelligence: SystemIntelligence | null;
-  anticipation: Anticipation | null;
-  intelligenceLoading: boolean;
-  generateIntelligence: () => void;
-
-  // Threat Assessment
   threats: Threat[];
   overallThreatLevel: ThreatLevel;
   hasCriticalThreat: boolean;
 
-  // ── NEW: Enhanced Intelligence ─────────────────────────────────
-  // User Learning
-  learning: UserLearning | null;
-  learningInsights: { strengths: string[]; growthAreas: string[]; recommendations: string[] } | null;
-  getPrediction: (type: 'energy' | 'productivity' | 'focus') => number;
-  isGoodTimeFor: (category: string) => boolean;
-
-  // Shadow Intelligence
-  unreadFindings: ResearchFinding[];
-  updateFindingStatus: (id: string, status: 'read' | 'acted_on' | 'dismissed') => void;
-  suggestShadows: (goalText: string) => ShadowTemplate[];
-
-  // Synthesis
-  synthesizedInsights: SynthesizedInsight[];
-  getTopInsight: () => SynthesizedInsight | null;
-  synthesize: () => SynthesizedInsight[];
-
-  // Anticipation Engine
-  jarvisAnticipations: JarvisAnticipation[];
-  activeAnticipations: JarvisAnticipation[];
-
-  // Proactive Message
-  generateProactiveMessage: () => ProactiveMessage | null;
-
-  // Activity & Calendar
   activitySummary: DailyActivitySummary | null;
   recentActivities: Activity[];
   calendarContext: string;
   nextCalendarEvent: CalendarEvent | null;
 }
 
+/** Combined type for backward compatibility */
+type JarvisBrainState = JarvisIntelligenceState & JarvisLiveState;
+
+// ── Contexts ────────────────────────────────────────────────────────
+
+const JarvisIntelligenceCtx = createContext<JarvisIntelligenceState | null>(null);
+const JarvisLiveCtx = createContext<JarvisLiveState | null>(null);
+// Legacy combined context for backward compat
 const JarvisBrainCtx = createContext<JarvisBrainState | null>(null);
 
+/** Use only intelligence data (heavy, infrequent updates) */
+export function useJarvisIntelligence(): JarvisIntelligenceState {
+  const ctx = useContext(JarvisIntelligenceCtx);
+  if (!ctx) throw new Error('useJarvisIntelligence must be used within JarvisBrainProvider');
+  return ctx;
+}
+
+/** Use only live state data (lightweight, frequent updates) */
+export function useJarvisLiveState(): JarvisLiveState {
+  const ctx = useContext(JarvisLiveCtx);
+  if (!ctx) throw new Error('useJarvisLiveState must be used within JarvisBrainProvider');
+  return ctx;
+}
+
+/** Full combined context — backward compatible */
 export function useJarvisBrain(): JarvisBrainState {
   const ctx = useContext(JarvisBrainCtx);
   if (!ctx) throw new Error('useJarvisBrain must be used within JarvisBrainProvider');
@@ -146,7 +160,7 @@ export function JarvisBrainProvider({ children }: { children: ReactNode }) {
   const recentActivities = useMemo(() => getRecentActivities(5), [getRecentActivities]);
   const calendarContext = useMemo(() => getCalendarContext(), [getCalendarContext]);
 
-  // ── NEW hooks ──────────────────────────────────────────────────
+  // ── Intelligence hooks ─────────────────────────────────────────
   const { learning, getPrediction, isGoodTimeFor, getInsights } = useUserLearning();
 
   const unreadFindings = useMemo(() => getUnreadFindings(), [getUnreadFindings]);
@@ -257,7 +271,6 @@ export function JarvisBrainProvider({ children }: { children: ReactNode }) {
 
   // ── Proactive message generator ──────────────────────────────
   const generateProactiveMessage = useCallback((): ProactiveMessage | null => {
-    // 1. Active anticipations (time-sensitive)
     if (activeAnticipations.length > 0) {
       const top = activeAnticipations[0];
       return {
@@ -269,7 +282,6 @@ export function JarvisBrainProvider({ children }: { children: ReactNode }) {
       };
     }
 
-    // 2. High-priority synthesized insights
     const topInsight = getTopInsight();
     if (topInsight && topInsight.priority >= 7) {
       return {
@@ -283,7 +295,6 @@ export function JarvisBrainProvider({ children }: { children: ReactNode }) {
       };
     }
 
-    // 3. Unread shadow findings
     if (unreadFindings.length > 0) {
       const finding = unreadFindings[0];
       return {
@@ -298,7 +309,6 @@ export function JarvisBrainProvider({ children }: { children: ReactNode }) {
       };
     }
 
-    // 4. Pattern-based nudge
     if (learning && getPrediction('productivity') > 0.8) {
       return {
         type: 'nudge',
@@ -311,7 +321,35 @@ export function JarvisBrainProvider({ children }: { children: ReactNode }) {
     return null;
   }, [activeAnticipations, getTopInsight, unreadFindings, learning, getPrediction]);
 
-  const value = useMemo<JarvisBrainState>(() => ({
+  // ── Split context values with useMemo ─────────────────────────
+
+  const intelligenceValue = useMemo<JarvisIntelligenceState>(() => ({
+    intelligence,
+    anticipation,
+    intelligenceLoading,
+    generateIntelligence,
+    learning,
+    learningInsights: getInsights(),
+    getPrediction,
+    isGoodTimeFor,
+    unreadFindings,
+    updateFindingStatus,
+    suggestShadows,
+    synthesizedInsights,
+    getTopInsight,
+    synthesize,
+    jarvisAnticipations,
+    activeAnticipations,
+    generateProactiveMessage,
+  }), [
+    intelligence, anticipation, intelligenceLoading, generateIntelligence,
+    learning, getInsights, getPrediction, isGoodTimeFor,
+    unreadFindings, updateFindingStatus, suggestShadows,
+    synthesizedInsights, getTopInsight, synthesize,
+    jarvisAnticipations, activeAnticipations, generateProactiveMessage,
+  ]);
+
+  const liveValue = useMemo<JarvisLiveState>(() => ({
     allInterventions,
     highestPriority,
     hasIntervention,
@@ -326,27 +364,9 @@ export function JarvisBrainProvider({ children }: { children: ReactNode }) {
     logMagnesium,
     fatigueAccumulation,
     workoutCompleted,
-    intelligence,
-    anticipation,
-    intelligenceLoading,
-    generateIntelligence,
     threats,
     overallThreatLevel,
     hasCriticalThreat,
-    // NEW
-    learning,
-    learningInsights: getInsights(),
-    getPrediction,
-    isGoodTimeFor,
-    unreadFindings,
-    updateFindingStatus,
-    suggestShadows,
-    synthesizedInsights,
-    getTopInsight,
-    synthesize,
-    jarvisAnticipations,
-    activeAnticipations,
-    generateProactiveMessage,
     activitySummary,
     recentActivities,
     calendarContext,
@@ -356,18 +376,23 @@ export function JarvisBrainProvider({ children }: { children: ReactNode }) {
     getInterventionsForPage, getHighestForPage,
     geneticState, sprintsToday, logSprint, logColdExposure, logMagnesium,
     fatigueAccumulation, workoutCompleted,
-    intelligence, anticipation, intelligenceLoading, generateIntelligence,
     threats, overallThreatLevel, hasCriticalThreat,
-    learning, getInsights, getPrediction, isGoodTimeFor,
-    unreadFindings, updateFindingStatus, suggestShadows,
-    synthesizedInsights, getTopInsight, synthesize,
-    jarvisAnticipations, activeAnticipations, generateProactiveMessage,
     activitySummary, recentActivities, calendarContext, nextCalendarEvent,
   ]);
 
+  // Combined for backward compatibility
+  const combinedValue = useMemo<JarvisBrainState>(() => ({
+    ...intelligenceValue,
+    ...liveValue,
+  }), [intelligenceValue, liveValue]);
+
   return (
-    <JarvisBrainCtx.Provider value={value}>
-      {children}
-    </JarvisBrainCtx.Provider>
+    <JarvisIntelligenceCtx.Provider value={intelligenceValue}>
+      <JarvisLiveCtx.Provider value={liveValue}>
+        <JarvisBrainCtx.Provider value={combinedValue}>
+          {children}
+        </JarvisBrainCtx.Provider>
+      </JarvisLiveCtx.Provider>
+    </JarvisIntelligenceCtx.Provider>
   );
 }
