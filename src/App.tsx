@@ -27,7 +27,6 @@ import { useLocalDataMigration } from "@/hooks/useLocalDataMigration";
 import { DataMigrationDialog } from "@/components/onboarding/DataMigrationDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { SystemChatPanel } from "@/components/chat/SystemChatPanel";
-import { getSystemDate } from "@/utils/dayCycleEngine";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
