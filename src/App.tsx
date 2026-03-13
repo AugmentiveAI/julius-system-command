@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { HistoryProvider } from "@/contexts/HistoryContext";
 import { FocusModeProvider } from "@/contexts/FocusModeContext";
 import { DayCycleProvider } from "@/contexts/DayCycleContext";
+import { TickerProvider } from "@/contexts/TickerContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { getSystemDate } from "@/utils/dayCycleEngine";
 import { FocusFAB } from "@/components/focus/FocusFAB";
