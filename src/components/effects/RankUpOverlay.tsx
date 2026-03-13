@@ -1,3 +1,4 @@
+// TODO: Phase2-IP-rebrand — E/D/C/B/A/S rank system visual style needs original design
 import { useEffect, useState } from 'react';
 import { hapticSuccess } from '@/utils/haptics';
 
