@@ -1,55 +1,47 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Swords, Dumbbell, TrendingUp, MoreHorizontal } from 'lucide-react';
+import { Swords, Dumbbell, Eye, Crown } from 'lucide-react';
 import { hapticTap } from '@/utils/haptics';
-import { useCurrentMode } from '@/components/dashboard/CurrentStateCard';
 
+// TODO: Phase2-IP-rebrand — "Hunter" terminology, rank aesthetic
 const navItems = [
-  { path: '/', label: 'Home', icon: Home },
-  { path: '/quests', label: 'Quests', icon: Swords },
-  { path: '/training', label: 'Train', icon: Dumbbell },
-  { path: '/progress', label: 'Progress', icon: TrendingUp },
-  { path: '/more', label: 'More', icon: MoreHorizontal },
+  { path: '/', label: 'TODAY', icon: Swords },
+  { path: '/training', label: 'TRAIN', icon: Dumbbell },
+  { path: '/intel', label: 'INTEL', icon: Eye },
+  { path: '/system', label: 'SYSTEM', icon: Crown },
 ];
-
-const MODE_DOT_COLORS: Record<string, string> = {
-  push: 'bg-green-400 shadow-[0_0_6px_rgba(74,222,128,0.6)]',
-  steady: 'bg-yellow-400 shadow-[0_0_6px_rgba(250,204,21,0.6)]',
-  recover: 'bg-red-400 shadow-[0_0_6px_rgba(248,113,113,0.6)]',
-};
 
 export const BottomNav = () => {
   const location = useLocation();
-  const currentMode = useCurrentMode();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 border-t border-border bg-card/95 backdrop-blur-sm" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-      <div className="mx-auto flex max-w-md items-center justify-around py-2">
+    <nav
+      className="fixed bottom-0 left-0 right-0 border-t border-border/50 bg-background/95 backdrop-blur-sm z-40"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+    >
+      <div className="mx-auto flex max-w-md items-center justify-around py-1.5">
         {navItems.map(({ path, label, icon: Icon }) => {
-          const isActive = location.pathname === path;
-          const showDot = path === '/' && currentMode;
+          const isActive = path === '/'
+            ? location.pathname === '/'
+            : location.pathname.startsWith(path);
+
           return (
             <Link
               key={path}
               to={path}
               onTouchStart={hapticTap}
-              className={`relative flex flex-col items-center gap-0.5 px-3 py-2 transition-colors ${
+              className={`relative flex flex-col items-center gap-0.5 px-4 py-1.5 transition-colors ${
                 isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              <div className="relative">
-                <Icon
-                  className={`h-5 w-5`}
-                  style={
-                    isActive
-                      ? { filter: 'drop-shadow(0 0 6px hsl(187 100% 50% / 0.6))' }
-                      : undefined
-                  }
+              <Icon className="h-5 w-5" />
+              <span className="font-mono text-[9px] tracking-[0.15em] font-medium">{label}</span>
+              {/* Active indicator — subtle purple glow underline */}
+              {isActive && (
+                <span
+                  className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 h-[2px] w-8 rounded-full bg-primary"
+                  style={{ boxShadow: '0 0 8px hsl(263 91% 66% / 0.6)' }}
                 />
-                {showDot && (
-                  <span className={`absolute -top-1 -right-1 h-2 w-2 rounded-full ${MODE_DOT_COLORS[currentMode]}`} />
-                )}
-              </div>
-              <span className="font-tech text-[10px] leading-tight">{label}</span>
+              )}
             </Link>
           );
         })}
