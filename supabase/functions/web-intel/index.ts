@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { sanitizeStr, sanitizeNum, sanitizeArray } from "../_shared/sanitize.ts";
+import { checkRateLimit } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -209,6 +210,10 @@ serve(async (req) => {
         status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    const userId = claimsData.claims.sub as string;
+    const rateLimited = await checkRateLimit(supabase, userId, 'web-intel', corsHeaders);
+    if (rateLimited) return rateLimited;
 
     const body: IntelRequest = await req.json();
     const { mode = 'scan', topics = [], playerContext: rawCtx, depth: rawDepth = 1 } = body;
