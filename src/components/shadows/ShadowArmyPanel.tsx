@@ -1,3 +1,4 @@
+// TODO: Phase2-IP-rebrand — "Shadow Army" needs original name for extraction system
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Plus, Swords, TrendingUp, ChevronDown, ChevronUp, Trash2, ArrowUp, Zap, X, Download, Loader2 } from 'lucide-react';

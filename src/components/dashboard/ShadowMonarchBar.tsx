@@ -1,3 +1,4 @@
+// TODO: Phase2-IP-rebrand — "Shadow Monarch" title needs original name
 import { useEffect, useState } from 'react';
 
 interface ShadowMonarchBarProps {

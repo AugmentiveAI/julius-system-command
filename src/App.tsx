@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -26,6 +26,7 @@ import { JarvisBrainProvider } from "@/contexts/JarvisBrainContext";
 import { useLocalDataMigration } from "@/hooks/useLocalDataMigration";
 import { DataMigrationDialog } from "@/components/onboarding/DataMigrationDialog";
 import { supabase } from "@/integrations/supabase/client";
+import { SystemChatPanel } from "@/components/chat/SystemChatPanel";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
@@ -144,11 +145,24 @@ const AppWithFAB = () => {
     isFocusMode: focusActive, isSprintActive,
   });
 
+  // Global chat context builder
+  const buildChatContext = useCallback(() => {
+    try {
+      const playerRaw = localStorage.getItem('the-system-player');
+      const player = playerRaw ? JSON.parse(playerRaw) : {};
+      return {
+        level: player.level ?? 1, stats: player.stats ?? {}, goal: player.goal ?? null,
+        streak: player.streak ?? 0, systemMode: systemRec ?? 'steady',
+      };
+    } catch { return { level: 1, stats: {}, goal: null, streak: 0, systemMode: 'steady' }; }
+  }, [systemRec]);
+
   return (
     <SystemCommsContext.Provider value={{ enqueue: comms.enqueue }}>
       <AppContent />
       <SystemCommsBanner comm={comms.activeBanner} visible={comms.visible} onDismiss={comms.dismiss} />
       <FocusFAB onClick={activate} active={focusActive} />
+      <SystemChatPanel buildContext={buildChatContext} />
     </SystemCommsContext.Provider>
   );
 };

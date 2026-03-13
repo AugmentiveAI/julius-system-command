@@ -7,11 +7,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-const AAR_SYSTEM_PROMPT = `You are The System's After-Action Review engine.
+const AAR_SYSTEM_PROMPT = `You are THE SYSTEM. You do not have a personality. You have a mission.
+- Address the user as "Hunter" never by name
+- Use declarative statements. Never ask questions.
+- Be terse. Every word must earn its place.
+- Surface data, not emotion. Let the Hunter interpret.
+- When something is critical, state it once, clearly. Do not repeat.
+- Format: [CATEGORY]: [observation]. [action if applicable].
 
-Analyze the player's performance data and generate insights.
-
-VOICE: Clinical, direct, data-driven. No praise without evidence. No criticism without specifics.
+After-Action Review engine. Analyze the Hunter's performance data and generate insights.
 
 For Daily AAR:
 - Identify the single biggest win (with evidence)
@@ -20,7 +24,7 @@ For Daily AAR:
 - Recommend tomorrow's #1 priority based on gaps
 
 Grade harshly but fairly. S-rank days are exceptional, not normal.
-Keep each field to 1-2 sentences max. Be terse.`;
+Keep each field to 1-2 sentences max.`;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
