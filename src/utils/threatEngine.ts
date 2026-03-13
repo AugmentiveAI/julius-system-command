@@ -165,6 +165,44 @@ const THREAT_RULES: ThreatRule[] = [
     }),
   },
 
+  // ── CARDIOVASCULAR (APOE e4 + age 41) ─────────────
+  {
+    id: 'cardio_elevated',
+    condition: (ctx) => (ctx as any).daysSinceLastCardio >= 3 && (ctx as any).daysSinceLastCardio < 5,
+    build: (ctx) => ({
+      category: 'cardiovascular',
+      level: 'elevated',
+      title: 'Cardio Gap Detected',
+      description: 'No cardiovascular training in 3+ days.',
+      metric: `${(ctx as any).daysSinceLastCardio} days since last cardio`,
+      recommendation: 'APOE e4 carrier — schedule cardio session today.',
+    }),
+  },
+  {
+    id: 'cardio_high',
+    condition: (ctx) => (ctx as any).daysSinceLastCardio >= 5 && (ctx as any).daysSinceLastCardio < 7,
+    build: (ctx) => ({
+      category: 'cardiovascular',
+      level: 'high',
+      title: 'Cardiovascular Risk Elevated',
+      description: 'No cardio in 5+ days.',
+      metric: `${(ctx as any).daysSinceLastCardio} days without cardio`,
+      recommendation: 'APOE e4 + age 41 — cardiovascular maintenance is non-negotiable.',
+    }),
+  },
+  {
+    id: 'cardio_critical',
+    condition: (ctx) => (ctx as any).daysSinceLastCardio >= 7,
+    build: (ctx) => ({
+      category: 'cardiovascular',
+      level: 'critical',
+      title: 'CARDIOVASCULAR ALERT',
+      description: `No cardio in ${(ctx as any).daysSinceLastCardio} days. APOE e4 carrier + 41.`,
+      metric: `${(ctx as any).daysSinceLastCardio} days — system priority`,
+      recommendation: 'This is a system priority, not a suggestion. Cardio today is mandatory.',
+    }),
+  },
+
   // ── CORNERSTONE ────────────────────────────────────
   {
     id: 'cornerstone_at_risk',

@@ -288,6 +288,9 @@ const Training = () => {
           <FatigueGauge accumulation={fatigueAccumulation} />
         </div>
 
+        {/* ROM Recovery Tracker */}
+        <RomTracker />
+
         <DeloadBanner decision={deloadDecision} />
 
         {/* JARVIS Brain Banner */}

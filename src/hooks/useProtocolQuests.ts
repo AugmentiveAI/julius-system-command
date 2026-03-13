@@ -84,10 +84,16 @@ export function useProtocolQuests() {
   useEffect(() => {
     const checkReset = () => {
       const today = getSystemDate();
+      const rehabPhase = getRehabPhase();
+      const filteredProtocol = DAILY_PROTOCOL.filter(q => {
+        if (!shouldShowRehabQuest(q, rehabPhase)) return false;
+        if (q.frequency === 'weekly' && !isSundayEvening()) return false;
+        return true;
+      });
       setState(prev => {
         if (prev.lastResetDate !== today) {
           return {
-            quests: DAILY_PROTOCOL.map(q => ({ ...q, completed: false })),
+            quests: filteredProtocol.map(q => ({ ...q, completed: false })),
             lastResetDate: today,
           };
         }
