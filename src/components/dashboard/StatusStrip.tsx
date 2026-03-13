@@ -42,8 +42,8 @@ export function StatusStrip({ rank, level, currentXP, xpToNextLevel, streak }: S
       {/* Right: Streak */}
       {streak > 0 && (
         <div className="flex items-center gap-1 shrink-0">
-          <Flame className="h-3.5 w-3.5 text-orange-400" />
-          <span className="font-mono text-xs font-bold text-orange-400">{streak}</span>
+          <Flame className="h-3.5 w-3.5 text-destructive" />
+          <span className="font-mono text-xs font-bold text-destructive">{streak}</span>
         </div>
       )}
     </div>

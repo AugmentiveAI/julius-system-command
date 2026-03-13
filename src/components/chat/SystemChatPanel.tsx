@@ -168,7 +168,7 @@ export function SystemChatPanel({ buildContext }: SystemChatPanelProps) {
               style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
             >
               <div className="flex items-center gap-2 rounded-lg px-3 py-2 bg-muted/20 border border-primary/15">
-                <span className="font-mono text-[10px] text-primary/40 shrink-0">&gt;</span>
+                <span className="font-mono text-[10px] text-primary/40 shrink-0">{'>'}</span>
                 <input
                   ref={inputRef}
                   type="text"
