@@ -676,7 +676,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
         <CaptureFAB />
       </div>
 
-      <SystemChatPanel buildContext={buildChatContext} />
+      
     </>
   );
 };

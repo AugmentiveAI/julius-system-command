@@ -146,11 +146,24 @@ const AppWithFAB = () => {
     isFocusMode: focusActive, isSprintActive,
   });
 
+  // Global chat context builder
+  const buildChatContext = useCallback(() => {
+    try {
+      const playerRaw = localStorage.getItem('the-system-player');
+      const player = playerRaw ? JSON.parse(playerRaw) : {};
+      return {
+        level: player.level ?? 1, stats: player.stats ?? {}, goal: player.goal ?? null,
+        streak: player.streak ?? 0, systemMode: systemRec ?? 'steady',
+      };
+    } catch { return { level: 1, stats: {}, goal: null, streak: 0, systemMode: 'steady' }; }
+  }, [systemRec]);
+
   return (
     <SystemCommsContext.Provider value={{ enqueue: comms.enqueue }}>
       <AppContent />
       <SystemCommsBanner comm={comms.activeBanner} visible={comms.visible} onDismiss={comms.dismiss} />
       <FocusFAB onClick={activate} active={focusActive} />
+      <SystemChatPanel buildContext={buildChatContext} />
     </SystemCommsContext.Provider>
   );
 };
