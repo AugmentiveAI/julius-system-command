@@ -1,4 +1,5 @@
 // TODO: Phase2-IP-rebrand — "Arise" mechanic needs original name for extraction system
+import { useEffect, useState } from 'react';
 
 interface AriseOverlayProps {
   show: boolean;
