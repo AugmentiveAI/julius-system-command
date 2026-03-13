@@ -233,6 +233,16 @@ ${playerData.training ? `- Sessions Logged: ${playerData.training.totalSessions}
 - Workout Distribution: ${JSON.stringify(playerData.training.workoutDistribution || {})}` : 'No training data available yet.'}
 Note: Factor training performance, fatigue trends, and recovery status into trajectory forecasting and challenge calibration.
 
+${playerData.physical ? `PHYSICAL RECOVERY DATA:
+- Left Knee ROM: ${playerData.physical.romLeft}% (8 years post-op)
+- Right Knee ROM: ${playerData.physical.romRight}% (3 years post-op)
+- Rehab Phase: ${playerData.physical.rehabPhase}
+- Age Group: ${playerData.physical.ageGroup}
+- APOE e4: Yes (elevated cardiovascular + cognitive risk)
+- ACTN3: CC (power/sprinter genetics)
+
+Julius is 41 years old, Black male, 8 and 3 years post bilateral patellar tendon surgery at ${playerData.physical.romLeft}%/${playerData.physical.romRight}% ROM. He has ACTN3 CC (power athlete genetics — responds well to strength and sprint training but needs full ROM before plyometrics), APOE e4 (elevated cardiovascular and cognitive risk — cardio is mandatory, saturated fat should be minimized). His training trajectory should build from rehab → strength foundation → power expression. Never recommend high-impact or deep knee flexion until ROM is confirmed at 95%+.` : ''}
+
 TODAY'S CONTEXT:
 - Day of Week: ${playerData.dayOfWeek}
 - Day Type: ${playerData.dayType}

@@ -134,6 +134,20 @@ serve(async (req) => {
       workoutTypeCounts[log.workout_type] = (workoutTypeCounts[log.workout_type] || 0) + 1;
     }
 
+    // Build physical recovery context
+    const physical = trainingContext.physical || {};
+    const physicalBlock = physical.romLeft != null ? `
+PHYSICAL RECOVERY STATUS:
+- Left Knee: 8 years post-op at ${physical.romLeft}% ROM
+- Right Knee: 3 years post-op at ${physical.romRight}% ROM
+- Rehab Phase: ${physical.rehabPhase || 'strength'}
+- Age: 41 (30% longer recovery needed)
+- APOE e4: elevated cardiovascular risk — cardio is mandatory
+- ACTN3 CC: power/sprinter genetics
+
+Julius has bilateral patellar tendon surgery history. DO NOT prescribe: running, jumping, plyometrics, deep squats, or heavy leg press unless ROM is confirmed at 95%+. Prioritize: VMO activation, terminal knee extensions, single-leg stability, eccentric loading protocols, and hip/glute development to reduce knee stress.
+` : '';
+
     const userPrompt = `${query || 'Analyze my training data and provide a complete training intelligence report.'}
 
 TRAINING DATA (Last 30 days):
@@ -150,7 +164,7 @@ CURRENT CONTEXT:
 - Prescribed Intensity: ${trainingContext.prescribedIntensity || 'N/A'}
 - Training Level: ${trainingContext.trainingLevel}
 - Sessions Logged: ${trainingContext.sessionsLogged}
-
+${physicalBlock}
 PER-EXERCISE TRENDS:
 ${JSON.stringify(exerciseTrends, null, 1)}
 

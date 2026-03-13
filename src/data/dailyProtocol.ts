@@ -227,4 +227,15 @@ export const DAILY_PROTOCOL: ProtocolQuest[] = [
       reason: 'Sleep critical for APOE e4 protection',
     },
   },
+  {
+    id: 'weekly-rom-checkin',
+    title: 'Weekly Recovery Assessment',
+    stat: 'discipline',
+    xp: 50,
+    timeBlock: 'evening',
+    completed: false,
+    isProtocol: true,
+    isRehab: true,
+    frequency: 'weekly',
+  },
 ];

@@ -151,6 +151,15 @@ export function ExerciseProgressCard({
           )}
         </div>
 
+        {/* Contraindication warning */}
+        {exerciseWarning && !allDone && (
+          <div className="flex items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-500/5 px-2 py-1">
+            <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0" />
+            <span className="font-mono text-[9px] text-amber-400">{exerciseWarning.reason}</span>
+            <span className="font-mono text-[8px] text-muted-foreground ml-auto shrink-0">Unlocks: {exerciseWarning.unlocksAt}</span>
+          </div>
+        )}
+
         {/* Sets progress + chevron */}
         <div className="flex items-center gap-2 shrink-0">
           <span className="font-mono text-xs text-muted-foreground">
