@@ -211,6 +211,10 @@ serve(async (req) => {
       });
     }
 
+    const userId = claimsData.claims.sub as string;
+    const rateLimited = await checkRateLimit(supabase, userId, 'web-intel', corsHeaders);
+    if (rateLimited) return rateLimited;
+
     const body: IntelRequest = await req.json();
     const { mode = 'scan', topics = [], playerContext: rawCtx, depth: rawDepth = 1 } = body;
 

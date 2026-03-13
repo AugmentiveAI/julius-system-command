@@ -41,6 +41,10 @@ serve(async (req) => {
       });
     }
 
+    const userId = claimsData.claims.sub as string;
+    const rateLimited = await checkRateLimit(supabase, userId, 'shadow-research', corsHeaders);
+    if (rateLimited) return rateLimited;
+
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
       return new Response(JSON.stringify({ error: 'AI gateway not configured' }), {

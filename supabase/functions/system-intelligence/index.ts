@@ -85,6 +85,10 @@ serve(async (req) => {
       });
     }
 
+    const userId = claimsData.claims.sub as string;
+    const rateLimited = await checkRateLimit(supabase, userId, 'system-intelligence', corsHeaders);
+    if (rateLimited) return rateLimited;
+
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
       return new Response(JSON.stringify({ error: 'System intelligence temporarily offline.' }), {
