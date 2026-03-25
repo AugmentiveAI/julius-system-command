@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Users, Sword, Backpack, Store as StoreIcon, Brain, Settings, Info, ChevronRight, Dna, Pill, RotateCcw, Calendar, Trash2, LogOut, Zap, Bot, Shield } from 'lucide-react';
+import { Users, Sword, Backpack, Store as StoreIcon, Brain, Settings, Info, ChevronRight, Dna, Pill, RotateCcw, Calendar, Trash2, LogOut, Zap, Bot, Shield, Target } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { ShadowArmyPanel } from '@/components/shadows/ShadowArmyPanel';
