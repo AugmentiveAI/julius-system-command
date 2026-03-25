@@ -446,6 +446,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
             recordCompletion(persuasion?.technique ?? null);
             onCalibratedQuestCompleted();
             rollForLoot(quest.stat, player.streak);
+            recordQuestForMastery(id, quest.title);
           }
           return next;
         });
