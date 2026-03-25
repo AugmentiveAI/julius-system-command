@@ -408,6 +408,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
         addCompletion({ questId: pq.id, questTitle: pq.title, xpEarned: pq.xp, completedAt: new Date().toISOString(), type: 'daily' });
         addXP(pq.xp);
         rollForLoot(pq.stat, player.streak);
+        recordQuestForMastery(pq.id, pq.title);
       }
       pillar.toggleQuest(pillarId);
 
