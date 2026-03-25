@@ -189,7 +189,21 @@ const SystemTab = () => {
     );
   }
 
-  if (activeSection === 'genetics') {
+  if (activeSection === 'mastery') {
+    return (
+      <div className="min-h-screen bg-background pb-24" style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}>
+        <div className="mx-auto max-w-md px-4 space-y-3">
+          {backButton}
+          <h2 className="font-mono text-[10px] tracking-[0.3em] text-muted-foreground text-center">SKILL MASTERY</h2>
+          <p className="font-mono text-[9px] text-muted-foreground text-center">Skills level up through repeated use. Higher mastery = higher XP multiplier.</p>
+          <SkillMasteryPanel skills={masterySkills} />
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
+
+
     const buffs = JULIUS_GENETICS.traits.filter(t => t.type === 'buff');
     const debuffs = JULIUS_GENETICS.traits.filter(t => t.type === 'debuff');
     return (
