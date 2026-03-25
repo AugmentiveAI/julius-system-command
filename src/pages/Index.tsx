@@ -223,6 +223,10 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
     player, onStatReduction: reduceStat, onXPGained: addXP, onPenaltyCleared: resetPenaltyDays, addNotification,
   });
 
+  const { recordQuestForMastery, levelUpSkill, dismissLevelUp } = useSkillMastery();
+  const questChains = useQuestChains();
+  const [chainModalOpen, setChainModalOpen] = useState(false);
+
   const [ariseState, setAriseState] = useState({ show: false, name: '' });
   const [statusWindowOpen, setStatusWindowOpen] = useState(false);
   const [rankUpState, setRankUpState] = useState({ show: false, rank: '' });
