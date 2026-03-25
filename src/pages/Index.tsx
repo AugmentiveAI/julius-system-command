@@ -29,6 +29,8 @@ import { usePersuasion, recordCompletion } from '@/hooks/usePersuasion';
 import { useShadowQuest } from '@/hooks/useShadowQuest';
 import { useSystemIntelligenceAI } from '@/hooks/useSystemIntelligenceAI';
 import { useSkills } from '@/hooks/useSkills';
+import { useSkillMastery } from '@/hooks/useSkillMastery';
+import { useQuestChains } from '@/hooks/useQuestChains';
 import { usePenaltyDungeon } from '@/hooks/usePenaltyDungeon';
 import { usePreCommitment } from '@/hooks/usePreCommitment';
 import { useWeeklyPlanning } from '@/hooks/useWeeklyPlanning';
