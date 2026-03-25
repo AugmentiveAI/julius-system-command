@@ -452,7 +452,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
         });
       }
     }
-  }, [quests, toggleQuest, addXP, addCompletion, pillar, pillarStreak, shadowQuest, completeShadow, calibration, persuasionMap, rollForLoot, player, onCalibratedQuestCompleted, toast]);
+  }, [quests, toggleQuest, addXP, addCompletion, pillar, pillarStreak, shadowQuest, completeShadow, calibration, persuasionMap, rollForLoot, player, onCalibratedQuestCompleted, toast, recordQuestForMastery]);
 
   // Auto-scan
   useEffect(() => {
