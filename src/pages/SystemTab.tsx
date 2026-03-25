@@ -19,6 +19,8 @@ import { usePlayer } from '@/hooks/usePlayer';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useStore } from '@/hooks/useStore';
 import { useSkills } from '@/hooks/useSkills';
+import { useSkillMastery } from '@/hooks/useSkillMastery';
+import { SkillMasteryPanel } from '@/components/skills/SkillMasteryPanel';
 import { useShadowArmy } from '@/hooks/useShadowArmy';
 import { useDungeons } from '@/hooks/useDungeons';
 import { usePillarStreak } from '@/hooks/usePillarStreak';
