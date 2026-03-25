@@ -203,7 +203,7 @@ const SystemTab = () => {
     );
   }
 
-
+  if (activeSection === 'genetics') {
     const buffs = JULIUS_GENETICS.traits.filter(t => t.type === 'buff');
     const debuffs = JULIUS_GENETICS.traits.filter(t => t.type === 'debuff');
     return (
