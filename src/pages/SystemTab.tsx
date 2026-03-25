@@ -33,7 +33,7 @@ import { AwakeningSequence } from '@/components/onboarding/AwakeningSequence';
 
 // TODO: Phase2-IP-rebrand — "Shadow Army", "Arise", "Hunter", rank names
 
-type SystemSection = null | 'shadows' | 'dungeons' | 'inventory' | 'store' | 'skills' | 'genetics' | 'supplements' | 'settings';
+type SystemSection = null | 'shadows' | 'dungeons' | 'inventory' | 'store' | 'skills' | 'mastery' | 'genetics' | 'supplements' | 'settings';
 
 const AI_SETTINGS_KEY = 'systemAISettings';
 
