@@ -209,6 +209,66 @@ export type Database = {
         }
         Relationships: []
       }
+      quest_chains: {
+        Row: {
+          bonus_xp: number
+          chain_type: string
+          completed_at: string | null
+          created_at: string
+          current_step: number
+          description: string | null
+          expires_at: string | null
+          id: string
+          metadata: Json | null
+          started_at: string
+          stat: string
+          status: string
+          steps: Json
+          title: string
+          total_steps: number
+          user_id: string
+          xp_per_step: number
+        }
+        Insert: {
+          bonus_xp?: number
+          chain_type?: string
+          completed_at?: string | null
+          created_at?: string
+          current_step?: number
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          metadata?: Json | null
+          started_at?: string
+          stat?: string
+          status?: string
+          steps?: Json
+          title: string
+          total_steps?: number
+          user_id: string
+          xp_per_step?: number
+        }
+        Update: {
+          bonus_xp?: number
+          chain_type?: string
+          completed_at?: string | null
+          created_at?: string
+          current_step?: number
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          metadata?: Json | null
+          started_at?: string
+          stat?: string
+          status?: string
+          steps?: Json
+          title?: string
+          total_steps?: number
+          user_id?: string
+          xp_per_step?: number
+        }
+        Relationships: []
+      }
       quest_history: {
         Row: {
           category: string | null
@@ -300,6 +360,48 @@ export type Database = {
           name?: string
           power_level?: number
           status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      skill_mastery: {
+        Row: {
+          created_at: string
+          current_xp: number
+          id: string
+          last_used_at: string | null
+          level: number
+          max_level: number
+          skill_id: string
+          times_used: number
+          unlocked_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_xp?: number
+          id?: string
+          last_used_at?: string | null
+          level?: number
+          max_level?: number
+          skill_id: string
+          times_used?: number
+          unlocked_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_xp?: number
+          id?: string
+          last_used_at?: string | null
+          level?: number
+          max_level?: number
+          skill_id?: string
+          times_used?: number
+          unlocked_at?: string
           updated_at?: string
           user_id?: string
         }
