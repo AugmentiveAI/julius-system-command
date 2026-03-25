@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Users, Sword, Backpack, Store as StoreIcon, Brain, Settings, Info, ChevronRight, Dna, Pill, RotateCcw, Calendar, Trash2, LogOut, Zap, Bot, Shield } from 'lucide-react';
+import { Users, Sword, Backpack, Store as StoreIcon, Brain, Settings, Info, ChevronRight, Dna, Pill, RotateCcw, Calendar, Trash2, LogOut, Zap, Bot, Shield, Target } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { ShadowArmyPanel } from '@/components/shadows/ShadowArmyPanel';
@@ -19,6 +19,8 @@ import { usePlayer } from '@/hooks/usePlayer';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useStore } from '@/hooks/useStore';
 import { useSkills } from '@/hooks/useSkills';
+import { useSkillMastery } from '@/hooks/useSkillMastery';
+import { SkillMasteryPanel } from '@/components/skills/SkillMasteryPanel';
 import { useShadowArmy } from '@/hooks/useShadowArmy';
 import { useDungeons } from '@/hooks/useDungeons';
 import { usePillarStreak } from '@/hooks/usePillarStreak';
@@ -31,7 +33,7 @@ import { AwakeningSequence } from '@/components/onboarding/AwakeningSequence';
 
 // TODO: Phase2-IP-rebrand — "Shadow Army", "Arise", "Hunter", rank names
 
-type SystemSection = null | 'shadows' | 'dungeons' | 'inventory' | 'store' | 'skills' | 'genetics' | 'supplements' | 'settings';
+type SystemSection = null | 'shadows' | 'dungeons' | 'inventory' | 'store' | 'skills' | 'mastery' | 'genetics' | 'supplements' | 'settings';
 
 const AI_SETTINGS_KEY = 'systemAISettings';
 
@@ -61,6 +63,7 @@ const SystemTab = () => {
 
   const skillCtx = { player, shadowCount: shadows.length, dungeonClears: completedDungeons.length, pillarStreak: pillarStreak.streak };
   const { unlockedSkills, newlyUnlocked, dismissNewSkill } = useSkills(skillCtx);
+  const { skills: masterySkills } = useSkillMastery();
 
   const { inventory, setAutomationsDeployed, setCashReserves, addClient, removeClient, addSkill, removeSkill, addTemplate, removeTemplate } = useInventory();
   const { quests, toggleQuest } = useProtocolQuests();
@@ -186,6 +189,20 @@ const SystemTab = () => {
     );
   }
 
+  if (activeSection === 'mastery') {
+    return (
+      <div className="min-h-screen bg-background pb-24" style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}>
+        <div className="mx-auto max-w-md px-4 space-y-3">
+          {backButton}
+          <h2 className="font-mono text-[10px] tracking-[0.3em] text-muted-foreground text-center">SKILL MASTERY</h2>
+          <p className="font-mono text-[9px] text-muted-foreground text-center">Skills level up through repeated use. Higher mastery = higher XP multiplier.</p>
+          <SkillMasteryPanel skills={masterySkills} />
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
+
   if (activeSection === 'genetics') {
     const buffs = JULIUS_GENETICS.traits.filter(t => t.type === 'buff');
     const debuffs = JULIUS_GENETICS.traits.filter(t => t.type === 'debuff');
@@ -305,6 +322,7 @@ const SystemTab = () => {
         <MenuItem icon={Backpack} label="Inventory" onClick={() => setActiveSection('inventory')} />
         <MenuItem icon={StoreIcon} label="Store" onClick={() => setActiveSection('store')} />
         <MenuItem icon={Brain} label="Skills" onClick={() => setActiveSection('skills')} badge={`${unlockedSkills.length}`} />
+        <MenuItem icon={Target} label="Skill Mastery" onClick={() => setActiveSection('mastery')} />
         <MenuItem icon={Dna} label="Genetic Profile" onClick={() => setActiveSection('genetics')} />
         <MenuItem icon={Pill} label="Supplements" onClick={() => setActiveSection('supplements')} />
         <MenuItem icon={Settings} label="Settings" onClick={() => setActiveSection('settings')} />

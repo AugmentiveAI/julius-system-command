@@ -29,6 +29,8 @@ import { usePersuasion, recordCompletion } from '@/hooks/usePersuasion';
 import { useShadowQuest } from '@/hooks/useShadowQuest';
 import { useSystemIntelligenceAI } from '@/hooks/useSystemIntelligenceAI';
 import { useSkills } from '@/hooks/useSkills';
+import { useSkillMastery } from '@/hooks/useSkillMastery';
+import { useQuestChains } from '@/hooks/useQuestChains';
 import { usePenaltyDungeon } from '@/hooks/usePenaltyDungeon';
 import { usePreCommitment } from '@/hooks/usePreCommitment';
 import { useWeeklyPlanning } from '@/hooks/useWeeklyPlanning';
@@ -57,6 +59,8 @@ import { EmergencyQuestBanner } from '@/components/quests/EmergencyQuestBanner';
 import { AARModal } from '@/components/aar/AARModal';
 import { WeeklyPlanningModal } from '@/components/planning/WeeklyPlanningModal';
 import { ActiveBoostsBar } from '@/components/dashboard/ActiveBoostsBar';
+import { QuestChainCard } from '@/components/chains/QuestChainCard';
+import { ChainStartModal } from '@/components/chains/ChainStartModal';
 
 import { useJarvisBrainOptional } from '@/contexts/JarvisBrainContext';
 import { reorderQuestsWithJarvis } from '@/utils/jarvisQuestReorder';
@@ -218,6 +222,10 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
   const penaltyDungeon = usePenaltyDungeon({
     player, onStatReduction: reduceStat, onXPGained: addXP, onPenaltyCleared: resetPenaltyDays, addNotification,
   });
+
+  const { recordQuestForMastery, levelUpSkill, dismissLevelUp } = useSkillMastery();
+  const questChains = useQuestChains();
+  const [chainModalOpen, setChainModalOpen] = useState(false);
 
   const [ariseState, setAriseState] = useState({ show: false, name: '' });
   const [statusWindowOpen, setStatusWindowOpen] = useState(false);
@@ -387,6 +395,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
         addCompletion({ questId: id, questTitle: protocolQuest.title, xpEarned: xp, completedAt: new Date().toISOString(), type: 'daily' });
         addXP(xp);
         rollForLoot(protocolQuest.stat, player.streak);
+        recordQuestForMastery(id, protocolQuest.title);
       }
       toggleQuest(id);
       return;
@@ -399,6 +408,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
         addCompletion({ questId: pq.id, questTitle: pq.title, xpEarned: pq.xp, completedAt: new Date().toISOString(), type: 'daily' });
         addXP(pq.xp);
         rollForLoot(pq.stat, player.streak);
+        recordQuestForMastery(pq.id, pq.title);
       }
       pillar.toggleQuest(pillarId);
 
@@ -436,12 +446,13 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
             recordCompletion(persuasion?.technique ?? null);
             onCalibratedQuestCompleted();
             rollForLoot(quest.stat, player.streak);
+            recordQuestForMastery(id, quest.title);
           }
           return next;
         });
       }
     }
-  }, [quests, toggleQuest, addXP, addCompletion, pillar, pillarStreak, shadowQuest, completeShadow, calibration, persuasionMap, rollForLoot, player, onCalibratedQuestCompleted, toast]);
+  }, [quests, toggleQuest, addXP, addCompletion, pillar, pillarStreak, shadowQuest, completeShadow, calibration, persuasionMap, rollForLoot, player, onCalibratedQuestCompleted, toast, recordQuestForMastery]);
 
   // Auto-scan
   useEffect(() => {
@@ -641,6 +652,56 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
             ))}
           </div>
 
+          {/* D. Active Quest Chains */}
+          {questChains.activeChains.length > 0 && (
+            <div className="space-y-2">
+              <h2 className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">ACTIVE CHAINS</h2>
+              {questChains.activeChains.map(chain => (
+                <QuestChainCard
+                  key={chain.id}
+                  chain={chain}
+                  onCompleteStep={async (chainId) => {
+                    const result = await questChains.completeStep(chainId);
+                    if (result.xpEarned > 0) {
+                      addXP(result.xpEarned);
+                      const chain = questChains.chains.find(c => c.id === chainId);
+                      if (chain) {
+                        addCompletion({ questId: `chain-${chainId}`, questTitle: chain.title, xpEarned: result.xpEarned, completedAt: new Date().toISOString(), type: 'daily' });
+                        recordQuestForMastery(`chain-${chain.stat}`, chain.title);
+                      }
+                      if (result.chainCompleted) {
+                        toast({ title: 'CHAIN COMPLETE', description: `+${result.xpEarned} XP earned. The System acknowledges your persistence.`, duration: 3000 });
+                      }
+                    }
+                  }}
+                  onAbandon={(chainId) => {
+                    if (confirm('Abandon this chain? Progress will be lost.')) {
+                      questChains.abandonChain(chainId);
+                    }
+                  }}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Start new chain button */}
+          <button
+            onClick={() => setChainModalOpen(true)}
+            className="w-full py-2 rounded-md border border-dashed border-border bg-card/20 font-mono text-[10px] tracking-wider text-muted-foreground uppercase hover:border-primary/30 hover:text-primary transition-colors"
+          >
+            + Initiate Quest Chain
+          </button>
+
+          {/* Mastery level-up notification */}
+          {levelUpSkill && (
+            <div className="rounded-lg border border-primary/40 bg-primary/10 p-3 animate-pulse">
+              <p className="font-mono text-[10px] tracking-wider text-primary text-center">
+                MASTERY LEVEL UP: {levelUpSkill.name} → Lv.{levelUpSkill.newLevel}
+              </p>
+              <button onClick={dismissLevelUp} className="block mx-auto mt-1 font-mono text-[9px] text-primary/60 hover:text-primary">Dismiss</button>
+            </div>
+          )}
+
           {/* Progress indicator */}
           {totalMissions > 0 && (
             <div className="pt-2">
@@ -661,7 +722,17 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
         <CaptureFAB />
       </div>
 
-      
+      <ChainStartModal
+        open={chainModalOpen}
+        onOpenChange={setChainModalOpen}
+        onStart={async (idx) => {
+          const chain = await questChains.startChain(idx);
+          if (chain) {
+            toast({ title: 'CHAIN INITIATED', description: `"${chain.title}" — ${chain.totalSteps} steps. The System is watching.`, duration: 3000 });
+          }
+        }}
+        activeChainCount={questChains.activeChains.length}
+      />
     </>
   );
 };
