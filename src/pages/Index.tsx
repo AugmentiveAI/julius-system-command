@@ -59,6 +59,8 @@ import { EmergencyQuestBanner } from '@/components/quests/EmergencyQuestBanner';
 import { AARModal } from '@/components/aar/AARModal';
 import { WeeklyPlanningModal } from '@/components/planning/WeeklyPlanningModal';
 import { ActiveBoostsBar } from '@/components/dashboard/ActiveBoostsBar';
+import { QuestChainCard } from '@/components/chains/QuestChainCard';
+import { ChainStartModal } from '@/components/chains/ChainStartModal';
 
 import { useJarvisBrainOptional } from '@/contexts/JarvisBrainContext';
 import { reorderQuestsWithJarvis } from '@/utils/jarvisQuestReorder';
