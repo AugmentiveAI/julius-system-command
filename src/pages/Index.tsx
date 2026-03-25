@@ -395,6 +395,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
         addCompletion({ questId: id, questTitle: protocolQuest.title, xpEarned: xp, completedAt: new Date().toISOString(), type: 'daily' });
         addXP(xp);
         rollForLoot(protocolQuest.stat, player.streak);
+        recordQuestForMastery(id, protocolQuest.title);
       }
       toggleQuest(id);
       return;
