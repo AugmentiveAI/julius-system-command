@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { StatusStrip } from '@/components/dashboard/StatusStrip';
-import { SystemMessageCard, SystemMessage } from '@/components/dashboard/SystemMessageCard';
-import { MissionCard } from '@/components/quests/MissionCard';
+import { HeroCard } from '@/components/feed/HeroCard';
+import { SystemFeedCard } from '@/components/feed/SystemFeedCard';
+import { MissionBatch } from '@/components/feed/MissionBatch';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { usePlayer } from '@/hooks/usePlayer';
 import { useProtocolQuests } from '@/hooks/useProtocolQuests';
@@ -37,6 +38,7 @@ import { useWeeklyPlanning } from '@/hooks/useWeeklyPlanning';
 import { useFocusModeContext } from '@/contexts/FocusModeContext';
 import { useFocusMode } from '@/hooks/useFocusMode';
 import { useTrainingLog } from '@/hooks/useTrainingLog';
+import { useSystemFeed } from '@/hooks/useSystemFeed';
 import { calibrateQuests, CalibratedQuest, QuestCompletionRecord } from '@/utils/questCalibration';
 import { loadCachedResistance } from '@/utils/resistanceTracker';
 import { PlayerStateCheck } from '@/types/playerState';
@@ -50,7 +52,6 @@ import { LevelUpOverlay } from '@/components/effects/LevelUpOverlay';
 import { AriseOverlay } from '@/components/effects/AriseOverlay';
 import { RankUpOverlay } from '@/components/effects/RankUpOverlay';
 import { LootDropToast } from '@/components/effects/LootDropToast';
-import { LootCinematicReveal } from '@/components/effects/LootCinematicReveal';
 import { FocusModeOverlay } from '@/components/focus/FocusModeOverlay';
 import StateCheck from '@/components/StateCheck';
 import { StatusWindow } from '@/components/dashboard/StatusWindow';
@@ -58,23 +59,16 @@ import { PenaltyDungeonOverlay } from '@/components/effects/PenaltyDungeonOverla
 import { EmergencyQuestBanner } from '@/components/quests/EmergencyQuestBanner';
 import { AARModal } from '@/components/aar/AARModal';
 import { WeeklyPlanningModal } from '@/components/planning/WeeklyPlanningModal';
-import { ActiveBoostsBar } from '@/components/dashboard/ActiveBoostsBar';
 import { QuestChainCard } from '@/components/chains/QuestChainCard';
 import { ChainStartModal } from '@/components/chains/ChainStartModal';
-
 import { useJarvisBrainOptional } from '@/contexts/JarvisBrainContext';
 import { reorderQuestsWithJarvis } from '@/utils/jarvisQuestReorder';
 import { QuestTimeBlock } from '@/types/quests';
-import { buildTrainingContext } from '@/hooks/useTrainingIntelligence';
-import { getMesocycleState } from '@/utils/periodizationEngine';
 import CaptureFAB from '@/components/capture/CaptureFAB';
-
-// TODO: Phase2-IP-rebrand — "Shadow Monarch", "Hunter" terminology, rank aesthetic
 
 const LAST_SCAN_DATE_KEY = 'systemLastScanDate';
 const STATE_HISTORY_KEY = 'systemStateHistory';
 const CALIBRATED_COMPLETIONS_KEY = 'systemCalibratedCompletions';
-const START_DATE_KEY = 'systemStartDate';
 
 function needsDailyScan(): boolean {
   return localStorage.getItem(LAST_SCAN_DATE_KEY) !== getSystemDate();
@@ -197,7 +191,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
         const key = `dungeon:${dungeon.title}`;
         if (autoDeployedRef.current.has(key)) continue;
         autoDeployedRef.current.add(key);
-        const objectives: DungeonObjective[] = dungeon.objectives.map((title, i) => ({ id: `obj-${i}`, title, completed: false }));
+        const objectives: DungeonObjective[] = dungeon.objectives.map((title: string, i: number) => ({ id: `obj-${i}`, title, completed: false }));
         const { data: userData } = await supabase.auth.getUser();
         if (!userData.user) return;
         await supabase.from('dungeons').insert({
@@ -234,6 +228,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
   const [scanOpen, setScanOpen] = useState(false);
   const autoScanRef = useRef(false);
   const [todayCheck, setTodayCheck] = useState<PlayerStateCheck | null>(getLatestTodayCheck);
+  const [missionsExpanded, setMissionsExpanded] = useState(false);
 
   const dailyXP = useDailyXP({
     quests, workoutCompleted, workoutXP: workout.xp, coldStreakDays: player.coldStreak ?? 0,
@@ -284,7 +279,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
   const focus = useFocusMode(calibration?.recommendedQuests ?? [], completedCalibratedIds, quests, preCommittedId);
   const { pendingDrop, rollForLoot, clearPendingDrop } = useLootDrops();
 
-  // Reorder quests with JARVIS brain
+  // ── Build unified mission list ──
   const allMissions = useMemo(() => {
     const missions: Array<{
       id: string; title: string; xp: number; completed: boolean;
@@ -295,7 +290,6 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
       description?: string; timeBlock?: string;
     }> = [];
 
-    // Protocol quests
     quests.forEach(q => {
       const totalXp = q.xp + (q.geneticBonus?.bonusXp || 0);
       missions.push({
@@ -306,7 +300,6 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
       });
     });
 
-    // Calibrated quests
     if (calibration) {
       const anticipation = jarvis?.anticipation ?? null;
       const geneticPhase = jarvis?.geneticState?.comtPhase ?? null;
@@ -322,7 +315,6 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
       });
     }
 
-    // Pillar quests
     pillar.quests.forEach(q => {
       const pillarColor = q.pillar === 'mind' ? 'text-blue-400 border-blue-500/30 bg-blue-500/10'
         : q.pillar === 'body' ? 'text-green-400 border-green-500/30 bg-green-500/10'
@@ -334,7 +326,6 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
       });
     });
 
-    // Shadow quest
     if (shadowQuest && shadowRevealed) {
       missions.push({
         id: shadowQuest.id, title: shadowQuest.title, xp: shadowQuest.rewardXP,
@@ -346,48 +337,23 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
     return missions;
   }, [quests, calibration, pillar, shadowQuest, shadowRevealed, completedCalibratedIds, persuasionMap, jarvis]);
 
-  // Build system messages for the card
-  const systemMessages = useMemo<SystemMessage[]>(() => {
-    const msgs: SystemMessage[] = [];
+  // ── System Feed ──
+  const { heroItem, feedItems } = useSystemFeed({
+    strategy,
+    intelligence,
+    highestPriority,
+    cornerstone,
+    todayHonored,
+    newLoopDetected,
+    penaltyLevel,
+    questChains: questChains.activeChains,
+    levelUpSkill,
+    shadows,
+    geneticPhase: jarvis?.geneticState?.comtPhase ?? null,
+  });
 
-    // Highest priority intervention
-    if (highestPriority) {
-      msgs.push({ id: 'intervention', text: highestPriority.message, priority: highestPriority.priority === 'critical' ? 'critical' : highestPriority.priority === 'high' ? 'warning' : 'insight' });
-    }
-
-    // Cornerstone alert
-    if (cornerstone && !todayHonored) {
-      msgs.push({ id: 'cornerstone', text: `Cornerstone unprotected: "${cornerstone.behavior}". History predicts low-output day.`, priority: 'warning' });
-    }
-
-    // Intelligence daily brief
-    if (intelligence?.dailyBrief) {
-      msgs.push({ id: 'brief', text: intelligence.dailyBrief, priority: 'insight' });
-    } else {
-      const firstSentence = strategy.dailyBrief.split(/[.!]/).filter(Boolean)[0]?.trim();
-      if (firstSentence) msgs.push({ id: 'brief', text: firstSentence + '.', priority: 'insight' });
-    }
-
-    // Loop detected
-    if (newLoopDetected) {
-      msgs.push({ id: 'loop', text: `Pattern detected: ${newLoopDetected.pattern}. ${newLoopDetected.breakStrategy || 'Analyze and adapt.'}`, priority: 'warning' });
-    }
-
-    // Penalty
-    if (penaltyLevel >= 2) {
-      msgs.push({ id: 'penalty', text: `Penalty level ${penaltyLevel}. Zero-day streak active. Complete any mission to halt decay.`, priority: 'critical' });
-    }
-
-    if (msgs.length === 0) {
-      msgs.push({ id: 'default', text: 'THE SYSTEM awaits. Begin your missions.', priority: 'insight' });
-    }
-
-    return msgs;
-  }, [highestPriority, cornerstone, todayHonored, intelligence, strategy, newLoopDetected, penaltyLevel]);
-
-  // Handlers
+  // ── Mission toggle handler ──
   const handleMissionToggle = useCallback((id: string) => {
-    // Check which type it is
     const protocolQuest = quests.find(q => q.id === id);
     if (protocolQuest) {
       if (!protocolQuest.completed) {
@@ -411,8 +377,6 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
         recordQuestForMastery(pq.id, pq.title);
       }
       pillar.toggleQuest(pillarId);
-
-      // Check pillar mastery
       const wasCompleted = pillar.isCompleted(pillarId);
       if (!wasCompleted) {
         const othersDone = pillar.quests.filter(q => q.id !== pillarId).every(q => pillar.isCompleted(q.id));
@@ -430,7 +394,6 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
       return;
     }
 
-    // Calibrated quest
     if (calibration) {
       const quest = calibration.recommendedQuests.find(q => q.id === id);
       if (quest) {
@@ -454,7 +417,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
     }
   }, [quests, toggleQuest, addXP, addCompletion, pillar, pillarStreak, shadowQuest, completeShadow, calibration, persuasionMap, rollForLoot, player, onCalibratedQuestCompleted, toast, recordQuestForMastery]);
 
-  // Auto-scan
+  // ── Auto-scan ──
   useEffect(() => {
     if (forceFirstScan) { setScanOpen(true); onScanTriggered?.(); }
   }, [forceFirstScan, onScanTriggered]);
@@ -486,31 +449,6 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
     if (hasLoggedAfter10am) setQuestCompleted('caffeine-cutoff', false);
   }, [hasLoggedAfter10am, setQuestCompleted]);
 
-  // Achievement tracking
-  const achievementRef = useRef({ morning: false, allDaily: false });
-  useEffect(() => {
-    const morningQuests = quests.filter(q => q.timeBlock === 'morning');
-    const allMorningDone = morningQuests.length > 0 && morningQuests.every(q => q.completed);
-    if (allMorningDone && !achievementRef.current.morning) { achievementRef.current.morning = true; toast(getSystemToast('morningProtocol')); }
-    if (!allMorningDone) achievementRef.current.morning = false;
-  }, [quests, toast]);
-
-  // All missions complete check
-  const totalMissions = allMissions.length;
-  const completedMissions = allMissions.filter(m => m.completed).length;
-  const allComplete = totalMissions > 0 && completedMissions >= totalMissions;
-  const [showAllComplete, setShowAllComplete] = useState(false);
-
-  useEffect(() => {
-    if (allComplete && !achievementRef.current.allDaily) {
-      achievementRef.current.allDaily = true;
-      setShowAllComplete(true);
-      toast(getSystemToast('allQuestsComplete'));
-      setTimeout(() => setShowAllComplete(false), 2000);
-    }
-    if (!allComplete) achievementRef.current.allDaily = false;
-  }, [allComplete, toast]);
-
   // Rank-up detection
   useEffect(() => {
     const expectedRank = getRankForLevel(player.level);
@@ -521,14 +459,21 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
     }
   }, [player.level, addNotification]);
 
-  // Active boosts
-  const hasActiveBoosts = useMemo(() => {
-    try { const inv = JSON.parse(localStorage.getItem('the-system-store-inventory') || '[]'); return inv.some((i: any) => i.activeUntil && new Date(i.activeUntil) > new Date()); }
-    catch { return false; }
-  }, []);
+  // All complete check
+  const totalMissions = allMissions.length;
+  const completedMissions = allMissions.filter(m => m.completed).length;
+  const allComplete = totalMissions > 0 && completedMissions >= totalMissions;
+  const achievementRef = useRef({ morning: false, allDaily: false });
 
+  useEffect(() => {
+    if (allComplete && !achievementRef.current.allDaily) {
+      achievementRef.current.allDaily = true;
+      toast(getSystemToast('allQuestsComplete'));
+    }
+    if (!allComplete) achievementRef.current.allDaily = false;
+  }, [allComplete, toast]);
 
-  // Focus mode handlers
+  // Focus mode
   const handleFocusComplete = useCallback(() => {
     if (!focus.currentQuest) return;
     const q = focus.currentQuest;
@@ -540,17 +485,39 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
 
   const currentPersuasion = focus.currentQuest ? persuasionMap.get(focus.currentQuest.id) ?? null : null;
 
+  // Feed action handler
+  const handleFeedAction = useCallback((handler: string) => {
+    if (handler === 'expand_missions') setMissionsExpanded(true);
+    if (handler.startsWith('chain:')) {
+      const chainId = handler.split(':')[1];
+      const chain = questChains.activeChains.find(c => c.id === chainId);
+      if (chain) {
+        questChains.completeStep(chainId).then(result => {
+          if (result.xpEarned > 0) {
+            addXP(result.xpEarned);
+            addCompletion({ questId: `chain-${chainId}`, questTitle: chain.title, xpEarned: result.xpEarned, completedAt: new Date().toISOString(), type: 'daily' });
+            recordQuestForMastery(`chain-${chain.stat}`, chain.title);
+            if (result.chainCompleted) {
+              toast({ title: 'CHAIN COMPLETE', description: `+${result.xpEarned} XP. The System acknowledges your persistence.`, duration: 3000 });
+            }
+          }
+        });
+      }
+    }
+  }, [questChains, addXP, addCompletion, recordQuestForMastery, toast]);
+
+  // Dismissed feed items
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
+  const visibleFeed = feedItems.filter(item => !dismissedIds.has(item.id));
+
   return (
     <>
-      {/* Overlays — Tier 1 only */}
+      {/* Tier 1 Overlays */}
       <LevelUpOverlay show={levelUpState.show} newLevel={levelUpState.newLevel} />
       <AriseOverlay show={ariseState.show} shadowName={ariseState.name} onDone={() => setAriseState({ show: false, name: '' })} />
       <RankUpOverlay show={rankUpState.show} newRank={rankUpState.rank} onDone={() => setRankUpState({ show: false, rank: '' })} />
-
-      {/* Tier 2 — Toast only for loot */}
       {pendingDrop && <LootDropToast item={pendingDrop.item} show={true} onDone={clearPendingDrop} />}
 
-      {/* Penalty dungeon */}
       {penaltyDungeon.isPenaltyActive && penaltyDungeon.activePenalty && (
         <PenaltyDungeonOverlay
           dungeon={penaltyDungeon.activePenalty}
@@ -598,123 +565,62 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
       />
 
       <div className="min-h-screen bg-background" style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
-        {/* A. Status Strip */}
+        {/* A. Status Strip — calm header */}
         <StatusStrip rank={player.title} level={player.level} currentXP={player.currentXP} xpToNextLevel={player.xpToNextLevel} streak={player.streak} />
 
-        {/* All complete flash */}
-        {showAllComplete && (
-          <div className="mx-auto max-w-md px-4 py-2">
-            <div className="rounded-lg border border-green-500/50 bg-green-500/10 p-2 text-center animate-pulse">
-              <span className="font-mono text-xs font-bold text-green-400 tracking-wider">ALL MISSIONS COMPLETE</span>
-            </div>
-          </div>
-        )}
-
-        {/* Penalty banner — persistent red */}
-        {penaltyLevel >= 2 && (
-          <div className="mx-auto max-w-md px-4 pt-1">
-            <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-2 text-center">
-              <span className="font-mono text-[10px] text-destructive tracking-wider">
-                PENALTY ACTIVE — Level {penaltyLevel}. Complete missions to halt stat decay.
-              </span>
-            </div>
-          </div>
-        )}
-
         <div className="mx-auto max-w-md space-y-3 px-4 pt-2">
-          {/* Active boosts — only when active */}
-          {hasActiveBoosts && <ActiveBoostsBar />}
-
-          {/* Emergency quest banner */}
+          {/* B. Emergency — only when active */}
           {emergency.hasActiveEmergency && emergency.activeEmergency && (
             <EmergencyQuestBanner quest={emergency.activeEmergency} onCompleteObjective={emergency.completeObjective} />
           )}
 
-          {/* B. THE SYSTEM message */}
-          <SystemMessageCard messages={systemMessages} />
+          {/* C. Hero Card — the ONE thing the System wants you to know */}
+          {heroItem && (
+            <HeroCard
+              item={heroItem}
+              onAction={heroItem.action ? () => handleFeedAction(heroItem.action!.handler) : undefined}
+              onDismiss={() => setDismissedIds(prev => new Set([...prev, heroItem.id]))}
+            />
+          )}
 
-          {/* C. Today's Missions — unified list */}
-          <div className="space-y-2">
-            {allMissions.map(mission => (
-              <MissionCard
-                key={mission.id}
-                id={mission.id}
-                title={mission.title}
-                xp={mission.xp}
-                completed={mission.completed}
-                onToggle={handleMissionToggle}
-                badge={mission.badge}
-                borderGlow={mission.borderGlow}
-                persuasionMessage={mission.persuasionMessage}
-                description={mission.description}
-                timeBlock={mission.timeBlock}
-              />
-            ))}
-          </div>
+          {/* D. Mission Batch — collapsible, clean */}
+          <MissionBatch
+            missions={allMissions}
+            onToggle={handleMissionToggle}
+            completedCount={completedMissions}
+            totalCount={totalMissions}
+          />
 
-          {/* D. Active Quest Chains */}
-          {questChains.activeChains.length > 0 && (
-            <div className="space-y-2">
-              <h2 className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">ACTIVE CHAINS</h2>
-              {questChains.activeChains.map(chain => (
-                <QuestChainCard
-                  key={chain.id}
-                  chain={chain}
-                  onCompleteStep={async (chainId) => {
-                    const result = await questChains.completeStep(chainId);
-                    if (result.xpEarned > 0) {
-                      addXP(result.xpEarned);
-                      const chain = questChains.chains.find(c => c.id === chainId);
-                      if (chain) {
-                        addCompletion({ questId: `chain-${chainId}`, questTitle: chain.title, xpEarned: result.xpEarned, completedAt: new Date().toISOString(), type: 'daily' });
-                        recordQuestForMastery(`chain-${chain.stat}`, chain.title);
-                      }
-                      if (result.chainCompleted) {
-                        toast({ title: 'CHAIN COMPLETE', description: `+${result.xpEarned} XP earned. The System acknowledges your persistence.`, duration: 3000 });
-                      }
-                    }
-                  }}
-                  onAbandon={(chainId) => {
-                    if (confirm('Abandon this chain? Progress will be lost.')) {
-                      questChains.abandonChain(chainId);
-                    }
-                  }}
+          {/* E. System Feed — everything else the System surfaces */}
+          {visibleFeed.length > 0 && (
+            <div className="rounded-lg border border-border/30 bg-card/20 px-3">
+              <p className="font-mono text-[8px] tracking-[0.2em] text-muted-foreground/50 uppercase pt-3 pb-1">
+                SYSTEM FEED
+              </p>
+              {visibleFeed.slice(0, 6).map(item => (
+                <SystemFeedCard
+                  key={item.id}
+                  item={item}
+                  onAction={item.action ? () => handleFeedAction(item.action!.handler) : undefined}
+                  onDismiss={() => setDismissedIds(prev => new Set([...prev, item.id]))}
                 />
               ))}
+              {visibleFeed.length > 6 && (
+                <p className="font-mono text-[9px] text-muted-foreground/40 text-center py-2">
+                  +{visibleFeed.length - 6} more
+                </p>
+              )}
             </div>
           )}
 
-          {/* Start new chain button */}
-          <button
-            onClick={() => setChainModalOpen(true)}
-            className="w-full py-2 rounded-md border border-dashed border-border bg-card/20 font-mono text-[10px] tracking-wider text-muted-foreground uppercase hover:border-primary/30 hover:text-primary transition-colors"
-          >
-            + Initiate Quest Chain
-          </button>
-
-          {/* Mastery level-up notification */}
-          {levelUpSkill && (
-            <div className="rounded-lg border border-primary/40 bg-primary/10 p-3 animate-pulse">
-              <p className="font-mono text-[10px] tracking-wider text-primary text-center">
-                MASTERY LEVEL UP: {levelUpSkill.name} → Lv.{levelUpSkill.newLevel}
-              </p>
-              <button onClick={dismissLevelUp} className="block mx-auto mt-1 font-mono text-[9px] text-primary/60 hover:text-primary">Dismiss</button>
-            </div>
-          )}
-
-          {/* Progress indicator */}
-          {totalMissions > 0 && (
-            <div className="pt-2">
-              <div className="h-1 rounded-full bg-muted/30 overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-primary transition-all duration-500"
-                  style={{ width: `${(completedMissions / totalMissions) * 100}%` }}
-                />
-              </div>
-              <p className="text-center font-mono text-[10px] text-muted-foreground mt-1.5">
-                {completedMissions} / {totalMissions} missions
-              </p>
-            </div>
+          {/* F. Chain initiation — minimal */}
+          {questChains.activeChains.length < 2 && (
+            <button
+              onClick={() => setChainModalOpen(true)}
+              className="w-full py-2 rounded-md border border-dashed border-border/30 font-mono text-[10px] tracking-wider text-muted-foreground/50 uppercase hover:border-primary/30 hover:text-primary transition-colors"
+            >
+              + Initiate Quest Chain
+            </button>
           )}
         </div>
 
@@ -728,7 +634,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
         onStart={async (idx) => {
           const chain = await questChains.startChain(idx);
           if (chain) {
-            toast({ title: 'CHAIN INITIATED', description: `"${chain.title}" — ${chain.totalSteps} steps. The System is watching.`, duration: 3000 });
+            toast({ title: 'CHAIN INITIATED', description: `"${chain.title}" — ${chain.totalSteps} steps.`, duration: 3000 });
           }
         }}
         activeChainCount={questChains.activeChains.length}
