@@ -63,6 +63,7 @@ const SystemTab = () => {
 
   const skillCtx = { player, shadowCount: shadows.length, dungeonClears: completedDungeons.length, pillarStreak: pillarStreak.streak };
   const { unlockedSkills, newlyUnlocked, dismissNewSkill } = useSkills(skillCtx);
+  const { skills: masterySkills } = useSkillMastery();
 
   const { inventory, setAutomationsDeployed, setCashReserves, addClient, removeClient, addSkill, removeSkill, addTemplate, removeTemplate } = useInventory();
   const { quests, toggleQuest } = useProtocolQuests();
