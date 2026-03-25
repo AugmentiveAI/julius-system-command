@@ -722,7 +722,17 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
         <CaptureFAB />
       </div>
 
-      
+      <ChainStartModal
+        open={chainModalOpen}
+        onOpenChange={setChainModalOpen}
+        onStart={async (idx) => {
+          const chain = await questChains.startChain(idx);
+          if (chain) {
+            toast({ title: 'CHAIN INITIATED', description: `"${chain.title}" — ${chain.totalSteps} steps. The System is watching.`, duration: 3000 });
+          }
+        }}
+        activeChainCount={questChains.activeChains.length}
+      />
     </>
   );
 };
