@@ -322,6 +322,7 @@ const SystemTab = () => {
         <MenuItem icon={Backpack} label="Inventory" onClick={() => setActiveSection('inventory')} />
         <MenuItem icon={StoreIcon} label="Store" onClick={() => setActiveSection('store')} />
         <MenuItem icon={Brain} label="Skills" onClick={() => setActiveSection('skills')} badge={`${unlockedSkills.length}`} />
+        <MenuItem icon={Target} label="Skill Mastery" onClick={() => setActiveSection('mastery')} />
         <MenuItem icon={Dna} label="Genetic Profile" onClick={() => setActiveSection('genetics')} />
         <MenuItem icon={Pill} label="Supplements" onClick={() => setActiveSection('supplements')} />
         <MenuItem icon={Settings} label="Settings" onClick={() => setActiveSection('settings')} />
