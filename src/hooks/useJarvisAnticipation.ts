@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { JarvisAnticipation, UserLearning } from '@/types/learning';
+import { storageKey } from '@/utils/scopedStorage';
 
 const STORAGE_KEY = 'jarvisAnticipations';
 
@@ -13,21 +14,38 @@ function setHour(date: Date, hour: number): Date {
   return d;
 }
 
+/** Stable signature for deduplication — same type+prediction = same anticipation */
+function anticipationSignature(a: Pick<JarvisAnticipation, 'type' | 'prediction'>): string {
+  return `${a.type}::${a.prediction}`;
+}
+
 export function useJarvisAnticipation(learning: UserLearning | null) {
   const [anticipations, setAnticipations] = useState<JarvisAnticipation[]>([]);
 
-  // Load stored
+  // Load stored (scoped, with validation)
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) setAnticipations(JSON.parse(stored));
-    } catch { /* ignore */ }
+      const raw = localStorage.getItem(storageKey(STORAGE_KEY));
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          setAnticipations(parsed);
+        } else {
+          // Invalid payload — clear it
+          localStorage.removeItem(storageKey(STORAGE_KEY));
+        }
+      }
+    } catch {
+      localStorage.removeItem(storageKey(STORAGE_KEY));
+    }
   }, []);
 
-  // Save on change
+  // Save on change (scoped)
   useEffect(() => {
     if (anticipations.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(anticipations));
+      localStorage.setItem(storageKey(STORAGE_KEY), JSON.stringify(anticipations));
+    } else {
+      localStorage.removeItem(storageKey(STORAGE_KEY));
     }
   }, [anticipations]);
 
@@ -112,7 +130,29 @@ export function useJarvisAnticipation(learning: UserLearning | null) {
       });
     }
 
-    setAnticipations(newAnticipations);
+    // Merge: preserve existing id/surfaced/surfacedAt for matching signatures
+    setAnticipations(prev => {
+      const prevBySignature = new Map<string, JarvisAnticipation>();
+      for (const a of prev) {
+        prevBySignature.set(anticipationSignature(a), a);
+      }
+
+      return newAnticipations.map(fresh => {
+        const sig = anticipationSignature(fresh);
+        const existing = prevBySignature.get(sig);
+        if (existing) {
+          // Preserve identity and surfaced state
+          return {
+            ...fresh,
+            id: existing.id,
+            surfaced: existing.surfaced,
+            surfacedAt: existing.surfacedAt,
+          };
+        }
+        return fresh;
+      });
+    });
+
     return newAnticipations;
   }, [learning]);
 

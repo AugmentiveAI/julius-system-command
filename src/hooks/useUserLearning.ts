@@ -9,6 +9,7 @@ import {
   ResponsePatterns,
   DerivedInsights,
 } from '@/types/learning';
+import { storageKey } from '@/utils/scopedStorage';
 
 const STORAGE_KEY = 'jarvisUserLearning';
 const COOLDOWN_MS = 3600000; // 1 hour
@@ -129,10 +130,13 @@ function calculateEnergyPatterns(questHistory: any[]): EnergyPatterns {
     energyByHour[h] = (hourCounts[h] || 0) / maxCount;
   }
 
+  // Fix: parse each hour key as integer before filtering
   const crashHours = Object.entries(energyByHour)
-    .filter(([, val]) => val < 0.15 && parseInt(Object.keys(energyByHour)[0]) >= 6)
-    .map(([h]) => parseInt(h))
-    .filter(h => h >= 12 && h <= 18);
+    .filter(([hourStr, val]) => {
+      const h = parseInt(hourStr, 10);
+      return val < 0.15 && h >= 12 && h <= 18;
+    })
+    .map(([h]) => parseInt(h, 10));
 
   return {
     energyByHour,
@@ -192,14 +196,13 @@ export function useUserLearning() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const lastAnalyzedAt = useRef<number>(0);
 
-  // Load stored learning
+  // Load stored learning (scoped)
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored = localStorage.getItem(storageKey(STORAGE_KEY));
       if (stored) {
         const parsed = JSON.parse(stored);
         setLearning(parsed);
-        // Treat lastUpdated as last analysis time
         if (parsed.lastUpdated) {
           lastAnalyzedAt.current = new Date(parsed.lastUpdated).getTime();
         }
@@ -216,11 +219,18 @@ export function useUserLearning() {
     setIsAnalyzing(true);
 
     try {
-      const calibratedCompletions = JSON.parse(localStorage.getItem('systemCalibratedCompletions') || '[]');
-      const historyRaw = JSON.parse(localStorage.getItem('the-system-history') || '{"completions":[]}');
+      const calibratedCompletions = JSON.parse(
+        localStorage.getItem(storageKey('systemCalibratedCompletions')) || '[]'
+      );
+      const historyRaw = JSON.parse(
+        localStorage.getItem(storageKey('the-system-history')) || '{"completions":[]}'
+      );
       const questHistory = [...calibratedCompletions, ...(historyRaw.completions || [])];
 
-      const playerRaw = localStorage.getItem('systemPlayer');
+      // Try scoped 'the-system-player' first, then fallback to 'systemPlayer'
+      const playerRaw =
+        localStorage.getItem(storageKey('the-system-player')) ||
+        localStorage.getItem(storageKey('systemPlayer'));
       const player = playerRaw ? JSON.parse(playerRaw) : {};
 
       const execution = calculateExecutionPatterns(questHistory);
@@ -244,7 +254,7 @@ export function useUserLearning() {
 
       lastAnalyzedAt.current = Date.now();
       setLearning(newLearning);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newLearning));
+      localStorage.setItem(storageKey(STORAGE_KEY), JSON.stringify(newLearning));
     } catch (e) {
       console.error('[UserLearning] Analysis failed:', e);
     } finally {
@@ -252,7 +262,7 @@ export function useUserLearning() {
     }
   }, [learning?.responses]);
 
-  // Auto-analyze: once on load if data is stale (>1 hour or >1 day)
+  // Auto-analyze: once on load if data is stale (>1 day)
   useEffect(() => {
     const lastAnalysis = learning?.lastUpdated;
     const shouldAnalyze = !lastAnalysis || daysBetween(new Date(lastAnalysis), new Date()) >= 1;
