@@ -231,9 +231,13 @@ export function useUserLearning() {
       const questHistory = [...calibratedCompletions, ...(historyRaw.completions || [])];
 
       // Try scoped 'the-system-player' first, then fallback to 'systemPlayer'
-      const playerRaw =
-        localStorage.getItem(storageKey('the-system-player')) ||
-        localStorage.getItem(storageKey('systemPlayer'));
+      const primaryKey = storageKey('the-system-player');
+      const fallbackKey = storageKey('systemPlayer');
+      const playerRaw = localStorage.getItem(primaryKey) || localStorage.getItem(fallbackKey);
+      if (DEBUG_TELEMETRY) {
+        const usedFallback = !localStorage.getItem(primaryKey) && !!playerRaw;
+        console.debug("[telemetry]", { event: usedFallback ? "player_key_fallback_used" : "scoped_key_used", op: "read_player", key: usedFallback ? fallbackKey : primaryKey });
+      }
       const player = playerRaw ? JSON.parse(playerRaw) : {};
 
       const execution = calculateExecutionPatterns(questHistory);

@@ -143,7 +143,7 @@ export function useJarvisAnticipation(learning: UserLearning | null) {
         const sig = anticipationSignature(fresh);
         const existing = prevBySignature.get(sig);
         if (existing) {
-          // Preserve identity and surfaced state
+          if (DEBUG_TELEMETRY) console.debug("[telemetry]", { event: "duplicate_preserved", sig, surfaced: existing.surfaced });
           return {
             ...fresh,
             id: existing.id,
