@@ -32,11 +32,12 @@ export function useJarvisAnticipation(learning: UserLearning | null) {
         if (Array.isArray(parsed)) {
           setAnticipations(parsed);
         } else {
-          // Invalid payload — clear it
+          if (DEBUG_TELEMETRY) console.debug("[telemetry]", { event: "stale_storage_cleared", key: STORAGE_KEY, valueType: typeof parsed });
           localStorage.removeItem(storageKey(STORAGE_KEY));
         }
       }
     } catch {
+      if (DEBUG_TELEMETRY) console.debug("[telemetry]", { event: "stale_storage_cleared", key: STORAGE_KEY, reason: "parse_error" });
       localStorage.removeItem(storageKey(STORAGE_KEY));
     }
   }, []);
