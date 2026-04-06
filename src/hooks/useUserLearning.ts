@@ -200,7 +200,9 @@ export function useUserLearning() {
   // Load stored learning (scoped)
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(storageKey(STORAGE_KEY));
+      const scopedKey = storageKey(STORAGE_KEY);
+      if (DEBUG_TELEMETRY) console.debug("[telemetry]", { event: "scoped_key_used", op: "load_learning", key: scopedKey });
+      const stored = localStorage.getItem(scopedKey);
       if (stored) {
         const parsed = JSON.parse(stored);
         setLearning(parsed);
