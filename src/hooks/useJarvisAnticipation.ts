@@ -3,6 +3,7 @@ import { JarvisAnticipation, UserLearning } from '@/types/learning';
 import { storageKey } from '@/utils/scopedStorage';
 
 const STORAGE_KEY = 'jarvisAnticipations';
+const DEBUG_TELEMETRY = import.meta.env.DEV;
 
 function generateId(): string {
   return `antic-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;

@@ -13,6 +13,7 @@ import { storageKey } from '@/utils/scopedStorage';
 
 const STORAGE_KEY = 'jarvisUserLearning';
 const COOLDOWN_MS = 3600000; // 1 hour
+const DEBUG_TELEMETRY = import.meta.env.DEV;
 
 function daysBetween(a: Date, b: Date): number {
   return Math.abs(Math.floor((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24)));
