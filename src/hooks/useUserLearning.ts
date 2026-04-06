@@ -13,6 +13,7 @@ import { storageKey } from '@/utils/scopedStorage';
 
 const STORAGE_KEY = 'jarvisUserLearning';
 const COOLDOWN_MS = 3600000; // 1 hour
+const DEBUG_TELEMETRY = import.meta.env.DEV;
 
 function daysBetween(a: Date, b: Date): number {
   return Math.abs(Math.floor((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24)));
@@ -199,7 +200,9 @@ export function useUserLearning() {
   // Load stored learning (scoped)
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(storageKey(STORAGE_KEY));
+      const scopedKey = storageKey(STORAGE_KEY);
+      if (DEBUG_TELEMETRY) console.debug("[telemetry]", { event: "scoped_key_used", op: "load_learning", key: scopedKey });
+      const stored = localStorage.getItem(scopedKey);
       if (stored) {
         const parsed = JSON.parse(stored);
         setLearning(parsed);
@@ -228,9 +231,13 @@ export function useUserLearning() {
       const questHistory = [...calibratedCompletions, ...(historyRaw.completions || [])];
 
       // Try scoped 'the-system-player' first, then fallback to 'systemPlayer'
-      const playerRaw =
-        localStorage.getItem(storageKey('the-system-player')) ||
-        localStorage.getItem(storageKey('systemPlayer'));
+      const primaryKey = storageKey('the-system-player');
+      const fallbackKey = storageKey('systemPlayer');
+      const playerRaw = localStorage.getItem(primaryKey) || localStorage.getItem(fallbackKey);
+      if (DEBUG_TELEMETRY) {
+        const usedFallback = !localStorage.getItem(primaryKey) && !!playerRaw;
+        console.debug("[telemetry]", { event: usedFallback ? "player_key_fallback_used" : "scoped_key_used", op: "read_player", key: usedFallback ? fallbackKey : primaryKey });
+      }
       const player = playerRaw ? JSON.parse(playerRaw) : {};
 
       const execution = calculateExecutionPatterns(questHistory);

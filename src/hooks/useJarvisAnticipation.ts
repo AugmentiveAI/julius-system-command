@@ -3,6 +3,7 @@ import { JarvisAnticipation, UserLearning } from '@/types/learning';
 import { storageKey } from '@/utils/scopedStorage';
 
 const STORAGE_KEY = 'jarvisAnticipations';
+const DEBUG_TELEMETRY = import.meta.env.DEV;
 
 function generateId(): string {
   return `antic-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
@@ -31,11 +32,12 @@ export function useJarvisAnticipation(learning: UserLearning | null) {
         if (Array.isArray(parsed)) {
           setAnticipations(parsed);
         } else {
-          // Invalid payload — clear it
+          if (DEBUG_TELEMETRY) console.debug("[telemetry]", { event: "stale_storage_cleared", key: STORAGE_KEY, valueType: typeof parsed });
           localStorage.removeItem(storageKey(STORAGE_KEY));
         }
       }
     } catch {
+      if (DEBUG_TELEMETRY) console.debug("[telemetry]", { event: "stale_storage_cleared", key: STORAGE_KEY, reason: "parse_error" });
       localStorage.removeItem(storageKey(STORAGE_KEY));
     }
   }, []);
@@ -141,7 +143,7 @@ export function useJarvisAnticipation(learning: UserLearning | null) {
         const sig = anticipationSignature(fresh);
         const existing = prevBySignature.get(sig);
         if (existing) {
-          // Preserve identity and surfaced state
+          if (DEBUG_TELEMETRY) console.debug("[telemetry]", { event: "duplicate_preserved", sig, surfaced: existing.surfaced });
           return {
             ...fresh,
             id: existing.id,
