@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Switch } from '@/components/ui/switch';
 import { useAIQuests } from '@/hooks/useAIQuests';
 import { AwakeningSequence } from '@/components/onboarding/AwakeningSequence';
+import { BriefScheduleSection } from '@/components/settings/BriefScheduleSection';
 
 const AI_SETTINGS_KEY = 'systemAISettings';
 
@@ -88,6 +89,9 @@ const Settings = () => {
         <h1 className="font-display text-sm uppercase tracking-[0.3em] text-muted-foreground text-center">
           Settings
         </h1>
+
+        {/* Daily Brief Schedule (PR2b) */}
+        <BriefScheduleSection />
 
         {/* AI Quest Engine Section */}
         <div className="rounded-lg border border-primary/20 bg-card/80 p-5 space-y-5"
