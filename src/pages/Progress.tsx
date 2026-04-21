@@ -20,7 +20,7 @@ import { useSystemStrategy } from '@/hooks/useSystemStrategy';
 import { useAfterActionReview } from '@/hooks/useAfterActionReview';
 import { useNarrativeLoops } from '@/hooks/useNarrativeLoops';
 import { useCornerstone } from '@/hooks/useCornerstone';
-import { useJarvisBrainOptional } from '@/contexts/JarvisBrainContext';
+import { useShadowIntelSlice } from '@/contexts/jarvisSlices';
 import { DailyAAR } from '@/types/afterActionReview';
 import {
   Collapsible,
@@ -57,7 +57,7 @@ const Progress = () => {
   const aar = useAfterActionReview();
   const { activeLoops, breakLoop } = useNarrativeLoops();
   const { cornerstone, todayHonored } = useCornerstone();
-  const brain = useJarvisBrainOptional();
+  const shadowIntel = useShadowIntelSlice();
 
   const [milestonesOpen, setMilestonesOpen] = useState(true);
   const [statsOpen, setStatsOpen] = useState(true);
@@ -176,12 +176,12 @@ const Progress = () => {
         <div className="h-px bg-border" />
 
         {/* Shadow Intel */}
-        {brain && (
+        {shadowIntel && (
           <Collapsible open={intelOpen} onOpenChange={setIntelOpen}>
             <CollapsibleTrigger asChild>
               <div>
                 <SectionHeader
-                  title={`SHADOW INTEL${brain.unreadFindings.length > 0 ? ` (${brain.unreadFindings.length})` : ''}`}
+                  title={`SHADOW INTEL${shadowIntel.unreadCount > 0 ? ` (${shadowIntel.unreadCount})` : ''}`}
                   isOpen={intelOpen}
                   onToggle={() => setIntelOpen(o => !o)}
                 />
@@ -190,10 +190,10 @@ const Progress = () => {
             <CollapsibleContent>
               <div className="pb-4">
                 <ShadowIntelPanel
-                  findings={brain.unreadFindings}
-                  onMarkRead={(id) => brain.updateFindingStatus(id, 'read')}
-                  onActOn={(id) => brain.updateFindingStatus(id, 'acted_on')}
-                  onDismiss={(id) => brain.updateFindingStatus(id, 'dismissed')}
+                  findings={shadowIntel.findings}
+                  onMarkRead={(id) => shadowIntel.updateStatus(id, 'read')}
+                  onActOn={(id) => shadowIntel.updateStatus(id, 'acted_on')}
+                  onDismiss={(id) => shadowIntel.updateStatus(id, 'dismissed')}
                 />
               </div>
             </CollapsibleContent>
