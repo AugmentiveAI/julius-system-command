@@ -17,7 +17,7 @@ import { useHistoryContext } from '@/contexts/HistoryContext';
 import { useSystemStrategy } from '@/hooks/useSystemStrategy';
 import { useAfterActionReview } from '@/hooks/useAfterActionReview';
 import { useNarrativeLoops } from '@/hooks/useNarrativeLoops';
-import { useJarvisBrainOptional } from '@/contexts/JarvisBrainContext';
+import { useShadowIntelSlice } from '@/contexts/jarvisSlices';
 import { DailyAAR } from '@/types/afterActionReview';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
@@ -39,7 +39,7 @@ const Intel = () => {
   const { strategy } = useSystemStrategy();
   const aar = useAfterActionReview();
   const { activeLoops, breakLoop } = useNarrativeLoops();
-  const brain = useJarvisBrainOptional();
+  const shadowIntel = useShadowIntelSlice();
 
   const [trajectoryOpen, setTrajectoryOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
@@ -133,19 +133,19 @@ const Intel = () => {
         <div className="h-px bg-border" />
 
         {/* D. Shadow Intel */}
-        {brain && brain.unreadFindings.length > 0 && (
+        {shadowIntel && shadowIntel.unreadCount > 0 && (
           <>
             <Collapsible open={intelOpen} onOpenChange={setIntelOpen}>
               <CollapsibleTrigger asChild>
-                <div><SectionRow title="SHADOW INTEL" isOpen={intelOpen} onToggle={() => setIntelOpen(o => !o)} count={brain.unreadFindings.length} /></div>
+                <div><SectionRow title="SHADOW INTEL" isOpen={intelOpen} onToggle={() => setIntelOpen(o => !o)} count={shadowIntel.unreadCount} /></div>
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <div className="pb-4">
                   <ShadowIntelPanel
-                    findings={brain.unreadFindings}
-                    onMarkRead={(id) => brain.updateFindingStatus(id, 'read')}
-                    onActOn={(id) => brain.updateFindingStatus(id, 'acted_on')}
-                    onDismiss={(id) => brain.updateFindingStatus(id, 'dismissed')}
+                    findings={shadowIntel.findings}
+                    onMarkRead={(id) => shadowIntel.updateStatus(id, 'read')}
+                    onActOn={(id) => shadowIntel.updateStatus(id, 'acted_on')}
+                    onDismiss={(id) => shadowIntel.updateStatus(id, 'dismissed')}
                   />
                 </div>
               </CollapsibleContent>

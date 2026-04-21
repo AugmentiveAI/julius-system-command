@@ -44,7 +44,7 @@ import { PillarConfirmation } from '@/components/quests/PillarConfirmation';
 import { useAIQuests } from '@/hooks/useAIQuests';
 import { loadAIQuests } from '@/utils/aiQuestGenerator';
 import { JarvisPageBanner } from '@/components/jarvis/JarvisPageBanner';
-import { useJarvisBrainOptional } from '@/contexts/JarvisBrainContext';
+import { useAnticipationSlice, useGeneticPhaseSlice } from '@/contexts/jarvisSlices';
 import { reorderQuestsWithJarvis, getReorderReason } from '@/utils/jarvisQuestReorder';
 import { useEmergencyQuests } from '@/hooks/useEmergencyQuests';
 import { EmergencyQuestBanner } from '@/components/quests/EmergencyQuestBanner';
@@ -189,7 +189,8 @@ const Quests = () => {
   const pillarStreak = usePillarStreak();
   const [pillarBonusToast, setPillarBonusToast] = useState<number | null>(null);
   const { aiResult } = useAIQuests();
-  const jarvis = useJarvisBrainOptional();
+  const jarvisAnticipation = useAnticipationSlice();
+  const jarvisGeneticPhase = useGeneticPhaseSlice();
   const emergency = useEmergencyQuests();
 
   // Morning confirmation — require if pillars were previewed last night but not yet confirmed today
@@ -298,19 +299,17 @@ const Quests = () => {
     if (!calibration) return null;
 
     // JARVIS reordering: apply anticipation + genetic phase
-    const anticipation = jarvis?.anticipation ?? null;
-    const geneticPhase = jarvis?.geneticState?.comtPhase ?? null;
-    const reordered = reorderQuestsWithJarvis(calibration.recommendedQuests, anticipation, geneticPhase);
+    const reordered = reorderQuestsWithJarvis(calibration.recommendedQuests, jarvisAnticipation, jarvisGeneticPhase);
 
     const groups: Record<QuestTimeBlock, CalibratedQuest[]> = { morning: [], midday: [], afternoon: [], evening: [] };
     reordered.forEach(q => groups[assignTimeBlock(q)].push(q));
     return groups;
-  }, [calibration, jarvis?.anticipation, jarvis?.geneticState?.comtPhase]);
+  }, [calibration, jarvisAnticipation, jarvisGeneticPhase]);
 
   // Reorder reason for display
   const reorderReason = useMemo(() => {
-    return getReorderReason(jarvis?.anticipation ?? null, jarvis?.geneticState?.comtPhase ?? null);
-  }, [jarvis?.anticipation, jarvis?.geneticState?.comtPhase]);
+    return getReorderReason(jarvisAnticipation, jarvisGeneticPhase);
+  }, [jarvisAnticipation, jarvisGeneticPhase]);
 
   // Enqueue quest-context comms
   const { enqueue: enqueueComm } = useSystemCommsContext();

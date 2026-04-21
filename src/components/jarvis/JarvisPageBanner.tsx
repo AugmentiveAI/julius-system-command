@@ -1,8 +1,12 @@
-import { useState, useEffect, useMemo } from 'react';
 import { Brain, Zap, Shield, AlertTriangle, Radar, TrendingUp } from 'lucide-react';
-import { useJarvisBrainOptional } from '@/contexts/JarvisBrainContext';
+import {
+  useJarvisSelector,
+  shallowEqual,
+} from '@/contexts/JarvisBrainContext';
+import { useRerenderCounter } from '@/hooks/useRerenderCounter';
 import { SystemInterventionBanner } from '@/components/dashboard/SystemInterventionBanner';
 import { ProactiveMessage } from '@/types/learning';
+import { SystemIntervention } from '@/utils/interventionEngine';
 
 interface JarvisPageBannerProps {
   page: 'quests' | 'training';
@@ -28,27 +32,56 @@ const TYPE_ICONS: Record<string, typeof Brain> = {
   nudge: Zap,
 };
 
+interface BannerSlice {
+  pageInterventions: SystemIntervention[];
+  proactiveMessage: ProactiveMessage | null;
+  phase: string | null;
+  unreadCount: number;
+  dismissIntervention: (id: string) => void;
+}
+
 export function JarvisPageBanner({ page, onCallback }: JarvisPageBannerProps) {
-  const brain = useJarvisBrainOptional();
-  if (!brain) return null;
+  useRerenderCounter(`JarvisPageBanner[${page}]`);
 
-  const pageInterventions = brain.getInterventionsForPage(page);
+  const slice = useJarvisSelector<BannerSlice | null>((brain) => {
+    if (!brain) return null;
+    return {
+      pageInterventions: brain.getInterventionsForPage(page),
+      proactiveMessage: brain.generateProactiveMessage(),
+      phase: brain.geneticState?.comtPhase ?? null,
+      unreadCount: brain.unreadFindings.length,
+      dismissIntervention: brain.dismissIntervention,
+    };
+  }, (a, b) => {
+    if (a === b) return true;
+    if (!a || !b) return false;
+    return shallowEqual({
+      len: a.pageInterventions.length,
+      firstId: a.pageInterventions[0]?.id ?? null,
+      msg: a.proactiveMessage?.short ?? null,
+      phase: a.phase,
+      unread: a.unreadCount,
+    }, {
+      len: b.pageInterventions.length,
+      firstId: b.pageInterventions[0]?.id ?? null,
+      msg: b.proactiveMessage?.short ?? null,
+      phase: b.phase,
+      unread: b.unreadCount,
+    });
+  });
+
+  if (!slice) return null;
+
+  const { pageInterventions, proactiveMessage, phase, unreadCount, dismissIntervention } = slice;
   const highest = pageInterventions[0] ?? null;
-
-  // Proactive message from enhanced intelligence
-  const proactiveMessage = brain.generateProactiveMessage();
-
-  // Show genetic phase context when no intervention or proactive message
-  const phase = brain.geneticState?.comtPhase;
   const phaseContext = phase ? PAGE_CONTEXT_MESSAGES[phase] : null;
 
-  // Priority: intervention > proactive message > genetic phase
   if (highest) {
     return (
       <SystemInterventionBanner
         intervention={highest}
         totalCount={pageInterventions.length}
-        onDismiss={brain.dismissIntervention}
+        onDismiss={dismissIntervention}
         onCallback={onCallback}
       />
     );
@@ -65,9 +98,9 @@ export function JarvisPageBanner({ page, onCallback }: JarvisPageBannerProps) {
           <p className="font-mono text-[10px] tracking-wider text-primary/90 font-medium">
             {proactiveMessage.short}
           </p>
-          {brain.unreadFindings.length > 0 && (
+          {unreadCount > 0 && (
             <span className="ml-auto shrink-0 inline-flex items-center rounded-full border border-secondary/30 bg-secondary/10 px-1.5 py-0.5 font-mono text-[8px] text-secondary">
-              {brain.unreadFindings.length} intel
+              {unreadCount} intel
             </span>
           )}
         </div>

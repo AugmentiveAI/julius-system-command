@@ -1,4 +1,11 @@
-import { createContext, useContext, useCallback, useMemo, ReactNode } from 'react';
+import { createContext, useContext, useCallback, useMemo, useRef, useEffect, ReactNode } from 'react';
+import {
+  createJarvisStore,
+  useStoreSelector,
+  shallowEqual,
+  type JarvisStore,
+  type EqualityFn,
+} from './jarvisStore';
 import { useSystemInterventions } from '@/hooks/useSystemInterventions';
 import { useGeneticState } from '@/hooks/useGeneticState';
 import { useProtocolQuests } from '@/hooks/useProtocolQuests';
@@ -113,6 +120,8 @@ const JarvisIntelligenceCtx = createContext<JarvisIntelligenceState | null>(null
 const JarvisLiveCtx = createContext<JarvisLiveState | null>(null);
 // Legacy combined context for backward compat
 const JarvisBrainCtx = createContext<JarvisBrainState | null>(null);
+// External store for selector-based slice subscription
+const JarvisStoreCtx = createContext<JarvisStore<JarvisBrainState | null> | null>(null);
 
 /** Use only intelligence data (heavy, infrequent updates) */
 export function useJarvisIntelligence(): JarvisIntelligenceState {
@@ -139,6 +148,31 @@ export function useJarvisBrain(): JarvisBrainState {
 export function useJarvisBrainOptional(): JarvisBrainState | null {
   return useContext(JarvisBrainCtx);
 }
+
+/**
+ * Subscribe to a slice of the JARVIS brain via `useSyncExternalStore`.
+ * The component only re-renders when `selector(state)` changes (per `equalityFn`).
+ *
+ * Returns `null` when called outside the provider OR when the store has no
+ * snapshot yet — selectors must handle the null case.
+ *
+ * Pass `shallowEqual` for object slices like `{ count, hasItem }`.
+ */
+export function useJarvisSelector<T>(
+  selector: (state: JarvisBrainState | null) => T,
+  equalityFn: EqualityFn<T> = Object.is,
+): T {
+  const store = useContext(JarvisStoreCtx);
+  // Fallback when used outside provider — give selector a null snapshot once.
+  const fallbackStoreRef = useRef<JarvisStore<JarvisBrainState | null> | null>(null);
+  if (!store && !fallbackStoreRef.current) {
+    fallbackStoreRef.current = createJarvisStore<JarvisBrainState | null>(null);
+  }
+  return useStoreSelector(store ?? fallbackStoreRef.current!, selector, equalityFn);
+}
+
+export { shallowEqual };
+
 
 // ── Provider ────────────────────────────────────────────────────────
 
@@ -386,13 +420,26 @@ export function JarvisBrainProvider({ children }: { children: ReactNode }) {
     ...liveValue,
   }), [intelligenceValue, liveValue]);
 
+  // ── External store: push new snapshots so selector subscribers
+  //    (useJarvisSelector) can re-derive without rerendering on every
+  //    parent context update.
+  const storeRef = useRef<JarvisStore<JarvisBrainState | null> | null>(null);
+  if (!storeRef.current) {
+    storeRef.current = createJarvisStore<JarvisBrainState | null>(combinedValue);
+  }
+  useEffect(() => {
+    storeRef.current?.set(combinedValue);
+  }, [combinedValue]);
+
   return (
-    <JarvisIntelligenceCtx.Provider value={intelligenceValue}>
-      <JarvisLiveCtx.Provider value={liveValue}>
-        <JarvisBrainCtx.Provider value={combinedValue}>
-          {children}
-        </JarvisBrainCtx.Provider>
-      </JarvisLiveCtx.Provider>
-    </JarvisIntelligenceCtx.Provider>
+    <JarvisStoreCtx.Provider value={storeRef.current}>
+      <JarvisIntelligenceCtx.Provider value={intelligenceValue}>
+        <JarvisLiveCtx.Provider value={liveValue}>
+          <JarvisBrainCtx.Provider value={combinedValue}>
+            {children}
+          </JarvisBrainCtx.Provider>
+        </JarvisLiveCtx.Provider>
+      </JarvisIntelligenceCtx.Provider>
+    </JarvisStoreCtx.Provider>
   );
 }

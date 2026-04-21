@@ -18,7 +18,11 @@ import { usePillarStreak } from '@/hooks/usePillarStreak';
 import { useSystemNotifications } from '@/hooks/useSystemNotifications';
 import { useShadowArmy } from '@/hooks/useShadowArmy';
 import { useDungeons } from '@/hooks/useDungeons';
-import { useJarvisBrain, useJarvisBrainOptional } from '@/contexts/JarvisBrainContext';
+import {
+  useGeneticPhaseSlice,
+  useHighestInterventionSlice,
+  useLogColdExposureCallback,
+} from '@/contexts/jarvisSlices';
 import { useEmergencyQuests } from '@/hooks/useEmergencyQuests';
 import { useAfterActionReview } from '@/hooks/useAfterActionReview';
 import { useNarrativeLoops } from '@/hooks/useNarrativeLoops';
@@ -138,15 +142,13 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
   const { completedDungeons } = useDungeons();
   const { addCompletion } = useHistoryContext();
   usePreCommitment(); // hydrate
-  const {
-    highestPriority,
-    logColdExposure: _logColdExposure,
-  } = useJarvisBrain();
+  const highestPriority = useHighestInterventionSlice();
+  const _logColdExposure = useLogColdExposureCallback();
   const emergency = useEmergencyQuests();
   const aarReview = useAfterActionReview();
   const { newLoopDetected } = useNarrativeLoops();
   const { cornerstone, todayHonored } = useCornerstone();
-  const jarvis = useJarvisBrainOptional();
+  const geneticPhase = useGeneticPhaseSlice();
 
   // ── Local UI state ─────────────────────────────────────────
   const [ariseState, setAriseState] = useState({ show: false, name: '' });
@@ -234,7 +236,7 @@ const Index = ({ forceFirstScan, onScanTriggered }: IndexProps) => {
     questChains: questChains.activeChains,
     levelUpSkill,
     shadows,
-    geneticPhase: jarvis?.geneticState?.comtPhase ?? null,
+    geneticPhase,
   });
 
   // ── Mission toggle router (discriminated union) ───────────
