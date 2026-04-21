@@ -7,7 +7,7 @@ import { useProtocolQuests } from '@/hooks/useProtocolQuests';
 import { usePillarQuests } from '@/hooks/usePillarQuests';
 import { useShadowQuest } from '@/hooks/useShadowQuest';
 import { usePersuasion } from '@/hooks/usePersuasion';
-import { useJarvisBrainOptional } from '@/contexts/JarvisBrainContext';
+import { useAnticipationSlice, useGeneticPhaseSlice } from '@/contexts/jarvisSlices';
 import { loadCachedResistance } from '@/utils/resistanceTracker';
 import {
   Mission,
@@ -52,7 +52,8 @@ export function useIndexMissionGraph({
 }: UseIndexMissionGraphArgs) {
   const { quests } = useProtocolQuests();
   const pillar = usePillarQuests();
-  const jarvis = useJarvisBrainOptional();
+  const anticipation = useAnticipationSlice();
+  const geneticPhase = useGeneticPhaseSlice();
 
   const calibration = useMemo(() => {
     if (!activeCheck) return null;
@@ -96,8 +97,6 @@ export function useIndexMissionGraph({
     });
 
     if (calibration) {
-      const anticipation = jarvis?.anticipation ?? null;
-      const geneticPhase = jarvis?.geneticState?.comtPhase ?? null;
       const reordered = reorderQuestsWithJarvis(calibration.recommendedQuests, anticipation, geneticPhase);
       reordered.forEach(q => {
         const persuasion = persuasionMap.get(q.id);
@@ -142,7 +141,7 @@ export function useIndexMissionGraph({
     }
 
     return list;
-  }, [quests, calibration, pillar, shadowQuest, shadowRevealed, completedCalibratedIds, persuasionMap, jarvis]);
+  }, [quests, calibration, pillar, shadowQuest, shadowRevealed, completedCalibratedIds, persuasionMap, anticipation, geneticPhase]);
 
   const legacyMissions = useMemo<LegacyMissionView[]>(
     () => missions.map(toLegacyMission),
