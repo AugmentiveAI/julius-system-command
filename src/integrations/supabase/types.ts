@@ -80,6 +80,45 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_briefs: {
+        Row: {
+          brief_date: string
+          content: string
+          created_at: string
+          generated_at: string
+          id: string
+          metadata: Json
+          strategic_focus: string | null
+          updated_at: string
+          user_id: string
+          weekly_objective: string | null
+        }
+        Insert: {
+          brief_date: string
+          content: string
+          created_at?: string
+          generated_at?: string
+          id?: string
+          metadata?: Json
+          strategic_focus?: string | null
+          updated_at?: string
+          user_id: string
+          weekly_objective?: string | null
+        }
+        Update: {
+          brief_date?: string
+          content?: string
+          created_at?: string
+          generated_at?: string
+          id?: string
+          metadata?: Json
+          strategic_focus?: string | null
+          updated_at?: string
+          user_id?: string
+          weekly_objective?: string | null
+        }
+        Relationships: []
+      }
       dungeons: {
         Row: {
           completed_at: string | null
@@ -209,6 +248,7 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          daily_brief_hour: number
           display_name: string
           goal: string | null
           id: string
@@ -216,12 +256,14 @@ export type Database = {
           rehab_phase: string | null
           rom_left_knee: number | null
           rom_right_knee: number | null
+          timezone: string
           title: string
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          daily_brief_hour?: number
           display_name?: string
           goal?: string | null
           id?: string
@@ -229,12 +271,14 @@ export type Database = {
           rehab_phase?: string | null
           rom_left_knee?: number | null
           rom_right_knee?: number | null
+          timezone?: string
           title?: string
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
+          daily_brief_hour?: number
           display_name?: string
           goal?: string | null
           id?: string
@@ -242,6 +286,7 @@ export type Database = {
           rehab_phase?: string | null
           rom_left_knee?: number | null
           rom_right_knee?: number | null
+          timezone?: string
           title?: string
           updated_at?: string
           user_id?: string
