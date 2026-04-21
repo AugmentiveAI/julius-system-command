@@ -86,7 +86,7 @@ export function useAutoDeployIntelligence({
           description: dungeon.description,
           difficulty: dungeon.difficulty,
           xp_reward: dungeon.xpReward,
-          objectives: objectives as unknown as DungeonObjective[],
+          objectives: objectives as unknown as never,
           status: 'available',
         }]);
       }
