@@ -79,7 +79,7 @@ export function useAutoDeployIntelligence({
         }));
         const { data: userData } = await supabase.auth.getUser();
         if (!userData.user) return;
-        await supabase.from('dungeons').insert({
+        await supabase.from('dungeons').insert([{
           user_id: userData.user.id,
           dungeon_type: dungeon.type,
           title: dungeon.title,
@@ -88,7 +88,7 @@ export function useAutoDeployIntelligence({
           xp_reward: dungeon.xpReward,
           objectives: objectives as unknown as DungeonObjective[],
           status: 'available',
-        });
+        }]);
       }
     })();
 

@@ -3,6 +3,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getSystemToast } from '@/utils/systemVoice';
 import { recordCompletion } from '@/hooks/usePersuasion';
 import { CalibratedQuest, QuestCompletionRecord } from '@/utils/questCalibration';
+import { PersuasionTechnique } from '@/types/persuasionEngine';
 import { Mission } from './missionTypes';
 
 interface UseMissionToggleRouterArgs {
@@ -36,7 +37,7 @@ interface UseMissionToggleRouterArgs {
 
   // Calibrated
   calibration: { recommendedQuests: CalibratedQuest[] } | null;
-  persuasionMap: Map<string, { technique: string | null }>;
+  persuasionMap: Map<string, { technique: PersuasionTechnique | null; message?: string | null }>;
   setCompletedCalibratedIds: React.Dispatch<React.SetStateAction<Set<string>>>;
   saveCompletionRecord: (record: QuestCompletionRecord) => void;
   onCalibratedQuestCompleted: () => void;
