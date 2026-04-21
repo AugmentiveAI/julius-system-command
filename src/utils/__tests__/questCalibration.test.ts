@@ -62,8 +62,8 @@ describe('calibrateQuests — quest list invariants', () => {
 
   it('quest IDs are unique within a calibration result (modulo break duplication)', () => {
     const r = calibrateQuests(buildState(), [], [], new Date('2025-01-15T09:00:00Z'));
-    const non‌Break = r.recommendedQuests.filter(q => !q.isBreak);
-    const ids = non‌Break.map(q => q.id);
+    const nonBreak = r.recommendedQuests.filter(q => !q.isBreak);
+    const ids = nonBreak.map(q => q.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
 
