@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { useDailyBrief } from '@/hooks/useDailyBrief';
 
 interface SystemBriefProps {
   dayNumber: number;
@@ -9,13 +10,19 @@ interface SystemBriefProps {
 }
 
 export function SystemBrief({ dayNumber, dailyBrief, strategicFocus, weeklyObjective }: SystemBriefProps) {
+  // Prefer DB-backed daily brief when available; fall back to props (legacy inline brief).
+  const { brief: dbBrief } = useDailyBrief();
+  const effectiveBrief = dbBrief?.content || dailyBrief;
+  const effectiveFocus = dbBrief?.strategic_focus || strategicFocus;
+  const effectiveObjective = dbBrief?.weekly_objective || weeklyObjective;
+
   const [displayedText, setDisplayedText] = useState('');
   const [hasAnimated, setHasAnimated] = useState(false);
 
   // Typing animation on first load only
   useEffect(() => {
     if (hasAnimated) {
-      setDisplayedText(dailyBrief);
+      setDisplayedText(effectiveBrief);
       return;
     }
 
@@ -23,14 +30,14 @@ export function SystemBrief({ dayNumber, dailyBrief, strategicFocus, weeklyObjec
     setDisplayedText('');
     const interval = setInterval(() => {
       i++;
-      setDisplayedText(dailyBrief.slice(0, i));
-      if (i >= dailyBrief.length) {
+      setDisplayedText(effectiveBrief.slice(0, i));
+      if (i >= effectiveBrief.length) {
         clearInterval(interval);
         setHasAnimated(true);
       }
     }, 12);
     return () => clearInterval(interval);
-  }, [dailyBrief, hasAnimated]);
+  }, [effectiveBrief, hasAnimated]);
 
   return (
     <div className="rounded-lg border border-border bg-card p-5 space-y-4">
@@ -60,13 +67,13 @@ export function SystemBrief({ dayNumber, dailyBrief, strategicFocus, weeklyObjec
         <Badge
           className="bg-primary/15 text-primary border-primary/30 font-mono text-[10px] sm:text-[10px] text-[9px] px-2 py-1 h-auto whitespace-normal text-left max-w-full"
         >
-          {strategicFocus}
+          {effectiveFocus}
         </Badge>
       </div>
 
       {/* Weekly Objective */}
       <p className="font-mono text-[10px] text-muted-foreground leading-relaxed border-t border-border/50 pt-3">
-        {weeklyObjective}
+        {effectiveObjective}
       </p>
     </div>
   );
