@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      auto_deploy_ledger: {
+        Row: {
+          created_at: string
+          deploy_date: string
+          deployed_entity_id: string | null
+          id: string
+          idempotency_key: string
+          kind: string
+          metadata: Json | null
+          status: string
+          suggestion_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          deploy_date?: string
+          deployed_entity_id?: string | null
+          id?: string
+          idempotency_key: string
+          kind: string
+          metadata?: Json | null
+          status?: string
+          suggestion_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          deploy_date?: string
+          deployed_entity_id?: string | null
+          id?: string
+          idempotency_key?: string
+          kind?: string
+          metadata?: Json | null
+          status?: string
+          suggestion_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           content: string
