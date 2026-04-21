@@ -420,13 +420,26 @@ export function JarvisBrainProvider({ children }: { children: ReactNode }) {
     ...liveValue,
   }), [intelligenceValue, liveValue]);
 
+  // ── External store: push new snapshots so selector subscribers
+  //    (useJarvisSelector) can re-derive without rerendering on every
+  //    parent context update.
+  const storeRef = useRef<JarvisStore<JarvisBrainState | null> | null>(null);
+  if (!storeRef.current) {
+    storeRef.current = createJarvisStore<JarvisBrainState | null>(combinedValue);
+  }
+  useEffect(() => {
+    storeRef.current?.set(combinedValue);
+  }, [combinedValue]);
+
   return (
-    <JarvisIntelligenceCtx.Provider value={intelligenceValue}>
-      <JarvisLiveCtx.Provider value={liveValue}>
-        <JarvisBrainCtx.Provider value={combinedValue}>
-          {children}
-        </JarvisBrainCtx.Provider>
-      </JarvisLiveCtx.Provider>
-    </JarvisIntelligenceCtx.Provider>
+    <JarvisStoreCtx.Provider value={storeRef.current}>
+      <JarvisIntelligenceCtx.Provider value={intelligenceValue}>
+        <JarvisLiveCtx.Provider value={liveValue}>
+          <JarvisBrainCtx.Provider value={combinedValue}>
+            {children}
+          </JarvisBrainCtx.Provider>
+        </JarvisLiveCtx.Provider>
+      </JarvisIntelligenceCtx.Provider>
+    </JarvisStoreCtx.Provider>
   );
 }
