@@ -67,13 +67,13 @@ export function SystemBrief({ dayNumber, dailyBrief, strategicFocus, weeklyObjec
         <Badge
           className="bg-primary/15 text-primary border-primary/30 font-mono text-[10px] sm:text-[10px] text-[9px] px-2 py-1 h-auto whitespace-normal text-left max-w-full"
         >
-          {strategicFocus}
+          {effectiveFocus}
         </Badge>
       </div>
 
       {/* Weekly Objective */}
       <p className="font-mono text-[10px] text-muted-foreground leading-relaxed border-t border-border/50 pt-3">
-        {weeklyObjective}
+        {effectiveObjective}
       </p>
     </div>
   );
